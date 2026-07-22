@@ -9,6 +9,25 @@ type Locale =
   | "my" | "km" | "lo" | "hi" | "bn" | "ta" | "ne" | "si"
   | "kk" | "uz" | "mn";
 type ActivityId = "home" | "tetris" | "missing" | "crossword" | "kpop";
+type KeyboardLayout = "qwerty" | "azerty" | "qwertz";
+type KeyboardRow = "top" | "home" | "bottom";
+
+type KoreanKey = {
+  jamo: string;
+  code: string;
+  row: KeyboardRow;
+};
+
+type KeyboardHelpCopy = {
+  myKeyboard: string;
+  nextKey: string;
+  press: string;
+  yourKey: string;
+  hangul: string;
+  mapTitle: string;
+  layoutNote: string;
+  complete: string;
+};
 
 type InterfaceCopy = {
   navLearn: string;
@@ -578,7 +597,163 @@ function resolveBrowserLocale(languages: readonly string[]): Locale {
 }
 
 const targetSentence = "저는 음악을 좋아해요.";
-const guideKeys = ["ㅈ", "ㅓ", "ㄴ", "ㅡ", "ㄴ", "ㅇ", "ㅡ", "ㅁ", "ㅇ", "ㅏ", "ㄱ"];
+
+const koreanKeyRows: Array<{ row: KeyboardRow; keys: KoreanKey[] }> = [
+  {
+    row: "top",
+    keys: [
+      { jamo: "ㅂ", code: "KeyQ", row: "top" },
+      { jamo: "ㅈ", code: "KeyW", row: "top" },
+      { jamo: "ㄷ", code: "KeyE", row: "top" },
+      { jamo: "ㄱ", code: "KeyR", row: "top" },
+      { jamo: "ㅅ", code: "KeyT", row: "top" },
+      { jamo: "ㅛ", code: "KeyY", row: "top" },
+      { jamo: "ㅕ", code: "KeyU", row: "top" },
+      { jamo: "ㅑ", code: "KeyI", row: "top" },
+      { jamo: "ㅐ", code: "KeyO", row: "top" },
+      { jamo: "ㅔ", code: "KeyP", row: "top" },
+    ],
+  },
+  {
+    row: "home",
+    keys: [
+      { jamo: "ㅁ", code: "KeyA", row: "home" },
+      { jamo: "ㄴ", code: "KeyS", row: "home" },
+      { jamo: "ㅇ", code: "KeyD", row: "home" },
+      { jamo: "ㄹ", code: "KeyF", row: "home" },
+      { jamo: "ㅎ", code: "KeyG", row: "home" },
+      { jamo: "ㅗ", code: "KeyH", row: "home" },
+      { jamo: "ㅓ", code: "KeyJ", row: "home" },
+      { jamo: "ㅏ", code: "KeyK", row: "home" },
+      { jamo: "ㅣ", code: "KeyL", row: "home" },
+    ],
+  },
+  {
+    row: "bottom",
+    keys: [
+      { jamo: "ㅋ", code: "KeyZ", row: "bottom" },
+      { jamo: "ㅌ", code: "KeyX", row: "bottom" },
+      { jamo: "ㅊ", code: "KeyC", row: "bottom" },
+      { jamo: "ㅍ", code: "KeyV", row: "bottom" },
+      { jamo: "ㅠ", code: "KeyB", row: "bottom" },
+      { jamo: "ㅜ", code: "KeyN", row: "bottom" },
+      { jamo: "ㅡ", code: "KeyM", row: "bottom" },
+    ],
+  },
+];
+
+const koreanKeys = koreanKeyRows.flatMap(({ keys }) => keys);
+const keyByJamo = new Map(koreanKeys.map((key) => [key.jamo, key]));
+const practiceSequence: KoreanKey[] = [
+  "ㅈ", "ㅓ", "ㄴ", "ㅡ", "ㄴ",
+  "ㅇ", "ㅡ", "ㅁ", "ㅇ", "ㅏ", "ㄱ", "ㅇ", "ㅡ", "ㄹ",
+  "ㅈ", "ㅗ", "ㅎ", "ㅇ", "ㅏ", "ㅎ", "ㅐ", "ㅇ", "ㅛ",
+].map((jamo) => keyByJamo.get(jamo)!);
+
+const keyboardLegends: Record<KeyboardLayout, Partial<Record<string, string>>> = {
+  qwerty: {},
+  azerty: { KeyQ: "A", KeyW: "Z", KeyA: "Q", KeyZ: "W", KeyM: "," },
+  qwertz: { KeyY: "Z", KeyZ: "Y" },
+};
+
+function keyboardLegend(layout: KeyboardLayout, code: string) {
+  return keyboardLegends[layout][code] ?? code.replace("Key", "");
+}
+
+const englishKeyboardCopy: KeyboardHelpCopy = {
+  myKeyboard: "My keyboard",
+  nextKey: "Next Korean key",
+  press: "Press",
+  yourKey: "Your key",
+  hangul: "Hangul",
+  mapTitle: "Korean 2-set keyboard map",
+  layoutNote: "Choose the Latin layout printed on your keys. The highlighted position stays the same.",
+  complete: "All keys complete!",
+};
+
+const keyboardHelpCopy: Partial<Record<Locale, KeyboardHelpCopy>> = {
+  en: englishKeyboardCopy,
+  ko: {
+    myKeyboard: "내 키보드",
+    nextKey: "다음 한글 키",
+    press: "누르기",
+    yourKey: "내 키보드",
+    hangul: "한글",
+    mapTitle: "두벌식 한글 자판 위치",
+    layoutNote: "키보드에 인쇄된 영문 배열을 고르세요. 강조된 물리적 위치는 같습니다.",
+    complete: "모든 키를 입력했어요!",
+  },
+  "pt-BR": {
+    myKeyboard: "Meu teclado",
+    nextKey: "Próxima tecla coreana",
+    press: "Pressione",
+    yourKey: "Sua tecla",
+    hangul: "Hangul",
+    mapTitle: "Mapa do teclado coreano",
+    layoutNote: "Escolha o padrão latino impresso nas teclas. A posição destacada não muda.",
+    complete: "Todas as teclas concluídas!",
+  },
+  ar: {
+    myKeyboard: "لوحة مفاتيحي",
+    nextKey: "مفتاح الهانغل التالي",
+    press: "اضغط",
+    yourKey: "مفتاحك",
+    hangul: "هانغل",
+    mapTitle: "خريطة لوحة المفاتيح الكورية",
+    layoutNote: "اختر ترتيب الحروف اللاتينية المطبوع على مفاتيحك. يبقى موضع التمييز نفسه.",
+    complete: "اكتملت جميع المفاتيح!",
+  },
+  fa: {
+    myKeyboard: "صفحه‌کلید من",
+    nextKey: "کلید بعدی هانگول",
+    press: "فشار دهید",
+    yourKey: "کلید شما",
+    hangul: "هانگول",
+    mapTitle: "نقشه صفحه‌کلید کره‌ای",
+    layoutNote: "چیدمان لاتین چاپ‌شده روی کلیدها را انتخاب کنید. جای کلید برجسته ثابت است.",
+    complete: "همه کلیدها کامل شد!",
+  },
+  fil: {
+    myKeyboard: "Keyboard ko",
+    nextKey: "Susunod na Hangul key",
+    press: "Pindutin",
+    yourKey: "Iyong key",
+    hangul: "Hangul",
+    mapTitle: "Mapa ng Korean keyboard",
+    layoutNote: "Piliin ang Latin layout na nakalimbag sa iyong mga key. Hindi nagbabago ang naka-highlight na puwesto.",
+    complete: "Kumpleto na ang lahat ng key!",
+  },
+  th: {
+    myKeyboard: "แป้นพิมพ์ของฉัน",
+    nextKey: "ปุ่มฮันกึลถัดไป",
+    press: "กด",
+    yourKey: "ปุ่มของคุณ",
+    hangul: "ฮันกึล",
+    mapTitle: "ผังแป้นพิมพ์ภาษาเกาหลี",
+    layoutNote: "เลือกรูปแบบอักษรละตินที่พิมพ์บนปุ่ม ตำแหน่งที่ไฮไลต์จะเหมือนเดิม",
+    complete: "พิมพ์ครบทุกปุ่มแล้ว!",
+  },
+  id: {
+    myKeyboard: "Keyboard saya",
+    nextKey: "Tombol Hangul berikutnya",
+    press: "Tekan",
+    yourKey: "Tombol Anda",
+    hangul: "Hangul",
+    mapTitle: "Peta keyboard Korea",
+    layoutNote: "Pilih tata letak Latin yang tercetak pada tombol. Posisi sorotan tetap sama.",
+    complete: "Semua tombol selesai!",
+  },
+  ms: {
+    myKeyboard: "Papan kekunci saya",
+    nextKey: "Kekunci Hangul seterusnya",
+    press: "Tekan",
+    yourKey: "Kekunci anda",
+    hangul: "Hangul",
+    mapTitle: "Peta papan kekunci Korea",
+    layoutNote: "Pilih susun atur Latin yang tercetak pada kekunci. Kedudukan yang diserlahkan kekal sama.",
+    complete: "Semua kekunci selesai!",
+  },
+};
 const tetrisWords = [
   { korean: "사랑", meaning: "love" },
   { korean: "음악", meaning: "music" },
@@ -661,6 +836,8 @@ const activities: Array<{
 
 export default function Home() {
   const [locale, setLocale] = useState<Locale>("en");
+  const [keyboardLayout, setKeyboardLayout] = useState<KeyboardLayout>("qwerty");
+  const [guideStep, setGuideStep] = useState(0);
   const [typed, setTyped] = useState("");
   const [activeActivity, setActiveActivity] = useState<ActivityId>("home");
   const [tetrisInput, setTetrisInput] = useState("");
@@ -671,6 +848,9 @@ export default function Home() {
   const [crosswordAnswer, setCrosswordAnswer] = useState("");
 
   const t = copy[locale];
+  const keyboardText = keyboardHelpCopy[locale] ?? englishKeyboardCopy;
+  const activePracticeKey = practiceSequence[guideStep] ?? null;
+  const upcomingPracticeKeys = practiceSequence.slice(guideStep, guideStep + 7);
   const targetChars = useMemo(() => Array.from(targetSentence), []);
   const typedChars = Array.from(typed);
   const correctChars = typedChars.reduce(
@@ -685,10 +865,14 @@ export default function Home() {
   useEffect(() => {
     try {
       const savedLocale = window.localStorage.getItem("hangeul-pop-locale");
+      const savedKeyboardLayout = window.localStorage.getItem("hangeul-pop-keyboard-layout");
       if (savedLocale && savedLocale in copy) {
         setLocale(savedLocale as Locale);
       } else {
         setLocale(resolveBrowserLocale(navigator.languages));
+      }
+      if (savedKeyboardLayout === "qwerty" || savedKeyboardLayout === "azerty" || savedKeyboardLayout === "qwertz") {
+        setKeyboardLayout(savedKeyboardLayout);
       }
     } catch {
       setLocale(resolveBrowserLocale(navigator.languages));
@@ -704,6 +888,14 @@ export default function Home() {
       // The language still applies for this session when storage is unavailable.
     }
   }, [locale]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("hangeul-pop-keyboard-layout", keyboardLayout);
+    } catch {
+      // The keyboard layout still applies for this session when storage is unavailable.
+    }
+  }, [keyboardLayout]);
 
   function submitTetris(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -801,17 +993,82 @@ export default function Home() {
                 className="typing-input"
                 lang="ko"
                 value={typed}
-                onChange={(event) => setTyped(event.target.value)}
+                onChange={(event) => {
+                  setTyped(event.target.value);
+                  if (!event.target.value) setGuideStep(0);
+                }}
+                onKeyDown={(event) => {
+                  if (event.code === activePracticeKey?.code) {
+                    setGuideStep((step) => Math.min(step + 1, practiceSequence.length));
+                  } else if (event.code === "Backspace") {
+                    setGuideStep((step) => Math.max(0, step - 1));
+                  }
+                }}
                 placeholder="여기에 입력하세요"
                 autoComplete="off"
                 spellCheck={false}
                 aria-describedby="typing-feedback"
               />
               <p className={`typing-feedback ${sentenceComplete ? "complete" : ""}`} id="typing-feedback" aria-live="polite">
-                {sentenceComplete ? "Great rhythm! Sentence complete." : typedChars.length ? `${accuracy}% accurate · keep going` : "Tip: use your Korean keyboard or the on-screen key guide."}
+                {sentenceComplete ? "Great rhythm! Sentence complete." : typedChars.length ? `${accuracy}% accurate · keep going` : "Follow the highlighted key position below."}
               </p>
-              <div className="key-guide" aria-label="Next Korean keys">
-                {guideKeys.map((key, index) => <kbd className={index === Math.min(typedChars.length, guideKeys.length - 1) ? "active" : ""} key={`${key}-${index}`}>{key}</kbd>)}
+
+              <div className="keyboard-tools">
+                <label className="keyboard-layout-picker">
+                  <span>{keyboardText.myKeyboard}</span>
+                  <select value={keyboardLayout} onChange={(event) => setKeyboardLayout(event.target.value as KeyboardLayout)}>
+                    <option value="qwerty">QWERTY</option>
+                    <option value="azerty">AZERTY</option>
+                    <option value="qwertz">QWERTZ</option>
+                  </select>
+                </label>
+                <p>{keyboardText.layoutNote}</p>
+              </div>
+
+              {activePracticeKey ? (
+                <div className="next-key-card" aria-live="polite">
+                  <span className="next-key-jamo" lang="ko">{activePracticeKey.jamo}</span>
+                  <span className="next-key-copy">
+                    <small>{keyboardText.nextKey}</small>
+                    <b>{keyboardText.press} <kbd>{keyboardLegend(keyboardLayout, activePracticeKey.code)}</kbd></b>
+                  </span>
+                </div>
+              ) : (
+                <div className="next-key-card complete" aria-live="polite">
+                  <span aria-hidden="true">✓</span>
+                  <b>{keyboardText.complete}</b>
+                </div>
+              )}
+
+              <div className="key-guide" aria-label="Upcoming Korean keys">
+                {upcomingPracticeKeys.map((key, index) => (
+                  <kbd className={index === 0 ? "active" : ""} key={`${key.jamo}-${guideStep + index}`}>
+                    <span lang="ko">{key.jamo}</span>
+                    <small>{keyboardLegend(keyboardLayout, key.code)}</small>
+                  </kbd>
+                ))}
+              </div>
+
+              <div className="keyboard-map" aria-label={keyboardText.mapTitle}>
+                <div className="keyboard-map-legend">
+                  <b>{keyboardText.mapTitle}</b>
+                  <span><i className="legend-hangul" /> {keyboardText.hangul}</span>
+                  <span><i className="legend-local" /> {keyboardText.yourKey}</span>
+                </div>
+                {koreanKeyRows.map(({ row, keys }) => (
+                  <div className={`keyboard-row ${row}`} key={row}>
+                    {keys.map((key) => (
+                      <kbd
+                        className={activePracticeKey?.code === key.code ? "active" : ""}
+                        aria-label={`${key.jamo}: ${keyboardText.press} ${keyboardLegend(keyboardLayout, key.code)}`}
+                        key={key.code}
+                      >
+                        <span lang="ko">{key.jamo}</span>
+                        <small>{keyboardLegend(keyboardLayout, key.code)}</small>
+                      </kbd>
+                    ))}
+                  </div>
+                ))}
               </div>
             </div>
 

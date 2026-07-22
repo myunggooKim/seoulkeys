@@ -490,25 +490,132 @@ footer {
   color: #0f7656;
 }
 
+.keyboard-tools {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 14px;
+  margin-block-start: 16px;
+  padding-block-start: 16px;
+  border-block-start: 1.5px dashed #cfcdc2;
+}
+
+.keyboard-tools p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.keyboard-layout-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.keyboard-layout-picker select {
+  min-height: 34px;
+  padding: 5px 28px 5px 9px;
+  border: 1.5px solid var(--ink);
+  border-radius: 9px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+}
+
+.next-key-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-block-start: 14px;
+  padding: 12px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  background: var(--yellow);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.next-key-card.complete {
+  background: var(--lime);
+}
+
+.next-key-jamo {
+  display: grid;
+  width: 50px;
+  height: 50px;
+  flex: none;
+  place-items: center;
+  border: 2px solid var(--ink);
+  border-radius: 11px;
+  background: var(--paper);
+  font-size: 29px;
+  font-weight: 950;
+}
+
+.next-key-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.next-key-copy small {
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.next-key-copy b {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 17px;
+}
+
+.next-key-copy kbd {
+  display: inline-grid;
+  min-width: 36px;
+  height: 34px;
+  padding-inline: 8px;
+  place-items: center;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: 0 3px 0 var(--ink);
+  font-family: inherit;
+  font-size: 15px;
+}
+
 .key-guide {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
   margin-block-start: 14px;
+  direction: ltr;
 }
 
 .key-guide kbd {
-  display: inline-grid;
-  min-width: 34px;
-  height: 34px;
+  display: grid;
+  min-width: 42px;
+  min-height: 44px;
+  padding: 4px 7px;
   place-items: center;
   border: 1.5px solid #cccac0;
   border-radius: 8px;
   background: var(--paper);
   box-shadow: 0 3px 0 #cccac0;
   font-family: inherit;
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 900;
+}
+
+.key-guide kbd small {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1;
 }
 
 .key-guide kbd.active {
@@ -516,6 +623,105 @@ footer {
   background: var(--yellow);
   box-shadow: 0 3px 0 var(--ink);
   transform: translateY(-2px);
+}
+
+.key-guide kbd.active small {
+  color: var(--ink);
+}
+
+.keyboard-map {
+  margin-block-start: 15px;
+  padding: 12px 10px 13px;
+  border: 1.5px solid #cfcdc2;
+  border-radius: 14px;
+  background: #efeee7;
+  direction: ltr;
+}
+
+.keyboard-map-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-block-end: 10px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.keyboard-map-legend b {
+  margin-inline-end: auto;
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.keyboard-map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.keyboard-map-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.legend-hangul {
+  background: var(--purple);
+}
+
+.legend-local {
+  background: var(--cyan);
+}
+
+.keyboard-row {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-block-start: 5px;
+}
+
+.keyboard-row.home {
+  padding-inline: 4%;
+}
+
+.keyboard-row.bottom {
+  padding-inline: 10%;
+}
+
+.keyboard-row kbd {
+  display: grid;
+  width: clamp(29px, 7.2%, 43px);
+  aspect-ratio: 1 / 1.08;
+  flex: none;
+  place-items: center;
+  border: 1.5px solid #b8b6aa;
+  border-radius: 7px;
+  background: var(--paper);
+  box-shadow: 0 2px 0 #b8b6aa;
+  font-family: inherit;
+  line-height: 1;
+  transition: transform 120ms ease, background 120ms ease;
+}
+
+.keyboard-row kbd span {
+  color: var(--purple);
+  font-size: clamp(12px, 2.2vw, 17px);
+  font-weight: 950;
+}
+
+.keyboard-row kbd small {
+  color: #147d8d;
+  font-size: clamp(7px, 1.4vw, 9px);
+  font-weight: 950;
+}
+
+.keyboard-row kbd.active {
+  border-color: var(--ink);
+  background: var(--yellow);
+  box-shadow: 0 3px 0 var(--ink);
+  transform: translateY(-3px) scale(1.07);
 }
 
 .daily-meter {
@@ -1235,6 +1441,32 @@ footer > div {
     align-items: flex-start;
     flex-direction: column;
     gap: 4px;
+  }
+
+  .keyboard-tools {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .keyboard-layout-picker {
+    justify-content: space-between;
+  }
+
+  .keyboard-map {
+    padding-inline: 6px;
+  }
+
+  .keyboard-map-legend {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .keyboard-map-legend b {
+    width: 100%;
+  }
+
+  .keyboard-row {
+    gap: 3px;
   }
 
   .daily-meter {
