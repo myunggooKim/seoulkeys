@@ -24,7 +24,7 @@ test("build source contains the complete Hangeul Pop learning experience", async
   assert.match(page, /Auto Korean pronunciation/);
   assert.match(page, /speech-toggle-track/);
   assert.match(page, /Female voice/);
-  assert.match(page, /Finger position color guide/i);
+  assert.match(page, /Transparent five-finger hand position guide/i);
 });
 
 test("keeps local-key mappings, recorded speech, and responsive finger guidance in source", async () => {
@@ -51,13 +51,19 @@ test("keeps local-key mappings, recorded speech, and responsive finger guidance 
   assert.match(page, /staticSpeechAudioByText/);
   assert.match(page, /audioFemaleUrl/);
   assert.match(page, /audioMaleUrl/);
-  assert.match(page, /!autoSpeak \|\| !sentenceComplete/);
-  assert.match(page, /!autoSpeak \|\| !travelComplete/);
-  assert.match(page, /!autoSpeak \|\| !screenComplete/);
+  assert.doesNotMatch(page, /!autoSpeak \|\| !sentenceComplete/);
+  assert.match(page, /evaluateLessonAttempt/);
+  assert.match(page, /confirmAndAdvance\(advanceLesson, targetSentence\)/);
+  assert.match(page, /타자기 줄바꿈 소리/);
+  assert.match(page, /저는 매일 한국어를 연습해요\./);
+  assert.match(page, /친구와 함께 여행하고 싶어요\./);
   assert.match(css, /\.keyboard-map/);
   assert.match(css, /\.keyboard-row kbd\.active/);
-  assert.match(css, /\.finger-guide/);
-  assert.match(css, /@keyframes finger-tap/);
+  assert.match(css, /\.hand-overlay/);
+  assert.match(css, /\.typing-hand/);
+  assert.match(css, /\.hand-finger\.active i/);
+  assert.match(css, /@keyframes fingertip-pulse/);
+  assert.doesNotMatch(css, /\.finger-guide/);
   assert.match(css, /\.keyboard-tools/);
   assert.match(css, /\.screen-demo/);
   assert.match(css, /\.travel-demo/);

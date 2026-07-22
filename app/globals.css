@@ -72,7 +72,8 @@ button {
 
 .site-shell {
   min-height: 100vh;
-  overflow: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
   background:
     radial-gradient(circle at 2% 10%, rgba(199, 255, 66, 0.48), transparent 21rem),
     radial-gradient(circle at 96% 9%, rgba(139, 241, 237, 0.55), transparent 24rem),
@@ -475,7 +476,7 @@ footer {
 .practice-stage {
   position: relative;
   min-width: 0;
-  padding: 12px;
+  padding: 12px 12px 28px;
 }
 
 .stage-orbit {
@@ -505,7 +506,7 @@ footer {
 
 .practice-card {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   padding: 28px;
   border: 3px solid var(--ink);
   border-radius: 38px 18px 38px 18px;
@@ -628,6 +629,113 @@ footer {
 .typing-feedback.complete,
 .form-message.success {
   color: #0f7656;
+}
+
+.lesson-evaluation {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 16px;
+  margin-block-start: 12px;
+  padding: 14px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.lesson-evaluation.accepted {
+  background: color-mix(in srgb, var(--lime) 42%, var(--paper));
+}
+
+.lesson-evaluation.rejected {
+  background: #fff0f5;
+  border-color: #a31545;
+  box-shadow: 3px 3px 0 #a31545;
+}
+
+.lesson-evaluation small,
+.lesson-evaluation b {
+  display: block;
+}
+
+.lesson-evaluation small {
+  margin-block-end: 3px;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.lesson-evaluation b {
+  font-size: 18px;
+}
+
+.lesson-evaluation p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.lesson-evaluation dl {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+}
+
+.lesson-evaluation dl div {
+  min-width: 72px;
+  padding: 7px 9px;
+  border: 1px solid color-mix(in srgb, var(--ink) 38%, transparent);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.68);
+  text-align: center;
+}
+
+.lesson-evaluation dt {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.lesson-evaluation dd {
+  margin: 2px 0 0;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.inline-sound-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-block-start: 12px;
+  padding: 7px 10px;
+  border: 1.5px solid #bbb9ae;
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--muted);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.inline-sound-control span {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 50%;
+  background: #d7d5ca;
+  color: var(--ink);
+}
+
+.inline-sound-control.on {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.inline-sound-control.on span {
+  background: var(--yellow);
 }
 
 .keyboard-tools {
@@ -770,8 +878,10 @@ footer {
 }
 
 .keyboard-map {
+  position: relative;
+  overflow: visible;
   margin-block-start: 15px;
-  padding: 12px 10px 13px;
+  padding: 12px 10px 118px;
   border: 1.5px solid #cfcdc2;
   border-radius: 14px;
   background: #efeee7;
@@ -816,6 +926,8 @@ footer {
 }
 
 .keyboard-row {
+  position: relative;
+  z-index: 1;
   display: flex;
   justify-content: center;
   gap: 4px;
@@ -831,7 +943,6 @@ footer {
 }
 
 .keyboard-row kbd {
-  --finger-color: #8a8a83;
   position: relative;
   overflow: visible;
   display: grid;
@@ -847,32 +958,6 @@ footer {
   line-height: 1;
   transition: transform 120ms ease, background 120ms ease;
 }
-
-.keyboard-row kbd::after {
-  position: absolute;
-  inset-block-end: -4px;
-  inset-inline-start: 50%;
-  width: 46%;
-  height: 62%;
-  border: 2px solid color-mix(in srgb, var(--finger-color) 75%, var(--ink));
-  border-radius: 52% 52% 42% 42%;
-  background: color-mix(in srgb, var(--finger-color) 42%, transparent);
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.26);
-  content: "";
-  opacity: 0.52;
-  pointer-events: none;
-  transform: translateX(-50%);
-  transition: opacity 140ms ease, transform 140ms ease;
-}
-
-.left-pinky,
-.right-pinky { --finger-color: #ff6fae; }
-.left-ring,
-.right-ring { --finger-color: #9b83ff; }
-.left-middle,
-.right-middle { --finger-color: #24c7d9; }
-.left-index,
-.right-index { --finger-color: #b7e329; }
 
 .keyboard-row kbd span {
   color: var(--purple);
@@ -893,58 +978,112 @@ footer {
   transform: translateY(-3px) scale(1.07);
 }
 
-.keyboard-row kbd.active::after {
-  opacity: 0.88;
-  transform: translateX(-50%) translateY(-5px) scale(1.12);
-  animation: finger-tap 760ms ease-in-out infinite;
-}
-
-.finger-guide {
+.hand-overlay {
+  position: absolute;
+  z-index: 4;
+  inset: 44px 7% 5px;
   direction: ltr;
-  display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  gap: 5px;
-  margin-block-start: 16px;
-  padding-block-start: 12px;
-  border-block-start: 1px dashed var(--line);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8%;
+  pointer-events: none;
 }
 
-.finger-guide > span {
-  --finger-color: #8a8a83;
-  display: grid;
-  min-width: 0;
-  justify-items: center;
-  gap: 2px;
-  color: var(--ink);
-  font-size: 9px;
-  font-weight: 950;
+.typing-hand {
+  position: relative;
+  width: 43%;
+  max-width: 210px;
+  height: 148px;
+  filter: drop-shadow(0 4px 5px rgba(21, 21, 21, 0.12));
 }
 
-.finger-guide > span > i {
+.hand-palm,
+.hand-wrist,
+.hand-finger {
+  position: absolute;
   display: block;
-  width: 22px;
-  height: 32px;
-  border: 2px solid color-mix(in srgb, var(--finger-color) 75%, var(--ink));
-  border-radius: 52% 52% 42% 42%;
-  background: color-mix(in srgb, var(--finger-color) 44%, transparent);
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
-  opacity: 0.76;
+  border: 1.5px solid rgba(21, 21, 21, 0.35);
+  background: rgba(109, 74, 255, 0.105);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(1.5px);
 }
 
-.finger-guide > span > small {
-  overflow: hidden;
-  width: 100%;
-  color: var(--muted);
-  font-size: 7px;
-  font-weight: 800;
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.hand-palm {
+  z-index: 2;
+  inset-block-end: 12px;
+  inset-inline-start: 14%;
+  width: 68%;
+  height: 72px;
+  border-radius: 42% 42% 28% 28%;
 }
 
-@keyframes finger-tap {
-  0%, 100% { transform: translateX(-50%) translateY(-4px) scale(1.08); }
-  50% { transform: translateX(-50%) translateY(1px) scale(0.96); }
+.hand-wrist {
+  z-index: 1;
+  inset-block-end: -8px;
+  inset-inline-start: 31%;
+  width: 35%;
+  height: 42px;
+  border-radius: 10px 10px 16px 16px;
+}
+
+.hand-finger {
+  z-index: 3;
+  inset-block-end: 62px;
+  width: 20%;
+  border-radius: 999px 999px 12px 12px;
+  transform-origin: 50% 100%;
+}
+
+.hand-finger i {
+  position: absolute;
+  inset-block-start: 5px;
+  inset-inline-start: 50%;
+  display: block;
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid rgba(21, 21, 21, 0.18);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.38);
+  opacity: 0.55;
+  transform: translateX(-50%);
+  transition: background 120ms ease, box-shadow 120ms ease, opacity 120ms ease, transform 120ms ease;
+}
+
+.hand-finger.active i {
+  border-color: var(--ink);
+  background: var(--yellow);
+  box-shadow: 0 0 0 5px rgba(255, 216, 65, 0.42), 0 0 18px rgba(255, 91, 155, 0.88);
+  opacity: 1;
+  animation: fingertip-pulse 720ms ease-in-out infinite;
+}
+
+.left-hand .pinky { left: 0; height: 61px; transform: rotate(-13deg); }
+.left-hand .ring { left: 20%; height: 82px; transform: rotate(-6deg); }
+.left-hand .middle { left: 40%; height: 99px; }
+.left-hand .index { left: 60%; height: 90px; transform: rotate(6deg); }
+.left-hand .thumb { left: 74%; bottom: 31px; height: 59px; transform: rotate(49deg); }
+
+.right-hand .pinky { right: 0; height: 61px; transform: rotate(13deg); }
+.right-hand .ring { right: 20%; height: 82px; transform: rotate(6deg); }
+.right-hand .middle { right: 40%; height: 99px; }
+.right-hand .index { right: 60%; height: 90px; transform: rotate(-6deg); }
+.right-hand .thumb { right: 74%; bottom: 31px; height: 59px; transform: rotate(-49deg); }
+
+.typing-hand > b {
+  position: absolute;
+  z-index: 5;
+  inset-block-end: 11px;
+  inset-inline-start: 50%;
+  color: rgba(21, 21, 21, 0.54);
+  font-size: 8px;
+  letter-spacing: 0.09em;
+  transform: translateX(-50%);
+}
+
+@keyframes fingertip-pulse {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.18); }
 }
 
 .daily-meter {
@@ -2576,7 +2715,7 @@ footer > div {
   }
 
   .practice-stage {
-    padding-inline: 0;
+    padding: 12px 0 24px;
   }
 
   .practice-card {
@@ -2613,6 +2752,7 @@ footer > div {
 
   .keyboard-map {
     padding-inline: 6px;
+    padding-block-end: 102px;
   }
 
   .keyboard-map-legend {
@@ -2626,6 +2766,25 @@ footer > div {
 
   .keyboard-row {
     gap: 3px;
+  }
+
+  .hand-overlay {
+    inset-inline: 3%;
+    inset-block-start: 50px;
+    transform: scale(0.88);
+    transform-origin: center bottom;
+  }
+
+  .lesson-evaluation {
+    grid-template-columns: 1fr;
+  }
+
+  .lesson-evaluation dl {
+    width: 100%;
+  }
+
+  .lesson-evaluation dl div {
+    flex: 1;
   }
 
   .daily-meter {
@@ -2719,15 +2878,6 @@ footer > div {
 
   .week-rhythm {
     grid-template-columns: repeat(4, 1fr);
-  }
-
-  .finger-guide > span > small {
-    display: none;
-  }
-
-  .finger-guide > span > i {
-    width: 16px;
-    height: 24px;
   }
 
   .admin-form-row {

@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { decomposeHangulCharacter } from "./hangul-keyboard";
+import { evaluateLessonAttempt, type LessonEvaluation } from "./lesson-evaluation";
 
 type Locale =
   | "en" | "ko" | "es" | "pt-BR" | "ja" | "zh-Hans" | "zh-Hant"
@@ -628,9 +629,9 @@ function resolveBrowserLocale(languages: readonly string[]): Locale {
 const lessonSentences = [
   "저는 음악을 좋아해요.",
   "오늘은 기분이 좋아요.",
-  "한국어를 매일 연습해요.",
-  "천천히 이야기해 주세요.",
-  "친구하고 여행하고 싶어요.",
+  "저는 매일 한국어를 연습해요.",
+  "천천히 말씀해 주세요.",
+  "친구와 함께 여행하고 싶어요.",
 ];
 
 const koreanKeyRows: Array<{ row: KeyboardRow; keys: KoreanKey[] }> = [
@@ -738,6 +739,8 @@ const fingerByCode: Record<string, string> = {
   KeyI: "right-middle", KeyK: "right-middle",
   KeyO: "right-ring", KeyL: "right-ring",
   KeyP: "right-pinky",
+  Period: "right-ring",
+  Space: "right-thumb",
 };
 
 function formatPracticeTime(totalSeconds: number) {
@@ -879,8 +882,9 @@ function playTypewriterReturnSound() {
   if (!AudioContextConstructor) return;
 
   const context = new AudioContextConstructor();
+  if (context.state === "suspended") void context.resume();
   const now = context.currentTime;
-  const noiseBuffer = context.createBuffer(1, Math.floor(context.sampleRate * 0.11), context.sampleRate);
+  const noiseBuffer = context.createBuffer(1, Math.floor(context.sampleRate * 0.16), context.sampleRate);
   const noiseData = noiseBuffer.getChannelData(0);
   for (let index = 0; index < noiseData.length; index += 1) {
     noiseData[index] = (Math.random() * 2 - 1) * (1 - index / noiseData.length);
@@ -893,9 +897,18 @@ function playTypewriterReturnSound() {
   carriageFilter.type = "bandpass";
   carriageFilter.frequency.setValueAtTime(2200, now);
   carriageFilter.Q.setValueAtTime(0.8, now);
-  carriageGain.gain.setValueAtTime(0.11, now);
-  carriageGain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+  carriageGain.gain.setValueAtTime(0.22, now);
+  carriageGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
   carriage.connect(carriageFilter).connect(carriageGain).connect(context.destination);
+
+  const clack = context.createOscillator();
+  const clackGain = context.createGain();
+  clack.type = "square";
+  clack.frequency.setValueAtTime(150, now);
+  clack.frequency.exponentialRampToValueAtTime(72, now + 0.075);
+  clackGain.gain.setValueAtTime(0.18, now);
+  clackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+  clack.connect(clackGain).connect(context.destination);
 
   const bell = context.createOscillator();
   const bellGain = context.createGain();
@@ -903,14 +916,16 @@ function playTypewriterReturnSound() {
   bell.frequency.setValueAtTime(920, now + 0.035);
   bell.frequency.exponentialRampToValueAtTime(610, now + 0.18);
   bellGain.gain.setValueAtTime(0.001, now);
-  bellGain.gain.linearRampToValueAtTime(0.1, now + 0.04);
-  bellGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+  bellGain.gain.linearRampToValueAtTime(0.17, now + 0.04);
+  bellGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
   bell.connect(bellGain).connect(context.destination);
 
   carriage.start(now);
+  clack.start(now);
+  clack.stop(now + 0.085);
   bell.start(now + 0.035);
-  bell.stop(now + 0.21);
-  window.setTimeout(() => void context.close(), 280);
+  bell.stop(now + 0.29);
+  window.setTimeout(() => void context.close(), 420);
 }
 
 function playSuccessChime() {
@@ -954,8 +969,8 @@ const screenPracticeLines = [
     genre: "Youth movie",
   },
   {
-    korean: "어디에 있든, 다시 만날 사람은 결국 만나게 돼.",
-    translation: "Wherever we are, people meant to meet will find each other again.",
+    korean: "인연이라면 어디에 있든 결국 다시 만나게 돼.",
+    translation: "If we’re meant to meet, we’ll find each other again wherever we are.",
     genre: "Romance drama",
   },
 ];
@@ -969,7 +984,7 @@ const travelPhrases: Record<TravelMode, Array<{ korean: string; meaning: string;
   welcome: [
     { korean: "한국에서 오셨어요?", meaning: "Are you from Korea?", situation: "Starting a conversation" },
     { korean: "제가 도와드릴까요?", meaning: "May I help you?", situation: "Offering help" },
-    { korean: "우리 동네 맛집을 알려 드릴게요.", meaning: "I’ll show you a good local restaurant.", situation: "Sharing a local tip" },
+    { korean: "우리 동네 맛집을 소개해 드릴게요.", meaning: "I’ll introduce you to a great local restaurant.", situation: "Sharing a local tip" },
   ],
 };
 
@@ -1087,7 +1102,6 @@ export default function Home() {
   const [speechSupported, setSpeechSupported] = useState(true);
   const [neuralTtsAvailable, setNeuralTtsAvailable] = useState(false);
   const [voiceGender, setVoiceGender] = useState<VoiceGender>("female");
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const [advanceQueued, setAdvanceQueued] = useState(false);
   const [keyboardLayout, setKeyboardLayout] = useState<KeyboardLayout>("qwerty");
   const [lessonIndex, setLessonIndex] = useState(0);
@@ -1099,6 +1113,10 @@ export default function Home() {
   const [accountSummary, setAccountSummary] = useState<{ streakDays: number; coins: number } | null>(null);
   const [guideStep, setGuideStep] = useState(0);
   const [typed, setTyped] = useState("");
+  const [lessonEvaluation, setLessonEvaluation] = useState<LessonEvaluation | null>(null);
+  const [lessonAccepted, setLessonAccepted] = useState(false);
+  const [lessonKeystrokes, setLessonKeystrokes] = useState(0);
+  const [lessonMistakes, setLessonMistakes] = useState(0);
   const [activeActivity, setActiveActivity] = useState<ActivityId>("home");
   const [tetrisInput, setTetrisInput] = useState("");
   const [tetrisIndex, setTetrisIndex] = useState(0);
@@ -1127,6 +1145,7 @@ export default function Home() {
   const targetSentence = lessonSentences[lessonIndex];
   const practiceSequence = useMemo(() => sentenceToPracticeSequence(targetSentence), [targetSentence]);
   const activePracticeKey = practiceSequence[guideStep] ?? null;
+  const activeFinger = activePracticeKey ? fingerByCode[activePracticeKey.code] ?? null : null;
   const upcomingPracticeKeys = practiceSequence.slice(guideStep, guideStep + 7);
   const targetChars = useMemo(() => Array.from(targetSentence), [targetSentence]);
   const typedChars = Array.from(typed);
@@ -1139,11 +1158,12 @@ export default function Home() {
   const sentenceComplete = typed === targetSentence;
   const completedSentences = lessonFinished
     ? lessonSentences.length
-    : Math.min(lessonSentences.length, lessonIndex + (sentenceComplete ? 1 : 0));
+    : Math.min(lessonSentences.length, lessonIndex + (lessonAccepted ? 1 : 0));
+  const scoredSentenceProgress = lessonAccepted ? 100 : Math.min(95, sentenceProgress);
   const dailyProgress = lessonStarted
     ? lessonFinished
       ? 100
-      : Math.min(100, Math.round(((lessonIndex + sentenceProgress / 100) / lessonSentences.length) * 100))
+      : Math.min(100, Math.round(((lessonIndex + scoredSentenceProgress / 100) / lessonSentences.length) * 100))
     : 0;
   const managedScreenLines = useMemo(() => managedContent
     .filter((item) => item.category === "kdrama" || item.category === "movie")
@@ -1170,7 +1190,6 @@ export default function Home() {
 
   const finishSpeech = useCallback(() => {
     speakingRef.current = false;
-    setIsSpeaking(false);
     if (activeAudioUrlRef.current) {
       URL.revokeObjectURL(activeAudioUrlRef.current);
       activeAudioUrlRef.current = null;
@@ -1196,7 +1215,6 @@ export default function Home() {
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 
     speakingRef.current = true;
-    setIsSpeaking(true);
 
     const playDeviceVoice = () => {
       if (requestId !== speechRequestRef.current) return;
@@ -1272,23 +1290,26 @@ export default function Home() {
     playNeuralVoice();
   }, [finishSpeech, managedContent, neuralTtsAvailable, voiceGender]);
 
-  const runAfterSpeech = useCallback((action: () => void) => {
-    const browserIsSpeaking = "speechSynthesis" in window && window.speechSynthesis.speaking;
-    if (speakingRef.current || isSpeaking || browserIsSpeaking) {
-      pendingActionRef.current = action;
-      setAdvanceQueued(true);
-    } else {
-      action();
-    }
-  }, [isSpeaking]);
-
-  const confirmAndAdvance = useCallback((action: () => void) => {
+  const confirmAndAdvance = useCallback((action: () => void, text: string) => {
     if (returnSoundEnabled) playTypewriterReturnSound();
-    runAfterSpeech(action);
-  }, [returnSoundEnabled, runAfterSpeech]);
+    setAdvanceQueued(true);
+    if (autoSpeak && speechSupported) {
+      pendingActionRef.current = action;
+      window.setTimeout(() => playKorean(text), returnSoundEnabled ? 360 : 0);
+      return;
+    }
+    window.setTimeout(() => {
+      setAdvanceQueued(false);
+      action();
+    }, returnSoundEnabled ? 560 : 0);
+  }, [autoSpeak, playKorean, returnSoundEnabled, speechSupported]);
 
   const advanceLesson = useCallback(() => {
     setAdvanceQueued(false);
+    setLessonAccepted(false);
+    setLessonEvaluation(null);
+    setLessonKeystrokes(0);
+    setLessonMistakes(0);
     if (lessonIndex >= lessonSentences.length - 1) {
       setLessonFinished(true);
       return;
@@ -1518,30 +1539,6 @@ export default function Home() {
     return () => window.clearInterval(timer);
   }, [lessonFinished, lessonStarted]);
 
-  useEffect(() => {
-    if (!autoSpeak || !sentenceComplete) return;
-    const timer = window.setTimeout(() => playKorean(targetSentence), 0);
-    return () => window.clearTimeout(timer);
-  }, [autoSpeak, playKorean, sentenceComplete, targetSentence]);
-
-  useEffect(() => {
-    if (!autoSpeak || !travelComplete) return;
-    const timer = window.setTimeout(() => playKorean(currentTravelPhrase.korean), 0);
-    return () => window.clearTimeout(timer);
-  }, [autoSpeak, playKorean, travelComplete, currentTravelPhrase.korean]);
-
-  useEffect(() => {
-    if (!autoSpeak || !screenComplete) return;
-    const timer = window.setTimeout(() => playKorean(currentScreenLine.korean), 0);
-    return () => window.clearTimeout(timer);
-  }, [autoSpeak, playKorean, screenComplete, currentScreenLine.korean]);
-
-  useEffect(() => {
-    if (!autoSpeak || !kpopComplete || !currentKpopItem) return;
-    const timer = window.setTimeout(() => playKorean(currentKpopItem.koreanText), 0);
-    return () => window.clearTimeout(timer);
-  }, [autoSpeak, currentKpopItem, kpopComplete, playKorean]);
-
   function submitTetris(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const current = tetrisWords[tetrisIndex % tetrisWords.length];
@@ -1566,7 +1563,6 @@ export default function Home() {
       activeAudioUrlRef.current = null;
       pendingActionRef.current = null;
       speakingRef.current = false;
-      setIsSpeaking(false);
       setAdvanceQueued(false);
       setLessonIndex(0);
       setLessonStarted(true);
@@ -1574,6 +1570,10 @@ export default function Home() {
       setElapsedSeconds(0);
       setTyped("");
       setGuideStep(0);
+      setLessonAccepted(false);
+      setLessonEvaluation(null);
+      setLessonKeystrokes(0);
+      setLessonMistakes(0);
     }
     window.setTimeout(() => {
       document.getElementById("practice")?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1701,19 +1701,34 @@ export default function Home() {
                 className="typing-input"
                 lang="ko"
                 value={typed}
-                disabled={lessonFinished}
+                disabled={lessonFinished || lessonAccepted}
                 onFocus={() => setLessonStarted(true)}
                 onChange={(event) => {
                   const nextValue = event.target.value;
                   setLessonStarted(true);
+                  const previousChars = Array.from(typed);
+                  const nextChars = Array.from(nextValue);
+                  if (nextChars.length > previousChars.length) {
+                    const added = nextChars.slice(previousChars.length);
+                    setLessonKeystrokes((count) => count + added.length);
+                    setLessonMistakes((count) => count + added.reduce(
+                      (total, character, offset) => total + (character === targetChars[previousChars.length + offset] ? 0 : 1),
+                      0,
+                    ));
+                  }
+                  if (lessonEvaluation && !lessonEvaluation.accepted) setLessonEvaluation(null);
                   setTyped(nextValue);
                   setGuideStep(Math.min(sentenceToPracticeSequence(nextValue).length, practiceSequence.length));
                 }}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.nativeEvent.isComposing && sentenceComplete) {
-                    event.preventDefault();
-                    confirmAndAdvance(advanceLesson);
-                  }
+                  if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+                  event.preventDefault();
+                  if (lessonAccepted || advanceQueued) return;
+                  const evaluation = evaluateLessonAttempt(typed, targetSentence, lessonKeystrokes, lessonMistakes);
+                  setLessonEvaluation(evaluation);
+                  if (!evaluation.accepted) return;
+                  setLessonAccepted(true);
+                  confirmAndAdvance(advanceLesson, targetSentence);
                 }}
                 placeholder="여기에 입력하세요"
                 autoComplete="off"
@@ -1726,13 +1741,34 @@ export default function Home() {
                   : advanceQueued
                     ? "🔊 Pronunciation is playing. The next sentence will open when it finishes."
                     : sentenceComplete
-                      ? isSpeaking
-                        ? "🔊 Listen to the pronunciation, then press Enter ↵"
-                        : "✓ Sentence complete — press Enter ↵ for the next sentence"
+                      ? "✓ 문장 입력 완료 · Enter ↵를 눌러 검사하세요."
                       : typedChars.length
                         ? `${accuracy}% accurate · keep going`
                         : "Follow the highlighted key position below."}
               </p>
+
+              {lessonEvaluation && (
+                <div className={`lesson-evaluation ${lessonEvaluation.accepted ? "accepted" : "rejected"}`} aria-live="assertive">
+                  <div>
+                    <small>{lessonEvaluation.accepted ? "TYPING CHECK PASSED" : "CHECK NEEDED"}</small>
+                    <b>{lessonEvaluation.label}</b>
+                    <p>{lessonEvaluation.message}</p>
+                  </div>
+                  <dl>
+                    <div><dt>완성도</dt><dd>{lessonEvaluation.completeness}%</dd></div>
+                    <div><dt>입력 정확도</dt><dd>{lessonEvaluation.accuracy}%</dd></div>
+                  </dl>
+                </div>
+              )}
+
+              <button
+                className={`inline-sound-control ${returnSoundEnabled ? "on" : ""}`}
+                type="button"
+                aria-pressed={returnSoundEnabled}
+                onClick={() => setReturnSoundEnabled((enabled) => !enabled)}
+              >
+                <span aria-hidden="true">↵</span> 타자기 줄바꿈 소리 {returnSoundEnabled ? "켜짐" : "꺼짐"}
+              </button>
 
               {lessonFinished ? (
                 <div className="lesson-finish-card">
@@ -1792,7 +1828,7 @@ export default function Home() {
                       <div className={`keyboard-row ${row}`} key={row}>
                         {keys.map((key) => (
                           <kbd
-                            className={`${fingerByCode[key.code]} ${activePracticeKey?.code === key.code ? "active" : ""}`}
+                            className={activePracticeKey?.code === key.code ? "active" : ""}
                             aria-label={`${key.jamo}: ${keyboardText.press} ${keyboardLegend(keyboardLayout, key.code)}`}
                             key={key.code}
                           >
@@ -1802,15 +1838,23 @@ export default function Home() {
                         ))}
                       </div>
                     ))}
-                    <div className="finger-guide" aria-label="Finger position color guide">
-                      <span className="left-pinky"><i />L5<small>left pinky</small></span>
-                      <span className="left-ring"><i />L4<small>left ring</small></span>
-                      <span className="left-middle"><i />L3<small>left middle</small></span>
-                      <span className="left-index"><i />L2<small>left index</small></span>
-                      <span className="right-index"><i />R2<small>right index</small></span>
-                      <span className="right-middle"><i />R3<small>right middle</small></span>
-                      <span className="right-ring"><i />R4<small>right ring</small></span>
-                      <span className="right-pinky"><i />R5<small>right pinky</small></span>
+                    <div className="hand-overlay" aria-label="Transparent five-finger hand position guide">
+                      <div className="typing-hand left-hand" aria-label="Left hand">
+                        <span className={`hand-finger pinky ${activeFinger === "left-pinky" ? "active" : ""}`}><i /></span>
+                        <span className={`hand-finger ring ${activeFinger === "left-ring" ? "active" : ""}`}><i /></span>
+                        <span className={`hand-finger middle ${activeFinger === "left-middle" ? "active" : ""}`}><i /></span>
+                        <span className={`hand-finger index ${activeFinger === "left-index" ? "active" : ""}`}><i /></span>
+                        <span className={`hand-finger thumb ${activeFinger === "left-thumb" ? "active" : ""}`}><i /></span>
+                        <span className="hand-palm" /><span className="hand-wrist" /><b>LEFT</b>
+                      </div>
+                      <div className="typing-hand right-hand" aria-label="Right hand">
+                        <span className={`hand-finger pinky ${activeFinger === "right-pinky" ? "active" : ""}`}><i /></span>
+                        <span className={`hand-finger ring ${activeFinger === "right-ring" ? "active" : ""}`}><i /></span>
+                        <span className={`hand-finger middle ${activeFinger === "right-middle" ? "active" : ""}`}><i /></span>
+                        <span className={`hand-finger index ${activeFinger === "right-index" ? "active" : ""}`}><i /></span>
+                        <span className={`hand-finger thumb ${activeFinger === "right-thumb" ? "active" : ""}`}><i /></span>
+                        <span className="hand-palm" /><span className="hand-wrist" /><b>RIGHT</b>
+                      </div>
                     </div>
                   </div>
                 </>
@@ -1997,7 +2041,7 @@ export default function Home() {
                   onKeyDown={(event) => {
                     if (event.key === "Enter" && !event.nativeEvent.isComposing && travelComplete) {
                       event.preventDefault();
-                      confirmAndAdvance(advanceTravelPhrase);
+                      confirmAndAdvance(advanceTravelPhrase, currentTravelPhrase.korean);
                     }
                   }}
                   placeholder="한국어 문장을 입력하세요"
@@ -2011,7 +2055,7 @@ export default function Home() {
                   className="button button-primary"
                   type="button"
                   disabled={!travelComplete}
-                  onClick={() => confirmAndAdvance(advanceTravelPhrase)}
+                  onClick={() => confirmAndAdvance(advanceTravelPhrase, currentTravelPhrase.korean)}
                 >
                   Next phrase <span aria-hidden="true">→</span>
                 </button>
@@ -2041,13 +2085,13 @@ export default function Home() {
                       onKeyDown={(event) => {
                         if (event.key === "Enter" && !event.nativeEvent.isComposing && kpopComplete) {
                           event.preventDefault();
-                          confirmAndAdvance(advanceKpopLine);
+                          confirmAndAdvance(advanceKpopLine, currentKpopItem.koreanText);
                         }
                       }}
                       spellCheck={false}
                     />
                     <p className={`form-message ${kpopComplete ? "success" : ""}`} aria-live="polite">{kpopComplete ? "Line complete — press Enter for the next track." : "Copy the spacing and punctuation exactly."}</p>
-                    <button className="button button-primary" type="button" disabled={!kpopComplete} onClick={() => confirmAndAdvance(advanceKpopLine)}>Next line <span aria-hidden="true">→</span></button>
+                    <button className="button button-primary" type="button" disabled={!kpopComplete} onClick={() => confirmAndAdvance(advanceKpopLine, currentKpopItem.koreanText)}>Next line <span aria-hidden="true">→</span></button>
                   </div>
                 </>
               ) : (
@@ -2092,7 +2136,7 @@ export default function Home() {
                   onKeyDown={(event) => {
                     if (event.key === "Enter" && !event.nativeEvent.isComposing && screenComplete) {
                       event.preventDefault();
-                      confirmAndAdvance(advanceScreenLine);
+                      confirmAndAdvance(advanceScreenLine, currentScreenLine.korean);
                     }
                   }}
                   placeholder="명대사를 그대로 입력하세요"
@@ -2106,7 +2150,7 @@ export default function Home() {
                   className="button button-primary"
                   type="button"
                   disabled={!screenComplete}
-                  onClick={() => confirmAndAdvance(advanceScreenLine)}
+                  onClick={() => confirmAndAdvance(advanceScreenLine, currentScreenLine.korean)}
                 >
                   Next scene <span aria-hidden="true">→</span>
                 </button>
