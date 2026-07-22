@@ -30,6 +30,13 @@ type KeyboardHelpCopy = {
   complete: string;
 };
 
+type SpeechHelpCopy = {
+  label: string;
+  on: string;
+  off: string;
+  unavailable: string;
+};
+
 type InterfaceCopy = {
   navLearn: string;
   navGames: string;
@@ -755,6 +762,41 @@ const keyboardHelpCopy: Partial<Record<Locale, KeyboardHelpCopy>> = {
     complete: "Semua kekunci selesai!",
   },
 };
+
+const englishSpeechCopy: SpeechHelpCopy = {
+  label: "Auto Korean pronunciation",
+  on: "On",
+  off: "Off",
+  unavailable: "Korean voice is unavailable in this browser",
+};
+
+const speechHelpCopy: Partial<Record<Locale, SpeechHelpCopy>> = {
+  en: englishSpeechCopy,
+  ko: { label: "한국어 자동 발음", on: "켜짐", off: "꺼짐", unavailable: "이 브라우저에서는 한국어 음성을 사용할 수 없습니다" },
+  "pt-BR": { label: "Pronúncia coreana automática", on: "Ligado", off: "Desligado", unavailable: "A voz coreana não está disponível neste navegador" },
+  ar: { label: "النطق الكوري التلقائي", on: "مفعّل", off: "متوقف", unavailable: "الصوت الكوري غير متاح في هذا المتصفح" },
+  fa: { label: "تلفظ خودکار کره‌ای", on: "روشن", off: "خاموش", unavailable: "صدای کره‌ای در این مرورگر در دسترس نیست" },
+  fil: { label: "Awtomatikong Korean bigkas", on: "Naka-on", off: "Naka-off", unavailable: "Walang Korean voice sa browser na ito" },
+  th: { label: "อ่านออกเสียงเกาหลีอัตโนมัติ", on: "เปิด", off: "ปิด", unavailable: "เบราว์เซอร์นี้ไม่มีเสียงภาษาเกาหลี" },
+  id: { label: "Pelafalan Korea otomatis", on: "Aktif", off: "Nonaktif", unavailable: "Suara Korea tidak tersedia di browser ini" },
+  ms: { label: "Sebutan Korea automatik", on: "Hidup", off: "Mati", unavailable: "Suara Korea tidak tersedia dalam pelayar ini" },
+};
+
+function speakKorean(text: string) {
+  if (!("speechSynthesis" in window)) return;
+  const utterance = new SpeechSynthesisUtterance(text);
+  const koreanVoice = window.speechSynthesis
+    .getVoices()
+    .find((voice) => voice.lang.toLowerCase().startsWith("ko"));
+
+  utterance.lang = "ko-KR";
+  utterance.rate = 0.88;
+  utterance.pitch = 1;
+  if (koreanVoice) utterance.voice = koreanVoice;
+
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+}
 const tetrisWords = [
   { korean: "사랑", meaning: "love" },
   { korean: "음악", meaning: "music" },
@@ -888,6 +930,8 @@ const activities: Array<{
 
 export default function Home() {
   const [locale, setLocale] = useState<Locale>("en");
+  const [autoSpeak, setAutoSpeak] = useState(true);
+  const [speechSupported, setSpeechSupported] = useState(true);
   const [keyboardLayout, setKeyboardLayout] = useState<KeyboardLayout>("qwerty");
   const [guideStep, setGuideStep] = useState(0);
   const [typed, setTyped] = useState("");
@@ -906,6 +950,7 @@ export default function Home() {
 
   const t = copy[locale];
   const keyboardText = keyboardHelpCopy[locale] ?? englishKeyboardCopy;
+  const speechText = speechHelpCopy[locale] ?? englishSpeechCopy;
   const activePracticeKey = practiceSequence[guideStep] ?? null;
   const upcomingPracticeKeys = practiceSequence.slice(guideStep, guideStep + 7);
   const targetChars = useMemo(() => Array.from(targetSentence), []);
@@ -934,6 +979,7 @@ export default function Home() {
     try {
       const savedLocale = window.localStorage.getItem("hangeul-pop-locale");
       const savedKeyboardLayout = window.localStorage.getItem("hangeul-pop-keyboard-layout");
+      const savedAutoSpeak = window.localStorage.getItem("hangeul-pop-auto-speak");
       if (savedLocale && savedLocale in copy) {
         setLocale(savedLocale as Locale);
       } else {
@@ -942,9 +988,13 @@ export default function Home() {
       if (savedKeyboardLayout === "qwerty" || savedKeyboardLayout === "azerty" || savedKeyboardLayout === "qwertz") {
         setKeyboardLayout(savedKeyboardLayout);
       }
+      if (savedAutoSpeak === "false") setAutoSpeak(false);
     } catch {
       setLocale(resolveBrowserLocale(navigator.languages));
     }
+    const supported = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+    setSpeechSupported(supported);
+    if (!supported) setAutoSpeak(false);
   }, []);
 
   useEffect(() => {
@@ -964,6 +1014,27 @@ export default function Home() {
       // The keyboard layout still applies for this session when storage is unavailable.
     }
   }, [keyboardLayout]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("hangeul-pop-auto-speak", String(autoSpeak));
+    } catch {
+      // The pronunciation preference still applies for this session when storage is unavailable.
+    }
+    if (!autoSpeak && "speechSynthesis" in window) window.speechSynthesis.cancel();
+  }, [autoSpeak]);
+
+  useEffect(() => {
+    if (autoSpeak && sentenceComplete) speakKorean(targetSentence);
+  }, [autoSpeak, sentenceComplete]);
+
+  useEffect(() => {
+    if (autoSpeak && travelComplete) speakKorean(currentTravelPhrase.korean);
+  }, [autoSpeak, travelComplete, currentTravelPhrase.korean]);
+
+  useEffect(() => {
+    if (autoSpeak && screenComplete) speakKorean(currentScreenLine.korean);
+  }, [autoSpeak, screenComplete, currentScreenLine.korean]);
 
   function submitTetris(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -996,18 +1067,37 @@ export default function Home() {
           <a href="#games">{t.navGames}</a>
           <a href="#progress">{t.navProgress}</a>
         </nav>
-        <label className="language-picker">
-          <span className="sr-only">Interface language</span>
-          <select value={locale} onChange={(event) => setLocale(event.target.value as Locale)}>
-            {localeGroups.map((group) => (
-              <optgroup label={group.label} key={group.label}>
-                {group.options.map((option) => (
-                  <option value={option.value} key={option.value}>{option.label}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </label>
+        <div className="header-tools">
+          <label
+            className={`speech-toggle ${!speechSupported ? "unavailable" : ""}`}
+            title={speechSupported ? speechText.label : speechText.unavailable}
+          >
+            <input
+              type="checkbox"
+              checked={autoSpeak}
+              disabled={!speechSupported}
+              onChange={(event) => setAutoSpeak(event.target.checked)}
+              aria-label={`${speechText.label}: ${autoSpeak ? speechText.on : speechText.off}`}
+            />
+            <span className="speech-toggle-track" aria-hidden="true"><i /></span>
+            <span className="speech-toggle-copy">
+              <b>{speechText.label}</b>
+              <small>{speechSupported ? autoSpeak ? speechText.on : speechText.off : speechText.unavailable}</small>
+            </span>
+          </label>
+          <label className="language-picker">
+            <span className="sr-only">Interface language</span>
+            <select value={locale} onChange={(event) => setLocale(event.target.value as Locale)}>
+              {localeGroups.map((group) => (
+                <optgroup label={group.label} key={group.label}>
+                  {group.options.map((option) => (
+                    <option value={option.value} key={option.value}>{option.label}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </label>
+        </div>
       </header>
 
       <section className="hero" id="top">

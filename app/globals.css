@@ -157,9 +157,106 @@ footer {
   border-color: var(--ink);
 }
 
+.header-tools {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: 10px;
+}
+
+.speech-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.speech-toggle input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.speech-toggle-track {
+  position: relative;
+  display: block;
+  width: 46px;
+  height: 27px;
+  flex: none;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: #d5d4cc;
+  box-shadow: 0 2px 0 var(--ink);
+  transition: background 150ms ease;
+}
+
+.speech-toggle-track::before {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 6px;
+  color: var(--ink);
+  content: "♪";
+  font-size: 10px;
+  font-weight: 950;
+  transform: translateY(-52%);
+}
+
+.speech-toggle-track i {
+  position: absolute;
+  inset-block-start: 3px;
+  inset-inline-start: 3px;
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+  transition: transform 150ms ease;
+}
+
+.speech-toggle input:checked + .speech-toggle-track {
+  background: var(--lime);
+}
+
+.speech-toggle input:checked + .speech-toggle-track i {
+  transform: translateX(19px);
+}
+
+[dir="rtl"] .speech-toggle input:checked + .speech-toggle-track i {
+  transform: translateX(-19px);
+}
+
+.speech-toggle input:focus-visible + .speech-toggle-track {
+  outline: 3px solid var(--purple);
+  outline-offset: 3px;
+}
+
+.speech-toggle-copy {
+  display: grid;
+  min-width: 112px;
+  line-height: 1.05;
+}
+
+.speech-toggle-copy b {
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.speech-toggle-copy small {
+  margin-block-start: 3px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.speech-toggle.unavailable {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .language-picker {
   position: relative;
-  justify-self: end;
 }
 
 .language-picker::before {
@@ -1545,6 +1642,14 @@ footer > div {
     grid-template-columns: 1fr auto;
   }
 
+  .header-tools {
+    gap: 7px;
+  }
+
+  .speech-toggle-copy {
+    display: none;
+  }
+
   .nav-links {
     display: none;
   }
@@ -1619,7 +1724,7 @@ footer > div {
   }
 
   .language-picker select {
-    min-width: 148px;
+    min-width: 132px;
     padding-inline: 30px 20px;
   }
 
