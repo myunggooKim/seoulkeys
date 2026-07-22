@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Locale =
   | "en" | "ko" | "es" | "pt-BR" | "ja" | "zh-Hans" | "zh-Hant"
@@ -12,11 +12,13 @@ type ActivityId = "home" | "tetris" | "missing" | "crossword" | "travel" | "kpop
 type TravelMode = "inKorea" | "welcome";
 type KeyboardLayout = "qwerty" | "azerty" | "qwertz";
 type KeyboardRow = "top" | "home" | "bottom";
+type VoiceGender = "female" | "male";
 
 type KoreanKey = {
   jamo: string;
   code: string;
   row: KeyboardRow;
+  shift?: boolean;
 };
 
 type KeyboardHelpCopy = {
@@ -35,6 +37,24 @@ type SpeechHelpCopy = {
   on: string;
   off: string;
   unavailable: string;
+};
+
+type ReturnSoundCopy = {
+  label: string;
+  on: string;
+  off: string;
+};
+
+type PublishedContentItem = {
+  id: number;
+  category: "kpop" | "kdrama" | "movie" | "travel" | "lesson";
+  title: string;
+  sourceTitle: string;
+  creator: string;
+  koreanText: string;
+  translation: string;
+  audioFemaleUrl: string;
+  audioMaleUrl: string;
 };
 
 type InterfaceCopy = {
@@ -604,7 +624,13 @@ function resolveBrowserLocale(languages: readonly string[]): Locale {
   return "en";
 }
 
-const targetSentence = "저는 음악을 좋아해요.";
+const lessonSentences = [
+  "저는 음악을 좋아해요.",
+  "오늘은 기분이 좋아요.",
+  "한국어를 매일 연습해요.",
+  "천천히 이야기해 주세요.",
+  "친구하고 여행하고 싶어요.",
+];
 
 const koreanKeyRows: Array<{ row: KeyboardRow; keys: KoreanKey[] }> = [
   {
@@ -652,11 +678,55 @@ const koreanKeyRows: Array<{ row: KeyboardRow; keys: KoreanKey[] }> = [
 
 const koreanKeys = koreanKeyRows.flatMap(({ keys }) => keys);
 const keyByJamo = new Map(koreanKeys.map((key) => [key.jamo, key]));
-const practiceSequence: KoreanKey[] = [
-  "ㅈ", "ㅓ", "ㄴ", "ㅡ", "ㄴ",
-  "ㅇ", "ㅡ", "ㅁ", "ㅇ", "ㅏ", "ㄱ", "ㅇ", "ㅡ", "ㄹ",
-  "ㅈ", "ㅗ", "ㅎ", "ㅇ", "ㅏ", "ㅎ", "ㅐ", "ㅇ", "ㅛ",
-].map((jamo) => keyByJamo.get(jamo)!);
+const initialJamo = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
+const medialJamo = [
+  ["ㅏ"], ["ㅐ"], ["ㅑ"], ["ㅒ"], ["ㅓ"], ["ㅔ"], ["ㅕ"], ["ㅖ"], ["ㅗ"],
+  ["ㅗ", "ㅏ"], ["ㅗ", "ㅐ"], ["ㅗ", "ㅣ"], ["ㅛ"], ["ㅜ"], ["ㅜ", "ㅓ"],
+  ["ㅜ", "ㅔ"], ["ㅜ", "ㅣ"], ["ㅠ"], ["ㅡ"], ["ㅡ", "ㅣ"], ["ㅣ"],
+];
+const finalJamo = [
+  [], ["ㄱ"], ["ㄱ", "ㅅ"], ["ㄴ"], ["ㄴ", "ㅈ"], ["ㄴ", "ㅎ"], ["ㄷ"], ["ㄹ"],
+  ["ㄹ", "ㄱ"], ["ㄹ", "ㅁ"], ["ㄹ", "ㅂ"], ["ㄹ", "ㅅ"], ["ㄹ", "ㅌ"], ["ㄹ", "ㅍ"],
+  ["ㄹ", "ㅎ"], ["ㅁ"], ["ㅂ"], ["ㅂ", "ㅅ"], ["ㅅ"], ["ㅅ", "ㅅ"], ["ㅇ"], ["ㅈ"],
+  ["ㅊ"], ["ㅋ"], ["ㅌ"], ["ㅍ"], ["ㅎ"],
+];
+const shiftedJamo: Record<string, string> = {
+  "ㄲ": "ㄱ", "ㄸ": "ㄷ", "ㅃ": "ㅂ", "ㅆ": "ㅅ", "ㅉ": "ㅈ", "ㅒ": "ㅐ", "ㅖ": "ㅔ",
+};
+
+function keyForJamo(jamo: string): KoreanKey | null {
+  const baseJamo = shiftedJamo[jamo] ?? jamo;
+  const key = keyByJamo.get(baseJamo);
+  return key ? { ...key, jamo, shift: jamo in shiftedJamo } : null;
+}
+
+function sentenceToPracticeSequence(sentence: string): KoreanKey[] {
+  const sequence: KoreanKey[] = [];
+
+  for (const character of Array.from(sentence)) {
+    const codePoint = character.codePointAt(0) ?? 0;
+    if (codePoint >= 0xac00 && codePoint <= 0xd7a3) {
+      const syllableIndex = codePoint - 0xac00;
+      const initialIndex = Math.floor(syllableIndex / 588);
+      const medialIndex = Math.floor((syllableIndex % 588) / 28);
+      const finalIndex = syllableIndex % 28;
+      const jamoSequence = [initialJamo[initialIndex], ...medialJamo[medialIndex], ...finalJamo[finalIndex]];
+      for (const jamo of jamoSequence) {
+        const key = keyForJamo(jamo);
+        if (key) sequence.push(key);
+      }
+    } else if (character === " ") {
+      sequence.push({ jamo: "Space", code: "Space", row: "bottom" });
+    } else if (character === ".") {
+      sequence.push({ jamo: ".", code: "Period", row: "bottom" });
+    } else {
+      const key = keyForJamo(character);
+      if (key) sequence.push(key);
+    }
+  }
+
+  return sequence;
+}
 
 const keyboardLegends: Record<KeyboardLayout, Partial<Record<string, string>>> = {
   qwerty: {},
@@ -665,7 +735,31 @@ const keyboardLegends: Record<KeyboardLayout, Partial<Record<string, string>>> =
 };
 
 function keyboardLegend(layout: KeyboardLayout, code: string) {
+  if (code === "Space") return "SPACE";
+  if (code === "Period") return layout === "azerty" ? ":" : ".";
   return keyboardLegends[layout][code] ?? code.replace("Key", "");
+}
+
+function practiceKeyLegend(layout: KeyboardLayout, key: KoreanKey) {
+  const legend = keyboardLegend(layout, key.code);
+  return key.shift ? `Shift+${legend}` : legend;
+}
+
+const fingerByCode: Record<string, string> = {
+  KeyQ: "left-pinky", KeyA: "left-pinky", KeyZ: "left-pinky",
+  KeyW: "left-ring", KeyS: "left-ring", KeyX: "left-ring",
+  KeyE: "left-middle", KeyD: "left-middle", KeyC: "left-middle",
+  KeyR: "left-index", KeyT: "left-index", KeyF: "left-index", KeyG: "left-index", KeyV: "left-index", KeyB: "left-index",
+  KeyY: "right-index", KeyU: "right-index", KeyH: "right-index", KeyJ: "right-index", KeyN: "right-index", KeyM: "right-index",
+  KeyI: "right-middle", KeyK: "right-middle",
+  KeyO: "right-ring", KeyL: "right-ring",
+  KeyP: "right-pinky",
+};
+
+function formatPracticeTime(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
+  const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+  return `${minutes}:${seconds}`;
 }
 
 const englishKeyboardCopy: KeyboardHelpCopy = {
@@ -782,21 +876,81 @@ const speechHelpCopy: Partial<Record<Locale, SpeechHelpCopy>> = {
   ms: { label: "Sebutan Korea automatik", on: "Hidup", off: "Mati", unavailable: "Suara Korea tidak tersedia dalam pelayar ini" },
 };
 
-function speakKorean(text: string) {
-  if (!("speechSynthesis" in window)) return;
-  const utterance = new SpeechSynthesisUtterance(text);
-  const koreanVoice = window.speechSynthesis
-    .getVoices()
-    .find((voice) => voice.lang.toLowerCase().startsWith("ko"));
+const englishReturnSoundCopy: ReturnSoundCopy = { label: "Learning sounds · typewriter", on: "On", off: "Off" };
+const returnSoundCopy: Partial<Record<Locale, ReturnSoundCopy>> = {
+  en: englishReturnSoundCopy,
+  ko: { label: "학습 효과음·타자기", on: "켜짐", off: "꺼짐" },
+  "pt-BR": { label: "Som de retorno da máquina", on: "Ligado", off: "Desligado" },
+  ar: { label: "صوت رجوع الآلة الكاتبة", on: "مفعّل", off: "متوقف" },
+  fa: { label: "صدای برگشت ماشین‌تحریر", on: "روشن", off: "خاموش" },
+  fil: { label: "Tunog ng typewriter return", on: "Naka-on", off: "Naka-off" },
+  th: { label: "เสียงขึ้นบรรทัดใหม่แบบเครื่องพิมพ์ดีด", on: "เปิด", off: "ปิด" },
+  id: { label: "Suara pindah baris mesin tik", on: "Aktif", off: "Nonaktif" },
+  ms: { label: "Bunyi baris baharu mesin taip", on: "Hidup", off: "Mati" },
+};
 
-  utterance.lang = "ko-KR";
-  utterance.rate = 0.88;
-  utterance.pitch = 1;
-  if (koreanVoice) utterance.voice = koreanVoice;
+function playTypewriterReturnSound() {
+  const AudioContextConstructor = window.AudioContext
+    ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextConstructor) return;
 
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
+  const context = new AudioContextConstructor();
+  const now = context.currentTime;
+  const noiseBuffer = context.createBuffer(1, Math.floor(context.sampleRate * 0.11), context.sampleRate);
+  const noiseData = noiseBuffer.getChannelData(0);
+  for (let index = 0; index < noiseData.length; index += 1) {
+    noiseData[index] = (Math.random() * 2 - 1) * (1 - index / noiseData.length);
+  }
+
+  const carriage = context.createBufferSource();
+  const carriageFilter = context.createBiquadFilter();
+  const carriageGain = context.createGain();
+  carriage.buffer = noiseBuffer;
+  carriageFilter.type = "bandpass";
+  carriageFilter.frequency.setValueAtTime(2200, now);
+  carriageFilter.Q.setValueAtTime(0.8, now);
+  carriageGain.gain.setValueAtTime(0.11, now);
+  carriageGain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+  carriage.connect(carriageFilter).connect(carriageGain).connect(context.destination);
+
+  const bell = context.createOscillator();
+  const bellGain = context.createGain();
+  bell.type = "triangle";
+  bell.frequency.setValueAtTime(920, now + 0.035);
+  bell.frequency.exponentialRampToValueAtTime(610, now + 0.18);
+  bellGain.gain.setValueAtTime(0.001, now);
+  bellGain.gain.linearRampToValueAtTime(0.1, now + 0.04);
+  bellGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+  bell.connect(bellGain).connect(context.destination);
+
+  carriage.start(now);
+  bell.start(now + 0.035);
+  bell.stop(now + 0.21);
+  window.setTimeout(() => void context.close(), 280);
 }
+
+function playSuccessChime() {
+  const AudioContextConstructor = window.AudioContext
+    ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextConstructor) return;
+  const context = new AudioContextConstructor();
+  const now = context.currentTime;
+  [523.25, 659.25, 783.99].forEach((frequency, index) => {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const start = now + index * 0.075;
+    oscillator.type = "sine";
+    oscillator.frequency.value = frequency;
+    gain.gain.setValueAtTime(0.001, start);
+    gain.gain.linearRampToValueAtTime(0.075, start + 0.018);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.14);
+    oscillator.connect(gain).connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(start + 0.15);
+  });
+  window.setTimeout(() => void context.close(), 420);
+}
+
 const tetrisWords = [
   { korean: "사랑", meaning: "love" },
   { korean: "음악", meaning: "music" },
@@ -834,6 +988,20 @@ const travelPhrases: Record<TravelMode, Array<{ korean: string; meaning: string;
     { korean: "우리 동네 맛집을 알려 드릴게요.", meaning: "I’ll show you a good local restaurant.", situation: "Sharing a local tip" },
   ],
 };
+
+function staticVoicePair(slug: string) {
+  return {
+    female: `/audio/ko/${slug}-female.mp3`,
+    male: `/audio/ko/${slug}-male.mp3`,
+  };
+}
+
+const staticSpeechAudioByText = new Map<string, { female: string; male: string }>([
+  ...lessonSentences.map((text, index) => [text, staticVoicePair(`lesson-${String(index + 1).padStart(2, "0")}`)] as const),
+  ...travelPhrases.inKorea.map((item, index) => [item.korean, staticVoicePair(`travel-korea-${String(index + 1).padStart(2, "0")}`)] as const),
+  ...travelPhrases.welcome.map((item, index) => [item.korean, staticVoicePair(`travel-welcome-${String(index + 1).padStart(2, "0")}`)] as const),
+  ...screenPracticeLines.map((item, index) => [item.korean, staticVoicePair(`scene-${String(index + 1).padStart(2, "0")}`)] as const),
+]);
 
 const learningLevels = [
   "Hangul principle",
@@ -931,8 +1099,20 @@ const activities: Array<{
 export default function Home() {
   const [locale, setLocale] = useState<Locale>("en");
   const [autoSpeak, setAutoSpeak] = useState(true);
+  const [returnSoundEnabled, setReturnSoundEnabled] = useState(true);
   const [speechSupported, setSpeechSupported] = useState(true);
+  const [neuralTtsAvailable, setNeuralTtsAvailable] = useState(false);
+  const [voiceGender, setVoiceGender] = useState<VoiceGender>("female");
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [advanceQueued, setAdvanceQueued] = useState(false);
   const [keyboardLayout, setKeyboardLayout] = useState<KeyboardLayout>("qwerty");
+  const [lessonIndex, setLessonIndex] = useState(0);
+  const [lessonStarted, setLessonStarted] = useState(false);
+  const [lessonFinished, setLessonFinished] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [progressLoaded, setProgressLoaded] = useState(false);
+  const [privacyNoticeVisible, setPrivacyNoticeVisible] = useState(false);
+  const [accountSummary, setAccountSummary] = useState<{ streakDays: number; coins: number } | null>(null);
   const [guideStep, setGuideStep] = useState(0);
   const [typed, setTyped] = useState("");
   const [activeActivity, setActiveActivity] = useState<ActivityId>("home");
@@ -944,16 +1124,27 @@ export default function Home() {
   const [crosswordAnswer, setCrosswordAnswer] = useState("");
   const [screenInput, setScreenInput] = useState("");
   const [screenIndex, setScreenIndex] = useState(0);
+  const [managedContent, setManagedContent] = useState<PublishedContentItem[]>([]);
+  const [kpopInput, setKpopInput] = useState("");
+  const [kpopIndex, setKpopIndex] = useState(0);
   const [travelMode, setTravelMode] = useState<TravelMode>("inKorea");
   const [travelIndex, setTravelIndex] = useState(0);
   const [travelInput, setTravelInput] = useState("");
+  const pendingActionRef = useRef<(() => void) | null>(null);
+  const activeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const activeAudioUrlRef = useRef<string | null>(null);
+  const speechRequestRef = useRef(0);
+  const speakingRef = useRef(false);
 
   const t = copy[locale];
   const keyboardText = keyboardHelpCopy[locale] ?? englishKeyboardCopy;
   const speechText = speechHelpCopy[locale] ?? englishSpeechCopy;
+  const returnSoundText = returnSoundCopy[locale] ?? englishReturnSoundCopy;
+  const targetSentence = lessonSentences[lessonIndex];
+  const practiceSequence = useMemo(() => sentenceToPracticeSequence(targetSentence), [targetSentence]);
   const activePracticeKey = practiceSequence[guideStep] ?? null;
   const upcomingPracticeKeys = practiceSequence.slice(guideStep, guideStep + 7);
-  const targetChars = useMemo(() => Array.from(targetSentence), []);
+  const targetChars = useMemo(() => Array.from(targetSentence), [targetSentence]);
   const typedChars = Array.from(typed);
   const correctChars = typedChars.reduce(
     (total, character, index) => total + (character === targetChars[index] ? 1 : 0),
@@ -962,8 +1153,23 @@ export default function Home() {
   const accuracy = typedChars.length === 0 ? 100 : Math.round((correctChars / typedChars.length) * 100);
   const sentenceProgress = Math.min(100, Math.round((typedChars.length / targetChars.length) * 100));
   const sentenceComplete = typed === targetSentence;
-  const dailyProgress = Math.min(100, 65 + Math.round(sentenceProgress * 0.15));
-  const currentScreenLine = screenPracticeLines[screenIndex % screenPracticeLines.length];
+  const completedSentences = lessonFinished
+    ? lessonSentences.length
+    : Math.min(lessonSentences.length, lessonIndex + (sentenceComplete ? 1 : 0));
+  const dailyProgress = lessonStarted
+    ? lessonFinished
+      ? 100
+      : Math.min(100, Math.round(((lessonIndex + sentenceProgress / 100) / lessonSentences.length) * 100))
+    : 0;
+  const managedScreenLines = useMemo(() => managedContent
+    .filter((item) => item.category === "kdrama" || item.category === "movie")
+    .map((item) => ({
+      korean: item.koreanText,
+      translation: item.translation,
+      genre: item.category === "kdrama" ? "K-Drama" : "K-Movie",
+    })), [managedContent]);
+  const availableScreenLines = managedScreenLines.length ? managedScreenLines : screenPracticeLines;
+  const currentScreenLine = availableScreenLines[screenIndex % availableScreenLines.length];
   const screenComplete = screenInput.trim() === currentScreenLine.korean;
   const screenChars = Array.from(screenInput);
   const screenTargetChars = Array.from(currentScreenLine.korean);
@@ -972,14 +1178,169 @@ export default function Home() {
     0,
   );
   const screenAccuracy = screenChars.length === 0 ? 100 : Math.round((screenCorrectChars / screenChars.length) * 100);
+  const publishedKpopItems = useMemo(() => managedContent.filter((item) => item.category === "kpop"), [managedContent]);
+  const currentKpopItem = publishedKpopItems.length ? publishedKpopItems[kpopIndex % publishedKpopItems.length] : null;
+  const kpopComplete = currentKpopItem ? kpopInput.trim() === currentKpopItem.koreanText : false;
   const currentTravelPhrase = travelPhrases[travelMode][travelIndex % travelPhrases[travelMode].length];
   const travelComplete = travelInput.trim() === currentTravelPhrase.korean;
 
+  const finishSpeech = useCallback(() => {
+    speakingRef.current = false;
+    setIsSpeaking(false);
+    if (activeAudioUrlRef.current) {
+      URL.revokeObjectURL(activeAudioUrlRef.current);
+      activeAudioUrlRef.current = null;
+    }
+    activeAudioRef.current = null;
+    const pendingAction = pendingActionRef.current;
+    pendingActionRef.current = null;
+    setAdvanceQueued(false);
+    if (pendingAction) window.setTimeout(pendingAction, 0);
+  }, []);
+
+  const playKorean = useCallback((text: string) => {
+    const requestId = speechRequestRef.current + 1;
+    speechRequestRef.current = requestId;
+    if (activeAudioRef.current) {
+      activeAudioRef.current.pause();
+      activeAudioRef.current = null;
+    }
+    if (activeAudioUrlRef.current) {
+      URL.revokeObjectURL(activeAudioUrlRef.current);
+      activeAudioUrlRef.current = null;
+    }
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+
+    speakingRef.current = true;
+    setIsSpeaking(true);
+
+    const playDeviceVoice = () => {
+      if (requestId !== speechRequestRef.current) return;
+      if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+        finishSpeech();
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      const koreanVoices = window.speechSynthesis.getVoices()
+        .filter((voice) => voice.lang.toLowerCase().startsWith("ko"));
+      const voiceHints = voiceGender === "female"
+        ? ["female", "woman", "여성", "sunhi", "yuna", "sora", "heami", "유나", "서현"]
+        : ["male", "man", "남성", "injoon", "hyunsu", "minjun", "민준", "현수"];
+      const preferredVoice = koreanVoices.find((voice) => {
+        const name = voice.name.toLowerCase();
+        return voiceHints.some((hint) => name.includes(hint));
+      }) ?? koreanVoices[voiceGender === "male" && koreanVoices.length > 1 ? 1 : 0];
+
+      utterance.lang = "ko-KR";
+      utterance.rate = 0.9;
+      utterance.pitch = preferredVoice ? 1 : voiceGender === "female" ? 1.06 : 0.9;
+      if (preferredVoice) utterance.voice = preferredVoice;
+      utterance.onend = finishSpeech;
+      utterance.onerror = finishSpeech;
+      window.speechSynthesis.speak(utterance);
+    };
+
+    const playAudioSource = (audioUrl: string, onFailure: () => void, revokeAfterUse = false) => {
+      if (requestId !== speechRequestRef.current) return;
+      const audio = new Audio(audioUrl);
+      if (revokeAfterUse) activeAudioUrlRef.current = audioUrl;
+      activeAudioRef.current = audio;
+      audio.onended = finishSpeech;
+      audio.onerror = () => {
+        if (revokeAfterUse) URL.revokeObjectURL(audioUrl);
+        activeAudioUrlRef.current = null;
+        activeAudioRef.current = null;
+        onFailure();
+      };
+      void audio.play().catch(onFailure);
+    };
+
+    const playNeuralVoice = () => {
+      if (!neuralTtsAvailable) {
+        playDeviceVoice();
+        return;
+      }
+      void fetch("/api/tts", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text, voice: voiceGender }),
+      })
+        .then(async (response) => {
+          if (!response.ok) throw new Error("Neural voice unavailable");
+          return response.blob();
+        })
+        .then((audioBlob) => {
+          if (requestId !== speechRequestRef.current) return;
+          playAudioSource(URL.createObjectURL(audioBlob), playDeviceVoice, true);
+        })
+        .catch(playDeviceVoice);
+    };
+
+    const managedItem = managedContent.find((item) => item.koreanText === text);
+    const recordedUrl = (managedItem
+      ? voiceGender === "female" ? managedItem.audioFemaleUrl : managedItem.audioMaleUrl
+      : "") || staticSpeechAudioByText.get(text)?.[voiceGender];
+    if (recordedUrl) {
+      playAudioSource(recordedUrl, playNeuralVoice);
+      return;
+    }
+    playNeuralVoice();
+  }, [finishSpeech, managedContent, neuralTtsAvailable, voiceGender]);
+
+  const runAfterSpeech = useCallback((action: () => void) => {
+    const browserIsSpeaking = "speechSynthesis" in window && window.speechSynthesis.speaking;
+    if (speakingRef.current || isSpeaking || browserIsSpeaking) {
+      pendingActionRef.current = action;
+      setAdvanceQueued(true);
+    } else {
+      action();
+    }
+  }, [isSpeaking]);
+
+  const confirmAndAdvance = useCallback((action: () => void) => {
+    if (returnSoundEnabled) playTypewriterReturnSound();
+    runAfterSpeech(action);
+  }, [returnSoundEnabled, runAfterSpeech]);
+
+  const advanceLesson = useCallback(() => {
+    setAdvanceQueued(false);
+    if (lessonIndex >= lessonSentences.length - 1) {
+      setLessonFinished(true);
+      return;
+    }
+    setLessonIndex((index) => index + 1);
+    setTyped("");
+    setGuideStep(0);
+    window.setTimeout(() => document.getElementById("hero-typing-input")?.focus(), 0);
+  }, [lessonIndex]);
+
+  const advanceTravelPhrase = useCallback(() => {
+    setTravelIndex((index) => (index + 1) % travelPhrases[travelMode].length);
+    setTravelInput("");
+  }, [travelMode]);
+
+  const advanceScreenLine = useCallback(() => {
+    setScreenIndex((index) => (index + 1) % availableScreenLines.length);
+    setScreenInput("");
+  }, [availableScreenLines.length]);
+
+  const advanceKpopLine = useCallback(() => {
+    if (!publishedKpopItems.length) return;
+    setKpopIndex((index) => (index + 1) % publishedKpopItems.length);
+    setKpopInput("");
+  }, [publishedKpopItems.length]);
+
   useEffect(() => {
-    try {
+    const hydrationTimer = window.setTimeout(() => {
+      try {
       const savedLocale = window.localStorage.getItem("hangeul-pop-locale");
       const savedKeyboardLayout = window.localStorage.getItem("hangeul-pop-keyboard-layout");
       const savedAutoSpeak = window.localStorage.getItem("hangeul-pop-auto-speak");
+      const savedVoiceGender = window.localStorage.getItem("hangeul-pop-voice-gender");
+      const savedReturnSound = window.localStorage.getItem("hangeul-pop-return-sound");
+      const savedDailyLesson = window.localStorage.getItem("hangeul-pop-daily-lesson");
+      const savedPrivacyNotice = window.localStorage.getItem("hangeul-pop-privacy-notice");
       if (savedLocale && savedLocale in copy) {
         setLocale(savedLocale as Locale);
       } else {
@@ -989,12 +1350,60 @@ export default function Home() {
         setKeyboardLayout(savedKeyboardLayout);
       }
       if (savedAutoSpeak === "false") setAutoSpeak(false);
-    } catch {
-      setLocale(resolveBrowserLocale(navigator.languages));
-    }
-    const supported = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
-    setSpeechSupported(supported);
-    if (!supported) setAutoSpeak(false);
+      if (savedVoiceGender === "female" || savedVoiceGender === "male") setVoiceGender(savedVoiceGender);
+      if (savedReturnSound === "false") setReturnSoundEnabled(false);
+      setPrivacyNoticeVisible(savedPrivacyNotice !== "accepted-v1");
+      if (savedDailyLesson) {
+        const dailyLesson = JSON.parse(savedDailyLesson) as {
+          date?: string;
+          lessonIndex?: number;
+          lessonStarted?: boolean;
+          lessonFinished?: boolean;
+        };
+        const today = new Date().toLocaleDateString("en-CA");
+        if (dailyLesson.date === today) {
+          setLessonIndex(Math.min(Math.max(0, dailyLesson.lessonIndex ?? 0), lessonSentences.length - 1));
+          setLessonStarted(Boolean(dailyLesson.lessonStarted));
+          setLessonFinished(Boolean(dailyLesson.lessonFinished));
+        }
+      }
+      } catch {
+        setLocale(resolveBrowserLocale(navigator.languages));
+      }
+      const supported = "Audio" in window || ("speechSynthesis" in window && "SpeechSynthesisUtterance" in window);
+      setSpeechSupported(supported);
+      if (!supported) setAutoSpeak(false);
+      setProgressLoaded(true);
+    }, 0);
+    return () => window.clearTimeout(hydrationTimer);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    void fetch("/api/tts", { headers: { accept: "application/json" } })
+      .then(async (response) => response.ok ? response.json() : null)
+      .then((status) => {
+        if (!active || !status?.available) return;
+        setNeuralTtsAvailable(true);
+        setSpeechSupported(true);
+      })
+      .catch(() => {
+        // The device's Korean voice remains available as a no-cost fallback.
+      });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    void fetch("/api/content", { headers: { accept: "application/json" } })
+      .then(async (response) => response.ok ? response.json() : null)
+      .then((payload) => {
+        if (active && Array.isArray(payload?.items)) setManagedContent(payload.items as PublishedContentItem[]);
+      })
+      .catch(() => {
+        // Built-in original practice content stays available while the library is offline.
+      });
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -1021,25 +1430,139 @@ export default function Home() {
     } catch {
       // The pronunciation preference still applies for this session when storage is unavailable.
     }
-    if (!autoSpeak && "speechSynthesis" in window) window.speechSynthesis.cancel();
-  }, [autoSpeak]);
+    if (!autoSpeak) {
+      speechRequestRef.current += 1;
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      activeAudioRef.current?.pause();
+      const finishTimer = window.setTimeout(finishSpeech, 0);
+      return () => window.clearTimeout(finishTimer);
+    }
+  }, [autoSpeak, finishSpeech]);
 
   useEffect(() => {
-    if (autoSpeak && sentenceComplete) speakKorean(targetSentence);
-  }, [autoSpeak, sentenceComplete]);
+    try {
+      window.localStorage.setItem("hangeul-pop-voice-gender", voiceGender);
+    } catch {
+      // The selected voice still applies for this session when storage is unavailable.
+    }
+  }, [voiceGender]);
 
   useEffect(() => {
-    if (autoSpeak && travelComplete) speakKorean(currentTravelPhrase.korean);
-  }, [autoSpeak, travelComplete, currentTravelPhrase.korean]);
+    try {
+      window.localStorage.setItem("hangeul-pop-return-sound", String(returnSoundEnabled));
+    } catch {
+      // The sound preference still applies for this session when storage is unavailable.
+    }
+  }, [returnSoundEnabled]);
 
   useEffect(() => {
-    if (autoSpeak && screenComplete) speakKorean(currentScreenLine.korean);
-  }, [autoSpeak, screenComplete, currentScreenLine.korean]);
+    if (!progressLoaded) return;
+    try {
+      window.localStorage.setItem("hangeul-pop-daily-lesson", JSON.stringify({
+        date: new Date().toLocaleDateString("en-CA"),
+        lessonIndex,
+        lessonStarted,
+        lessonFinished,
+      }));
+    } catch {
+      // Daily progress remains available for this session when storage is unavailable.
+    }
+  }, [lessonFinished, lessonIndex, lessonStarted, progressLoaded]);
+
+  useEffect(() => {
+    let active = true;
+    void fetch("/api/progress", { headers: { accept: "application/json" } })
+      .then(async (response) => response.ok ? response.json() : null)
+      .then((profile) => {
+        if (!active || !profile?.user || !profile?.progress) return;
+        setAccountSummary({ streakDays: profile.user.streakDays, coins: profile.user.coins });
+        const serverProgress = profile.progress as {
+          currentLesson: number;
+          completedSentences: number;
+          typingSeconds: number;
+          lessonFinished: boolean;
+        };
+        if (serverProgress.completedSentences > completedSentences || serverProgress.lessonFinished) {
+          setLessonIndex(Math.min(serverProgress.currentLesson, lessonSentences.length - 1));
+          setLessonStarted(serverProgress.completedSentences > 0 || serverProgress.lessonFinished);
+          setLessonFinished(serverProgress.lessonFinished);
+          setElapsedSeconds(serverProgress.typingSeconds);
+          setTyped("");
+          setGuideStep(0);
+        }
+      })
+      .catch(() => {
+        // Anonymous visitors and offline learners continue with device-local progress.
+      });
+    return () => { active = false; };
+  // The initial account sync intentionally runs once after hydration.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!progressLoaded || !lessonStarted) return;
+    const payload = {
+      currentLesson: lessonIndex,
+      completedSentences,
+      totalSentences: lessonSentences.length,
+      typingSeconds: elapsedSeconds,
+      accuracy,
+      lessonFinished,
+    };
+    const timer = window.setTimeout(() => {
+      void fetch("/api/progress", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+        .then(async (response) => response.ok ? response.json() : null)
+        .then((profile) => {
+          if (profile?.user) setAccountSummary({ streakDays: profile.user.streakDays, coins: profile.user.coins });
+        })
+        .catch(() => {
+          // Device-local progress remains available if account sync is unavailable.
+        });
+    }, 350);
+    return () => window.clearTimeout(timer);
+  // Sync on meaningful lesson milestones rather than posting every elapsed second or keystroke.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completedSentences, lessonFinished, lessonIndex, lessonStarted, progressLoaded]);
+
+  useEffect(() => {
+    if (!lessonStarted || lessonFinished) return;
+    const timer = window.setInterval(() => setElapsedSeconds((seconds) => seconds + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [lessonFinished, lessonStarted]);
+
+  useEffect(() => {
+    if (!autoSpeak || !sentenceComplete) return;
+    const timer = window.setTimeout(() => playKorean(targetSentence), 0);
+    return () => window.clearTimeout(timer);
+  }, [autoSpeak, playKorean, sentenceComplete, targetSentence]);
+
+  useEffect(() => {
+    if (!autoSpeak || !travelComplete) return;
+    const timer = window.setTimeout(() => playKorean(currentTravelPhrase.korean), 0);
+    return () => window.clearTimeout(timer);
+  }, [autoSpeak, playKorean, travelComplete, currentTravelPhrase.korean]);
+
+  useEffect(() => {
+    if (!autoSpeak || !screenComplete) return;
+    const timer = window.setTimeout(() => playKorean(currentScreenLine.korean), 0);
+    return () => window.clearTimeout(timer);
+  }, [autoSpeak, playKorean, screenComplete, currentScreenLine.korean]);
+
+  useEffect(() => {
+    if (!autoSpeak || !kpopComplete || !currentKpopItem) return;
+    const timer = window.setTimeout(() => playKorean(currentKpopItem.koreanText), 0);
+    return () => window.clearTimeout(timer);
+  }, [autoSpeak, currentKpopItem, kpopComplete, playKorean]);
 
   function submitTetris(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const current = tetrisWords[tetrisIndex % tetrisWords.length];
     if (tetrisInput.trim() === current.korean) {
+      if (returnSoundEnabled) playSuccessChime();
       setTetrisScore((score) => score + 100);
       setTetrisIndex((index) => index + 1);
       setTetrisInput("");
@@ -1049,8 +1572,29 @@ export default function Home() {
     }
   }
 
-  function focusHeroPractice() {
-    document.getElementById("hero-typing-input")?.focus();
+  function startTodayLesson() {
+    if (!lessonStarted || lessonFinished) {
+      speechRequestRef.current += 1;
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      activeAudioRef.current?.pause();
+      activeAudioRef.current = null;
+      if (activeAudioUrlRef.current) URL.revokeObjectURL(activeAudioUrlRef.current);
+      activeAudioUrlRef.current = null;
+      pendingActionRef.current = null;
+      speakingRef.current = false;
+      setIsSpeaking(false);
+      setAdvanceQueued(false);
+      setLessonIndex(0);
+      setLessonStarted(true);
+      setLessonFinished(false);
+      setElapsedSeconds(0);
+      setTyped("");
+      setGuideStep(0);
+    }
+    window.setTimeout(() => {
+      document.getElementById("practice")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      document.getElementById("hero-typing-input")?.focus();
+    }, 0);
   }
 
   return (
@@ -1065,7 +1609,7 @@ export default function Home() {
         <nav className="nav-links" aria-label="Main menu">
           <a href="#learn">{t.navLearn}</a>
           <a href="#games">{t.navGames}</a>
-          <a href="#progress">{t.navProgress}</a>
+          <a href="/my">{t.navProgress}</a>
         </nav>
         <div className="header-tools">
           <label
@@ -1083,6 +1627,28 @@ export default function Home() {
             <span className="speech-toggle-copy">
               <b>{speechText.label}</b>
               <small>{speechSupported ? autoSpeak ? speechText.on : speechText.off : speechText.unavailable}</small>
+            </span>
+          </label>
+          <label className="voice-picker" title="Korean pronunciation voice">
+            <span aria-hidden="true">{voiceGender === "female" ? "♀" : "♂"}</span>
+            <span className="sr-only">Korean voice</span>
+            <select value={voiceGender} onChange={(event) => setVoiceGender(event.target.value as VoiceGender)}>
+              <option value="female">Female voice</option>
+              <option value="male">Male voice</option>
+            </select>
+            <i>{neuralTtsAvailable ? "AI" : "MP3"}</i>
+          </label>
+          <label className="speech-toggle return-sound-toggle" title={returnSoundText.label}>
+            <input
+              type="checkbox"
+              checked={returnSoundEnabled}
+              onChange={(event) => setReturnSoundEnabled(event.target.checked)}
+              aria-label={`${returnSoundText.label}: ${returnSoundEnabled ? returnSoundText.on : returnSoundText.off}`}
+            />
+            <span className="speech-toggle-track" aria-hidden="true"><i /></span>
+            <span className="speech-toggle-copy">
+              <b>{returnSoundText.label}</b>
+              <small>{returnSoundEnabled ? returnSoundText.on : returnSoundText.off}</small>
             </span>
           </label>
           <label className="language-picker">
@@ -1109,7 +1675,7 @@ export default function Home() {
           </h1>
           <p className="hero-description">{t.description}</p>
           <div className="hero-actions">
-            <button className="button button-primary" type="button" onClick={focusHeroPractice}>
+            <button className="button button-primary" type="button" onClick={startTodayLesson}>
               {t.start} <span aria-hidden="true">→</span>
             </button>
             <a className="button button-secondary" href="#games">{t.explore}</a>
@@ -1117,7 +1683,7 @@ export default function Home() {
           <div className="trust-row" aria-label="Service highlights">
             <span><b>{learningLevels.length}</b> learning levels</span>
             <span><b>{Object.keys(copy).length}</b> interface languages</span>
-            <span><b>0</b> sign-up steps</span>
+            <span><b>1</b> secure sign-in</span>
           </div>
         </div>
 
@@ -1130,15 +1696,15 @@ export default function Home() {
                 <p className="card-kicker">{t.upNext}</p>
                 <h2>{t.practiceTitle}</h2>
               </div>
-              <span className="streak">4 day streak</span>
+              <a className="streak" href="/my">{accountSummary ? `${accountSummary.streakDays} day streak · ${accountSummary.coins} beats` : "My learning page"}</a>
             </div>
 
             <div className="typing-panel">
               <div className="typing-meta">
-                <span>{t.practiceHint}</span>
+                <span>{lessonStarted ? `Sentence ${lessonIndex + 1} / ${lessonSentences.length}` : `Ready · ${lessonSentences.length} sentences`}</span>
                 <span>{typedChars.length} / {targetChars.length} letters</span>
               </div>
-              <p className="target-sentence" lang="ko" aria-label={targetSentence}>
+              <p className="target-sentence" lang="ko" aria-label={targetSentence} key={targetSentence}>
                 {targetChars.map((character, index) => {
                   const state = index < typedChars.length
                     ? typedChars[index] === character ? "correct" : "incorrect"
@@ -1151,15 +1717,18 @@ export default function Home() {
                 className="typing-input"
                 lang="ko"
                 value={typed}
+                disabled={lessonFinished}
+                onFocus={() => setLessonStarted(true)}
                 onChange={(event) => {
-                  setTyped(event.target.value);
-                  if (!event.target.value) setGuideStep(0);
+                  const nextValue = event.target.value;
+                  setLessonStarted(true);
+                  setTyped(nextValue);
+                  setGuideStep(Math.min(sentenceToPracticeSequence(nextValue).length, practiceSequence.length));
                 }}
                 onKeyDown={(event) => {
-                  if (event.code === activePracticeKey?.code) {
-                    setGuideStep((step) => Math.min(step + 1, practiceSequence.length));
-                  } else if (event.code === "Backspace") {
-                    setGuideStep((step) => Math.max(0, step - 1));
+                  if (event.key === "Enter" && !event.nativeEvent.isComposing && sentenceComplete) {
+                    event.preventDefault();
+                    confirmAndAdvance(advanceLesson);
                   }
                 }}
                 placeholder="여기에 입력하세요"
@@ -1168,76 +1737,110 @@ export default function Home() {
                 aria-describedby="typing-feedback"
               />
               <p className={`typing-feedback ${sentenceComplete ? "complete" : ""}`} id="typing-feedback" aria-live="polite">
-                {sentenceComplete ? "Great rhythm! Sentence complete." : typedChars.length ? `${accuracy}% accurate · keep going` : "Follow the highlighted key position below."}
+                {lessonFinished
+                  ? "Today’s lesson is complete. Great work!"
+                  : advanceQueued
+                    ? "🔊 Pronunciation is playing. The next sentence will open when it finishes."
+                    : sentenceComplete
+                      ? isSpeaking
+                        ? "🔊 Listen to the pronunciation, then press Enter ↵"
+                        : "✓ Sentence complete — press Enter ↵ for the next sentence"
+                      : typedChars.length
+                        ? `${accuracy}% accurate · keep going`
+                        : "Follow the highlighted key position below."}
               </p>
 
-              <div className="keyboard-tools">
-                <label className="keyboard-layout-picker">
-                  <span>{keyboardText.myKeyboard}</span>
-                  <select value={keyboardLayout} onChange={(event) => setKeyboardLayout(event.target.value as KeyboardLayout)}>
-                    <option value="qwerty">QWERTY</option>
-                    <option value="azerty">AZERTY</option>
-                    <option value="qwertz">QWERTZ</option>
-                  </select>
-                </label>
-                <p>{keyboardText.layoutNote}</p>
-              </div>
-
-              {activePracticeKey ? (
-                <div className="next-key-card" aria-live="polite">
-                  <span className="next-key-jamo" lang="ko">{activePracticeKey.jamo}</span>
-                  <span className="next-key-copy">
-                    <small>{keyboardText.nextKey}</small>
-                    <b>{keyboardText.press} <kbd>{keyboardLegend(keyboardLayout, activePracticeKey.code)}</kbd></b>
-                  </span>
+              {lessonFinished ? (
+                <div className="lesson-finish-card">
+                  <span className="finish-mark" aria-hidden="true">✓</span>
+                  <div>
+                    <small>DAILY LESSON COMPLETE</small>
+                    <h3>{lessonSentences.length} sentences finished</h3>
+                    <p>{formatPracticeTime(elapsedSeconds)} practice · progress saved on this device</p>
+                  </div>
+                  <button className="button button-primary" type="button" onClick={startTodayLesson}>Practice again</button>
                 </div>
               ) : (
-                <div className="next-key-card complete" aria-live="polite">
-                  <span aria-hidden="true">✓</span>
-                  <b>{keyboardText.complete}</b>
-                </div>
-              )}
+                <>
+                  <div className="keyboard-tools">
+                    <label className="keyboard-layout-picker">
+                      <span>{keyboardText.myKeyboard}</span>
+                      <select value={keyboardLayout} onChange={(event) => setKeyboardLayout(event.target.value as KeyboardLayout)}>
+                        <option value="qwerty">QWERTY</option>
+                        <option value="azerty">AZERTY</option>
+                        <option value="qwertz">QWERTZ</option>
+                      </select>
+                    </label>
+                    <p>{keyboardText.layoutNote}</p>
+                  </div>
 
-              <div className="key-guide" aria-label="Upcoming Korean keys">
-                {upcomingPracticeKeys.map((key, index) => (
-                  <kbd className={index === 0 ? "active" : ""} key={`${key.jamo}-${guideStep + index}`}>
-                    <span lang="ko">{key.jamo}</span>
-                    <small>{keyboardLegend(keyboardLayout, key.code)}</small>
-                  </kbd>
-                ))}
-              </div>
+                  {activePracticeKey ? (
+                    <div className="next-key-card" aria-live="polite">
+                      <span className="next-key-jamo" lang="ko">{activePracticeKey.jamo}</span>
+                      <span className="next-key-copy">
+                        <small>{keyboardText.nextKey}</small>
+                        <b>{keyboardText.press} <kbd>{practiceKeyLegend(keyboardLayout, activePracticeKey)}</kbd></b>
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="next-key-card complete" aria-live="polite">
+                      <span aria-hidden="true">✓</span>
+                      <b>{keyboardText.complete}</b>
+                    </div>
+                  )}
 
-              <div className="keyboard-map" aria-label={keyboardText.mapTitle}>
-                <div className="keyboard-map-legend">
-                  <b>{keyboardText.mapTitle}</b>
-                  <span><i className="legend-hangul" /> {keyboardText.hangul}</span>
-                  <span><i className="legend-local" /> {keyboardText.yourKey}</span>
-                </div>
-                {koreanKeyRows.map(({ row, keys }) => (
-                  <div className={`keyboard-row ${row}`} key={row}>
-                    {keys.map((key) => (
-                      <kbd
-                        className={activePracticeKey?.code === key.code ? "active" : ""}
-                        aria-label={`${key.jamo}: ${keyboardText.press} ${keyboardLegend(keyboardLayout, key.code)}`}
-                        key={key.code}
-                      >
+                  <div className="key-guide" aria-label="Upcoming Korean keys">
+                    {upcomingPracticeKeys.map((key, index) => (
+                      <kbd className={index === 0 ? "active" : ""} key={`${key.jamo}-${guideStep + index}`}>
                         <span lang="ko">{key.jamo}</span>
-                        <small>{keyboardLegend(keyboardLayout, key.code)}</small>
+                        <small>{practiceKeyLegend(keyboardLayout, key)}</small>
                       </kbd>
                     ))}
                   </div>
-                ))}
-              </div>
+
+                  <div className="keyboard-map" aria-label={keyboardText.mapTitle}>
+                    <div className="keyboard-map-legend">
+                      <b>{keyboardText.mapTitle}</b>
+                      <span><i className="legend-hangul" /> {keyboardText.hangul}</span>
+                      <span><i className="legend-local" /> {keyboardText.yourKey}</span>
+                    </div>
+                    {koreanKeyRows.map(({ row, keys }) => (
+                      <div className={`keyboard-row ${row}`} key={row}>
+                        {keys.map((key) => (
+                          <kbd
+                            className={`${fingerByCode[key.code]} ${activePracticeKey?.code === key.code ? "active" : ""}`}
+                            aria-label={`${key.jamo}: ${keyboardText.press} ${keyboardLegend(keyboardLayout, key.code)}`}
+                            key={key.code}
+                          >
+                            <span lang="ko">{key.jamo}</span>
+                            <small>{keyboardLegend(keyboardLayout, key.code)}</small>
+                          </kbd>
+                        ))}
+                      </div>
+                    ))}
+                    <div className="finger-guide" aria-label="Finger position color guide">
+                      <span className="left-pinky"><i />L5<small>left pinky</small></span>
+                      <span className="left-ring"><i />L4<small>left ring</small></span>
+                      <span className="left-middle"><i />L3<small>left middle</small></span>
+                      <span className="left-index"><i />L2<small>left index</small></span>
+                      <span className="right-index"><i />R2<small>right index</small></span>
+                      <span className="right-middle"><i />R3<small>right middle</small></span>
+                      <span className="right-ring"><i />R4<small>right ring</small></span>
+                      <span className="right-pinky"><i />R5<small>right pinky</small></span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="daily-meter" id="progress">
-              <div className="daily-time"><b>6:30</b><span>/10 min</span></div>
+              <div className="daily-time"><b>{formatPracticeTime(elapsedSeconds)}</b><span>/10 min</span></div>
               <div className="meter-copy">
                 <div><span>Today’s practice</span><b>{dailyProgress}%</b></div>
                 <div className="meter-track" role="progressbar" aria-label="Today’s practice" aria-valuemin={0} aria-valuemax={100} aria-valuenow={dailyProgress}>
                   <span style={{ width: `${dailyProgress}%` }} />
                 </div>
-                <small>{sentenceComplete ? "Daily typing goal reached" : "2 activities in a row · 3 minutes left"}</small>
+                <small>{lessonFinished ? "Daily typing goal reached" : `${completedSentences} of ${lessonSentences.length} sentences complete`}</small>
               </div>
             </div>
           </article>
@@ -1277,7 +1880,7 @@ export default function Home() {
               <p className="demo-label">FOUNDATION · LESSON 02</p>
               <h3>Build reliable finger memory.</h3>
               <p>Practice small key groups, then combine them into syllables and everyday words. The lesson adapts to the keys you miss most.</p>
-              <button className="button button-primary" type="button" onClick={focusHeroPractice}>Continue basic position</button>
+              <button className="button button-primary" type="button" onClick={startTodayLesson}>Continue basic position</button>
             </div>
           )}
 
@@ -1307,7 +1910,15 @@ export default function Home() {
               <div className="missing-word" lang="ko">한 <span>{missingAnswer || "?"}</span></div>
               <div className="answer-options" aria-label="Choose the missing syllable">
                 {["국", "글", "강"].map((answer) => (
-                  <button type="button" className={missingAnswer === answer ? "chosen" : ""} onClick={() => setMissingAnswer(answer)} key={answer}>{answer}</button>
+                  <button
+                    type="button"
+                    className={missingAnswer === answer ? "chosen" : ""}
+                    onClick={() => {
+                      setMissingAnswer(answer);
+                      if (answer === "글" && returnSoundEnabled) playSuccessChime();
+                    }}
+                    key={answer}
+                  >{answer}</button>
                 ))}
               </div>
               <p className={`form-message ${missingAnswer === "글" ? "success" : ""}`}>
@@ -1321,7 +1932,16 @@ export default function Home() {
               <div className="crossword-grid" role="grid" aria-label="Mini Korean crossword">
                 <span className="blank" /><span lang="ko">한</span><span className="blank" /><span lang="ko">말</span>
                 <span lang="ko">음</span><span lang="ko">국</span><span className="blank" /><span lang="ko">씀</span>
-                <span className="blank" /><input lang="ko" maxLength={1} value={crosswordAnswer} onChange={(event) => setCrosswordAnswer(event.target.value)} aria-label="Crossword answer for Korean writing system" /><span className="blank" /><span className="blank" />
+                <span className="blank" /><input
+                  lang="ko"
+                  maxLength={1}
+                  value={crosswordAnswer}
+                  onChange={(event) => {
+                    setCrosswordAnswer(event.target.value);
+                    if (event.target.value === "글" && returnSoundEnabled) playSuccessChime();
+                  }}
+                  aria-label="Crossword answer for Korean writing system"
+                /><span className="blank" /><span className="blank" />
                 <span lang="ko">노</span><span lang="ko">래</span><span className="blank" /><span lang="ko">집</span>
               </div>
               <div className="demo-copy">
@@ -1390,6 +2010,12 @@ export default function Home() {
                   lang="ko"
                   value={travelInput}
                   onChange={(event) => setTravelInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.nativeEvent.isComposing && travelComplete) {
+                      event.preventDefault();
+                      confirmAndAdvance(advanceTravelPhrase);
+                    }
+                  }}
                   placeholder="한국어 문장을 입력하세요"
                   autoComplete="off"
                   spellCheck={false}
@@ -1401,10 +2027,7 @@ export default function Home() {
                   className="button button-primary"
                   type="button"
                   disabled={!travelComplete}
-                  onClick={() => {
-                    setTravelIndex((index) => (index + 1) % travelPhrases[travelMode].length);
-                    setTravelInput("");
-                  }}
+                  onClick={() => confirmAndAdvance(advanceTravelPhrase)}
                 >
                   Next phrase <span aria-hidden="true">→</span>
                 </button>
@@ -1415,16 +2038,48 @@ export default function Home() {
           {activeActivity === "kpop" && (
             <div className="kpop-demo">
               <div className="record-disc" aria-hidden="true"><span>ㅎ</span></div>
-              <div>
-                <p className="demo-label">LICENSED CONTENT · LOCKED REWARD</p>
-                <h3>One level until the music starts.</h3>
-                <p>Complete three long-form passages with at least 95% typing accuracy and 90% spacing accuracy. Only officially licensed lyrics are shown.</p>
-              </div>
-              <div className="unlock-meter">
-                <div><span>Long-form typing</span><b>Level 4 / 5</b></div>
-                <div className="meter-track" role="progressbar" aria-label="K-POP challenge unlock" aria-valuemin={0} aria-valuemax={5} aria-valuenow={4}><span style={{ width: "80%" }} /></div>
-                <small>Next: finish 2 paragraphs above 95% accuracy</small>
-              </div>
+              {currentKpopItem ? (
+                <>
+                  <div className="kpop-passage">
+                    <p className="demo-label">PUBLISHED CONTENT · {kpopIndex + 1}/{publishedKpopItems.length}</p>
+                    <h3>{currentKpopItem.title}</h3>
+                    <p className="kpop-source">{currentKpopItem.sourceTitle || "Original K-POP practice"}{currentKpopItem.creator ? ` · ${currentKpopItem.creator}` : ""}</p>
+                    <blockquote lang="ko">{currentKpopItem.koreanText}</blockquote>
+                    {currentKpopItem.translation && <p>{currentKpopItem.translation}</p>}
+                  </div>
+                  <div className="kpop-live-card">
+                    <label htmlFor="kpop-line-input">Type the Korean line</label>
+                    <textarea
+                      id="kpop-line-input"
+                      lang="ko"
+                      value={kpopInput}
+                      onChange={(event) => setKpopInput(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && !event.nativeEvent.isComposing && kpopComplete) {
+                          event.preventDefault();
+                          confirmAndAdvance(advanceKpopLine);
+                        }
+                      }}
+                      spellCheck={false}
+                    />
+                    <p className={`form-message ${kpopComplete ? "success" : ""}`} aria-live="polite">{kpopComplete ? "Line complete — press Enter for the next track." : "Copy the spacing and punctuation exactly."}</p>
+                    <button className="button button-primary" type="button" disabled={!kpopComplete} onClick={() => confirmAndAdvance(advanceKpopLine)}>Next line <span aria-hidden="true">→</span></button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <p className="demo-label">LICENSED CONTENT · READY FOR YOUR LIBRARY</p>
+                    <h3>Add the first music challenge.</h3>
+                    <p>The owner can add original or licensed lyrics in the private content studio. Once published, they appear here as a complete typing challenge.</p>
+                  </div>
+                  <div className="unlock-meter">
+                    <div><span>Content library</span><b>0 tracks</b></div>
+                    <div className="meter-track" role="progressbar" aria-label="K-POP content library" aria-valuemin={0} aria-valuemax={1} aria-valuenow={0}><span style={{ width: "0%" }} /></div>
+                    <small>Administrator: add content and both voice files at /admin</small>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -1441,15 +2096,21 @@ export default function Home() {
                 <p>{currentScreenLine.translation}</p>
               </div>
               <div className="scene-form">
-                <p className="demo-label">ORIGINAL PRACTICE DIALOGUE · LICENSE-SAFE PREVIEW</p>
+                <p className="demo-label">{managedScreenLines.length ? "PUBLISHED CONTENT · RIGHTS CHECKED" : "ORIGINAL PRACTICE DIALOGUE · LICENSE-SAFE PREVIEW"}</p>
                 <h3>Type the scene. Feel the emotion.</h3>
-                <p>Practice with original dialogue now. Quotes from real dramas and movies are added only after official permission.</p>
+                <p>{managedScreenLines.length ? "This line was published from the private content studio." : "Practice with original dialogue now. Quotes from real dramas and movies are added only after official permission."}</p>
                 <label htmlFor="screen-line-input">Korean dialogue</label>
                 <textarea
                   id="screen-line-input"
                   lang="ko"
                   value={screenInput}
                   onChange={(event) => setScreenInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.nativeEvent.isComposing && screenComplete) {
+                      event.preventDefault();
+                      confirmAndAdvance(advanceScreenLine);
+                    }
+                  }}
                   placeholder="명대사를 그대로 입력하세요"
                   spellCheck={false}
                 />
@@ -1461,10 +2122,7 @@ export default function Home() {
                   className="button button-primary"
                   type="button"
                   disabled={!screenComplete}
-                  onClick={() => {
-                    setScreenIndex((index) => (index + 1) % screenPracticeLines.length);
-                    setScreenInput("");
-                  }}
+                  onClick={() => confirmAndAdvance(advanceScreenLine)}
                 >
                   Next scene <span aria-hidden="true">→</span>
                 </button>
@@ -1506,8 +2164,28 @@ export default function Home() {
       <footer>
         <a className="brand" href="#top"><span className="brand-mark" aria-hidden="true">ㅎ</span><span>Hangeul Pop</span></a>
         <p>Type Korean. Play your way.</p>
-        <div><a href="#learn">Curriculum</a><a href="#games">Games</a><a href="#progress">Progress</a></div>
+        <div><a href="#learn">Curriculum</a><a href="#games">Games</a><a href="/my">My page</a><a href="/legal#privacy">Privacy</a><a href="/legal#terms">Terms</a></div>
       </footer>
+
+      {privacyNoticeVisible && (
+        <aside className="privacy-notice" aria-label="Privacy notice">
+          <span aria-hidden="true">◉</span>
+          <div>
+            <b>Your learning, kept minimal.</b>
+            <p>We store essential settings and lesson progress. No advertising or analytics cookies are active in this private preview.</p>
+          </div>
+          <a href="/legal#privacy">Details</a>
+          <button
+            type="button"
+            onClick={() => {
+              window.localStorage.setItem("hangeul-pop-privacy-notice", "accepted-v1");
+              setPrivacyNoticeVisible(false);
+            }}
+          >
+            Got it
+          </button>
+        </aside>
+      )}
     </main>
   );
 }

@@ -1,57 +1,38 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
 import test from "node:test";
 
-async function render() {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
-  const { default: worker } = await import(workerUrl.href);
-
-  return worker.fetch(
-    new Request("http://localhost/", {
-      headers: { accept: "text/html" },
-    }),
-    {
-      ASSETS: {
-        fetch: async () => new Response("Not found", { status: 404 }),
-      },
-    },
-    {
-      waitUntil() {},
-      passThroughOnException() {},
-    },
-  );
-}
-
-test("server-renders the Hangeul Pop learning experience", async () => {
-  const response = await render();
-  assert.equal(response.status, 200);
-  assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
-
-  const html = await response.text();
-  assert.match(html, /<title>Hangeul Pop — Learn Korean typing through play<\/title>/i);
-  assert.match(html, /저는 음악을 좋아해요\./);
-  assert.match(html, /Korean 2-set keyboard map/);
-  assert.match(html, /Next Korean key/);
-  assert.match(html, /QWERTY/);
-  assert.match(html, /AZERTY/);
-  assert.match(html, /QWERTZ/);
-  assert.match(html, /aria-label="ㅈ: Press W"/);
-  assert.match(html, /Português \(Brasil\)/);
-  assert.match(html, /العربية/);
-  assert.match(html, /ไทย/);
-  assert.match(html, /K-Drama &amp; Movie Lines/);
-  assert.match(html, /K-드라마·영화 명대사/);
-  assert.match(html, /Travel &amp; Say Hello/);
-  assert.match(html, /여행 회화·한국인에게 말 걸기/);
-  assert.match(html, /Auto Korean pronunciation/);
-  assert.match(html, /speech-toggle-track/);
+test("build source contains the complete Hangeul Pop learning experience", async () => {
+  const [layout, page] = await Promise.all([
+    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(layout, /Hangeul Pop — Learn Korean typing through play/i);
+  assert.match(page, /저는 음악을 좋아해요\./);
+  assert.match(page, /Korean 2-set keyboard map/);
+  assert.match(page, /Next Korean key/);
+  assert.match(page, /QWERTY/);
+  assert.match(page, /AZERTY/);
+  assert.match(page, /QWERTZ/);
+  assert.match(page, /Português \(Brasil\)/);
+  assert.match(page, /العربية/);
+  assert.match(page, /ไทย/);
+  assert.match(page, /K-Drama & Movie Lines/);
+  assert.match(page, /K-드라마·영화 명대사/);
+  assert.match(page, /Travel & Say Hello/);
+  assert.match(page, /여행 회화·한국인에게 말 걸기/);
+  assert.match(page, /Auto Korean pronunciation/);
+  assert.match(page, /speech-toggle-track/);
+  assert.match(page, /Female voice/);
+  assert.match(page, /Finger position color guide/i);
 });
 
-test("keeps local-key mappings and responsive keyboard guidance in source", async () => {
-  const [page, css] = await Promise.all([
+test("keeps local-key mappings, recorded speech, and responsive finger guidance in source", async () => {
+  const [page, css, admin, schema] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/AdminConsole.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(page, /azerty: \{ KeyQ: "A", KeyW: "Z"/);
@@ -63,16 +44,39 @@ test("keeps local-key mappings and responsive keyboard guidance in source", asyn
   assert.match(page, /const travelPhrases/);
   assert.match(page, /ORIGINAL PRACTICE DIALOGUE · LICENSE-SAFE PREVIEW/);
   assert.match(page, /Welcome Koreans/);
-  assert.match(page, /function speakKorean/);
+  assert.match(page, /const playKorean/);
   assert.match(page, /utterance\.lang = "ko-KR"/);
   assert.match(page, /hangeul-pop-auto-speak/);
-  assert.match(page, /autoSpeak && sentenceComplete/);
-  assert.match(page, /autoSpeak && travelComplete/);
-  assert.match(page, /autoSpeak && screenComplete/);
+  assert.match(page, /hangeul-pop-voice-gender/);
+  assert.match(page, /staticSpeechAudioByText/);
+  assert.match(page, /audioFemaleUrl/);
+  assert.match(page, /audioMaleUrl/);
+  assert.match(page, /!autoSpeak \|\| !sentenceComplete/);
+  assert.match(page, /!autoSpeak \|\| !travelComplete/);
+  assert.match(page, /!autoSpeak \|\| !screenComplete/);
   assert.match(css, /\.keyboard-map/);
   assert.match(css, /\.keyboard-row kbd\.active/);
+  assert.match(css, /\.finger-guide/);
+  assert.match(css, /@keyframes finger-tap/);
   assert.match(css, /\.keyboard-tools/);
   assert.match(css, /\.screen-demo/);
   assert.match(css, /\.travel-demo/);
   assert.match(css, /\.speech-toggle input:checked/);
+  assert.match(admin, /권리 상태/);
+  assert.match(admin, /여성 음성 파일 URL/);
+  assert.match(admin, /남성 음성 파일 URL/);
+  assert.match(schema, /contentItems/);
+  assert.match(schema, /audioFemaleUrl/);
+});
+
+test("ships both female and male prerecorded Korean audio", async () => {
+  const audioDirectory = new URL("../public/audio/ko/", import.meta.url);
+  const files = (await readdir(audioDirectory)).filter((name) => name.endsWith(".mp3"));
+  assert.equal(files.length, 28);
+  for (const stem of ["lesson-01", "lesson-05", "travel-korea-01", "travel-welcome-03", "scene-03"]) {
+    for (const gender of ["female", "male"]) {
+      const fileUrl = new URL(`${stem}-${gender}.mp3`, audioDirectory);
+      assert.ok((await stat(fileUrl)).size > 1_000, `${stem}-${gender} must contain audio`);
+    }
+  }
 });

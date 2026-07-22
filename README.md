@@ -1,98 +1,49 @@
-# vinext-starter
+# Hangeul Pop
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+Multilingual Korean typing and language-learning site built with Next.js/vinext and hosted with OpenAI Sites.
 
-## Prerequisites
+## What is included
 
-- Node.js `>=22.13.0`
+- Korean two-set keyboard position guide with local QWERTY/AZERTY/QWERTZ labels and translucent finger guidance
+- five-sentence daily lesson with Enter-to-advance, pronunciation wait, and typewriter return sound
+- word Tetris, missing-letter, crossword, travel conversation, K-POP, and K-Drama/movie-style typing activities
+- female/male prerecorded Korean pronunciation, progress sync, streak rewards, and a personal learning page
+- private content studio at `/admin`, with rights status, publication controls, and female/male audio URLs
+- privacy, terms, advertising, copyright, child-safety, and accessibility baseline at `/legal`
 
-## Quick Start
+## Local development
+
+Requires Node.js 22.13 or newer.
 
 ```bash
 npm install
 npm run dev
-npm run build
+npm run lint
+npm test
 ```
 
-This starter does not use `wrangler.jsonc`.
+Set `ADMIN_EMAILS` to a comma-separated allowlist for the content studio. The Sites deployment also requires its D1 binding named `DB`.
 
-## Included Shape
+## Prerecorded Korean audio
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+The 28 MP3 files in `public/audio/ko` are generated once and served as static assets, so lesson playback has no per-request TTS cost. They were synthesized with [Supertonic](https://github.com/supertone-inc/supertonic): sample code under MIT and model weights under OpenRAIL-M.
 
-## Workspace Auth Headers
+To regenerate them, create a Python 3.12 environment with `supertonic` and `soundfile`, then run:
 
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```bash
+python scripts/generate_static_korean_audio.py --ffmpeg /path/to/ffmpeg
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+The browser falls back to a Korean device voice if a recorded file is unavailable. An optional self-hosted Supertonic endpoint can be configured with `SUPERTONIC_TTS_URL`; `SUPERTONIC_TTS_API_KEY` is optional.
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+## Authentication
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+The current Sites deployment uses dispatch-owned Sign in with ChatGPT and per-request authenticated identity headers. `/my` and `/admin` are protected server-rendered pages. A true Google-only login requires a separate Google OAuth client and an independent authentication deployment; it is not represented as active here.
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+## Database and verification
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+- Schema: `db/schema.ts`
+- Migration: `drizzle/0000_black_black_bird.sql`
+- Generate future migrations: `npm run db:generate`
+- Production build: `npm run build`
+- Full verification: `npm test`
