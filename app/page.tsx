@@ -2,10 +2,15 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
-type Locale = "en" | "ko" | "es" | "ja" | "fr" | "ar";
+type Locale =
+  | "en" | "ko" | "es" | "pt-BR" | "ja" | "zh-Hans" | "zh-Hant"
+  | "fr" | "de" | "it" | "pl" | "nl" | "ru" | "tr"
+  | "ar" | "fa" | "ur" | "fil" | "th" | "id" | "ms" | "vi"
+  | "my" | "km" | "lo" | "hi" | "bn" | "ta" | "ne" | "si"
+  | "kk" | "uz" | "mn";
 type ActivityId = "home" | "tetris" | "missing" | "crossword" | "kpop";
 
-const copy: Record<Locale, {
+type InterfaceCopy = {
   navLearn: string;
   navGames: string;
   navProgress: string;
@@ -22,25 +27,31 @@ const copy: Record<Locale, {
   nextBeatHint: string;
   pathTitle: string;
   pathBody: string;
-}> = {
-  en: {
-    navLearn: "Learn",
-    navGames: "Games",
-    navProgress: "My progress",
-    eyebrow: "10 min a day · beginner friendly",
-    headlineTop: "Type Korean.",
-    headlineBottom: "Play your way.",
-    description: "Build real Hangul muscle memory through quick lessons, bright beats, and games that turn every keystroke into progress.",
-    start: "Start today’s lesson",
-    explore: "Explore games",
-    upNext: "Up next · Home-row practice",
-    practiceTitle: "Find the rhythm, one key at a time.",
-    practiceHint: "Type the Korean sentence below",
-    nextBeat: "Pick your next beat.",
-    nextBeatHint: "Short rounds. Instant feedback. Real Korean.",
-    pathTitle: "From your first key to your favorite song.",
-    pathBody: "A clear path takes you from Hangul basics to words, games, long-form typing, and licensed K-POP challenges.",
-  },
+};
+
+const englishCopy: InterfaceCopy = {
+  navLearn: "Learn",
+  navGames: "Games",
+  navProgress: "My progress",
+  eyebrow: "10 min a day · beginner friendly",
+  headlineTop: "Type Korean.",
+  headlineBottom: "Play your way.",
+  description: "Build real Hangul muscle memory through quick lessons, bright beats, and games that turn every keystroke into progress.",
+  start: "Start today’s lesson",
+  explore: "Explore games",
+  upNext: "Up next · Home-row practice",
+  practiceTitle: "Find the rhythm, one key at a time.",
+  practiceHint: "Type the Korean sentence below",
+  nextBeat: "Pick your next beat.",
+  nextBeatHint: "Short rounds. Instant feedback. Real Korean.",
+  pathTitle: "From your first key to your favorite song.",
+  pathBody: "A clear path takes you from Hangul basics to words, games, long-form typing, and licensed K-POP challenges.",
+};
+
+const translated = (overrides: Partial<InterfaceCopy>): InterfaceCopy => ({ ...englishCopy, ...overrides });
+
+const copy: Record<Locale, InterfaceCopy> = {
+  en: englishCopy,
   ko: {
     navLearn: "배우기",
     navGames: "게임",
@@ -131,7 +142,440 @@ const copy: Record<Locale, {
     pathTitle: "من أول مفتاح إلى أغنيتك المفضلة.",
     pathBody: "مسار واضح من أساسيات الهانغول إلى الكلمات والألعاب والكتابة الطويلة وتحديات K-POP المرخّصة.",
   },
+  "pt-BR": translated({
+    navLearn: "Aprender",
+    navGames: "Jogos",
+    navProgress: "Meu progresso",
+    eyebrow: "10 min por dia · ideal para iniciantes",
+    headlineTop: "Digite em coreano.",
+    headlineBottom: "Aprenda brincando.",
+    description: "Crie memória muscular com lições rápidas e jogos que transformam cada tecla em progresso.",
+    start: "Começar a lição de hoje",
+    explore: "Explorar jogos",
+    upNext: "A seguir · Posição inicial",
+    practiceTitle: "Encontre o ritmo, uma tecla de cada vez.",
+    practiceHint: "Digite a frase em coreano",
+    nextBeat: "Escolha seu próximo desafio.",
+    nextBeatHint: "Rodadas curtas. Retorno imediato. Coreano real.",
+    pathTitle: "Da primeira tecla à sua música favorita.",
+    pathBody: "Avance do Hangul básico para palavras, jogos, textos longos e desafios K-POP licenciados.",
+  }),
+  fa: translated({
+    navLearn: "یادگیری",
+    navGames: "بازی‌ها",
+    navProgress: "پیشرفت من",
+    eyebrow: "روزی ۱۰ دقیقه · مناسب تازه‌کارها",
+    headlineTop: "کره‌ای تایپ کنید.",
+    headlineBottom: "با بازی یاد بگیرید.",
+    description: "با درس‌های کوتاه و بازی‌های سرگرم‌کننده، حافظهٔ حرکتی تایپ هانگول را تقویت کنید.",
+    start: "شروع درس امروز",
+    explore: "دیدن بازی‌ها",
+    practiceHint: "جملهٔ کره‌ای زیر را تایپ کنید",
+    nextBeat: "چالش بعدی را انتخاب کنید.",
+    pathTitle: "از اولین کلید تا آهنگ محبوبتان.",
+  }),
+  ur: translated({
+    navLearn: "سیکھیں",
+    navGames: "کھیل",
+    navProgress: "میری پیش رفت",
+    eyebrow: "روزانہ ۱۰ منٹ · نئے سیکھنے والوں کے لیے",
+    headlineTop: "کوریائی ٹائپ کریں۔",
+    headlineBottom: "کھیلتے ہوئے سیکھیں۔",
+    description: "مختصر اسباق اور دلچسپ کھیلوں سے ہانگول ٹائپنگ کی عملی مہارت بنائیں۔",
+    start: "آج کا سبق شروع کریں",
+    explore: "کھیل دیکھیں",
+  }),
+  fil: translated({
+    navLearn: "Matuto",
+    navGames: "Mga laro",
+    navProgress: "Aking progreso",
+    eyebrow: "10 minuto bawat araw · para sa nagsisimula",
+    headlineTop: "Mag-type sa Korean.",
+    headlineBottom: "Matuto habang naglalaro.",
+    description: "Sanayin ang iyong Hangul typing sa maiikling aralin at masayang larong may agarang feedback.",
+    start: "Simulan ang aralin ngayon",
+    explore: "Tingnan ang mga laro",
+    upNext: "Susunod · Pangunahing posisyon",
+    practiceTitle: "Hanapin ang ritmo, isang key bawat pindot.",
+    practiceHint: "I-type ang Korean na pangungusap",
+    nextBeat: "Piliin ang susunod na hamon.",
+    nextBeatHint: "Maikling round. Agarang feedback. Tunay na Korean.",
+    pathTitle: "Mula unang key hanggang paboritong kanta.",
+    pathBody: "Mula Hangul basics patungo sa mga salita, laro, mahabang teksto, at lisensiyadong K-POP challenge.",
+  }),
+  th: translated({
+    navLearn: "เรียน",
+    navGames: "เกม",
+    navProgress: "ความคืบหน้าของฉัน",
+    eyebrow: "วันละ 10 นาที · เหมาะสำหรับผู้เริ่มต้น",
+    headlineTop: "พิมพ์ภาษาเกาหลี",
+    headlineBottom: "เรียนรู้ผ่านการเล่น",
+    description: "ฝึกความจำของนิ้วด้วยบทเรียนสั้นและเกมสนุกที่เปลี่ยนทุกการกดแป้นเป็นความก้าวหน้า",
+    start: "เริ่มบทเรียนวันนี้",
+    explore: "ดูเกมทั้งหมด",
+    upNext: "ถัดไป · ฝึกแป้นเหย้า",
+    practiceTitle: "ค้นหาจังหวะ ทีละแป้น",
+    practiceHint: "พิมพ์ประโยคภาษาเกาหลีด้านล่าง",
+    nextBeat: "เลือกชาเลนจ์ถัดไป",
+    nextBeatHint: "รอบสั้น ผลตอบรับทันที ภาษาเกาหลีจริง",
+    pathTitle: "จากแป้นแรกสู่เพลงโปรด",
+    pathBody: "เรียนตั้งแต่พื้นฐานฮันกึล คำศัพท์ เกม การพิมพ์ข้อความยาว ไปจนถึงชาเลนจ์ K-POP ที่ได้รับอนุญาต",
+  }),
+  id: translated({
+    navLearn: "Belajar",
+    navGames: "Game",
+    navProgress: "Progres saya",
+    eyebrow: "10 menit sehari · ramah pemula",
+    headlineTop: "Ketik bahasa Korea.",
+    headlineBottom: "Belajar sambil bermain.",
+    description: "Bangun memori otot Hangul lewat pelajaran singkat dan game seru dengan umpan balik instan.",
+    start: "Mulai pelajaran hari ini",
+    explore: "Jelajahi game",
+    upNext: "Berikutnya · Latihan baris dasar",
+    practiceTitle: "Temukan ritmenya, satu tombol setiap kali.",
+    practiceHint: "Ketik kalimat bahasa Korea di bawah",
+    nextBeat: "Pilih tantangan berikutnya.",
+    nextBeatHint: "Ronde singkat. Umpan balik instan. Bahasa Korea nyata.",
+    pathTitle: "Dari tombol pertama hingga lagu favorit.",
+    pathBody: "Mulai dari dasar Hangul, kata, game, teks panjang, hingga tantangan K-POP berlisensi.",
+  }),
+  ms: translated({
+    navLearn: "Belajar",
+    navGames: "Permainan",
+    navProgress: "Kemajuan saya",
+    eyebrow: "10 minit sehari · mesra pemula",
+    headlineTop: "Taip bahasa Korea.",
+    headlineBottom: "Belajar sambil bermain.",
+    description: "Bina ingatan jari Hangul melalui pelajaran ringkas dan permainan menyeronokkan dengan maklum balas segera.",
+    start: "Mulakan pelajaran hari ini",
+    explore: "Terokai permainan",
+    upNext: "Seterusnya · Latihan baris asas",
+    practiceTitle: "Cari rentak, satu kekunci pada satu masa.",
+    practiceHint: "Taip ayat bahasa Korea di bawah",
+    nextBeat: "Pilih cabaran seterusnya.",
+    nextBeatHint: "Pusingan ringkas. Maklum balas segera. Bahasa Korea sebenar.",
+    pathTitle: "Daripada kekunci pertama hingga lagu kegemaran.",
+    pathBody: "Ikuti asas Hangul, perkataan, permainan, teks panjang dan cabaran K-POP berlesen.",
+  }),
+  vi: translated({
+    navLearn: "Học",
+    navGames: "Trò chơi",
+    navProgress: "Tiến độ của tôi",
+    eyebrow: "10 phút mỗi ngày · phù hợp người mới",
+    headlineTop: "Gõ tiếng Hàn.",
+    headlineBottom: "Học qua trò chơi.",
+    description: "Rèn phản xạ gõ Hangul bằng bài học ngắn và trò chơi vui nhộn với phản hồi tức thì.",
+    start: "Bắt đầu bài học hôm nay",
+    explore: "Khám phá trò chơi",
+    practiceHint: "Gõ câu tiếng Hàn bên dưới",
+    nextBeat: "Chọn thử thách tiếp theo.",
+    pathTitle: "Từ phím đầu tiên đến bài hát yêu thích.",
+  }),
+  "zh-Hans": translated({
+    navLearn: "学习",
+    navGames: "游戏",
+    navProgress: "我的进度",
+    eyebrow: "每天10分钟 · 新手友好",
+    headlineTop: "输入韩语。",
+    headlineBottom: "边玩边学。",
+    description: "通过短课程和趣味游戏，逐步建立韩文打字的肌肉记忆。",
+    start: "开始今天的课程",
+    explore: "探索游戏",
+    practiceHint: "输入下方的韩语句子",
+    nextBeat: "选择下一个挑战。",
+    pathTitle: "从第一个按键到你最爱的歌曲。",
+  }),
+  "zh-Hant": translated({
+    navLearn: "學習",
+    navGames: "遊戲",
+    navProgress: "我的進度",
+    eyebrow: "每天10分鐘 · 新手友善",
+    headlineTop: "輸入韓語。",
+    headlineBottom: "邊玩邊學。",
+    description: "透過短課程和趣味遊戲，逐步建立韓文打字的肌肉記憶。",
+    start: "開始今天的課程",
+    explore: "探索遊戲",
+    practiceHint: "輸入下方的韓語句子",
+    nextBeat: "選擇下一個挑戰。",
+    pathTitle: "從第一個按鍵到你最愛的歌曲。",
+  }),
+  hi: translated({
+    navLearn: "सीखें",
+    navGames: "गेम",
+    navProgress: "मेरी प्रगति",
+    eyebrow: "रोज़ 10 मिनट · शुरुआती लोगों के लिए",
+    headlineTop: "कोरियाई टाइप करें।",
+    headlineBottom: "खेलते हुए सीखें।",
+    description: "छोटे पाठों और मज़ेदार खेलों से हंगुल टाइपिंग की मसल मेमोरी बनाएँ।",
+    start: "आज का पाठ शुरू करें",
+    explore: "गेम देखें",
+  }),
+  bn: translated({
+    navLearn: "শিখুন",
+    navGames: "গেম",
+    navProgress: "আমার অগ্রগতি",
+    eyebrow: "প্রতিদিন ১০ মিনিট · নতুনদের জন্য",
+    headlineTop: "কোরিয়ান টাইপ করুন।",
+    headlineBottom: "খেলতে খেলতে শিখুন।",
+    description: "ছোট পাঠ ও মজার গেমের মাধ্যমে হাঙ্গুল টাইপিংয়ের দক্ষতা গড়ে তুলুন।",
+    start: "আজকের পাঠ শুরু করুন",
+    explore: "গেম দেখুন",
+  }),
+  ta: translated({
+    navLearn: "கற்க",
+    navGames: "விளையாட்டுகள்",
+    navProgress: "என் முன்னேற்றம்",
+    eyebrow: "தினமும் 10 நிமிடம் · தொடக்கநிலைக்கு ஏற்றது",
+    headlineTop: "கொரிய மொழியை தட்டச்சு செய்யுங்கள்.",
+    headlineBottom: "விளையாடிக் கற்றுக்கொள்ளுங்கள்.",
+    description: "சிறிய பாடங்கள் மற்றும் வேடிக்கையான விளையாட்டுகள் மூலம் ஹங்குல் தட்டச்சைப் பழகுங்கள்.",
+    start: "இன்றைய பாடத்தை தொடங்குங்கள்",
+    explore: "விளையாட்டுகளை காணுங்கள்",
+  }),
+  tr: translated({
+    navLearn: "Öğren",
+    navGames: "Oyunlar",
+    navProgress: "İlerlemem",
+    eyebrow: "Günde 10 dakika · başlangıç dostu",
+    headlineTop: "Korece yaz.",
+    headlineBottom: "Oynayarak öğren.",
+    description: "Kısa dersler ve eğlenceli oyunlarla Hangul yazma refleksini geliştir.",
+    start: "Bugünkü derse başla",
+    explore: "Oyunları keşfet",
+  }),
+  ru: translated({
+    navLearn: "Учиться",
+    navGames: "Игры",
+    navProgress: "Мой прогресс",
+    eyebrow: "10 минут в день · для начинающих",
+    headlineTop: "Печатайте по-корейски.",
+    headlineBottom: "Учитесь играя.",
+    description: "Развивайте навык печати на хангыле с короткими уроками и увлекательными играми.",
+    start: "Начать сегодняшний урок",
+    explore: "Смотреть игры",
+  }),
+  de: translated({
+    navLearn: "Lernen",
+    navGames: "Spiele",
+    navProgress: "Mein Fortschritt",
+    eyebrow: "10 Minuten täglich · für Anfänger",
+    headlineTop: "Tippe Koreanisch.",
+    headlineBottom: "Lerne spielerisch.",
+    description: "Trainiere Hangul-Tippen mit kurzen Lektionen und unterhaltsamen Spielen.",
+    start: "Heutige Lektion starten",
+    explore: "Spiele entdecken",
+  }),
+  it: translated({
+    navLearn: "Impara",
+    navGames: "Giochi",
+    navProgress: "I miei progressi",
+    eyebrow: "10 minuti al giorno · per principianti",
+    headlineTop: "Scrivi in coreano.",
+    headlineBottom: "Impara giocando.",
+    description: "Allena la digitazione Hangul con brevi lezioni e giochi divertenti.",
+    start: "Inizia la lezione di oggi",
+    explore: "Scopri i giochi",
+  }),
+  pl: translated({
+    navLearn: "Nauka",
+    navGames: "Gry",
+    navProgress: "Moje postępy",
+    eyebrow: "10 minut dziennie · dla początkujących",
+    headlineTop: "Pisz po koreańsku.",
+    headlineBottom: "Ucz się przez zabawę.",
+    description: "Ćwicz pisanie w Hangulu dzięki krótkim lekcjom i ciekawym grom.",
+    start: "Rozpocznij dzisiejszą lekcję",
+    explore: "Zobacz gry",
+  }),
+  nl: translated({
+    navLearn: "Leren",
+    navGames: "Spellen",
+    navProgress: "Mijn voortgang",
+    eyebrow: "10 minuten per dag · voor beginners",
+    headlineTop: "Typ Koreaans.",
+    headlineBottom: "Leer spelenderwijs.",
+    description: "Bouw Hangul-typevaardigheid op met korte lessen en leuke spellen.",
+    start: "Start de les van vandaag",
+    explore: "Bekijk spellen",
+  }),
+  my: translated({
+    navLearn: "လေ့လာရန်",
+    navGames: "ဂိမ်းများ",
+    navProgress: "ကျွန်ုပ်၏တိုးတက်မှု",
+    eyebrow: "တစ်နေ့ ၁၀ မိနစ် · စတင်သူများအတွက်",
+    headlineTop: "ကိုရီးယားစာ ရိုက်ပါ။",
+    headlineBottom: "ကစားရင်း သင်ယူပါ။",
+    description: "တိုတောင်းသောသင်ခန်းစာများနှင့် ပျော်စရာဂိမ်းများဖြင့် ဟန်ဂုလ်စာရိုက်လေ့ကျင့်ပါ။",
+    start: "ယနေ့သင်ခန်းစာစတင်ရန်",
+    explore: "ဂိမ်းများကြည့်ရန်",
+  }),
+  km: translated({
+    navLearn: "រៀន",
+    navGames: "ហ្គេម",
+    navProgress: "វឌ្ឍនភាពរបស់ខ្ញុំ",
+    eyebrow: "១០ នាទីក្នុងមួយថ្ងៃ · សម្រាប់អ្នកចាប់ផ្តើម",
+    headlineTop: "វាយអក្សរកូរ៉េ។",
+    headlineBottom: "រៀនតាមរយៈការលេង។",
+    description: "ហាត់វាយអក្សរហាន់គុលជាមួយមេរៀនខ្លី និងហ្គេមសប្បាយៗ។",
+    start: "ចាប់ផ្តើមមេរៀនថ្ងៃនេះ",
+    explore: "មើលហ្គេម",
+  }),
+  lo: translated({
+    navLearn: "ຮຽນ",
+    navGames: "ເກມ",
+    navProgress: "ຄວາມຄືບໜ້າຂອງຂ້ອຍ",
+    eyebrow: "10 ນາທີຕໍ່ມື້ · ເໝາະສຳລັບຜູ້ເລີ່ມ",
+    headlineTop: "ພິມພາສາເກົາຫຼີ.",
+    headlineBottom: "ຮຽນຜ່ານການຫຼິ້ນ.",
+    description: "ຝຶກພິມຮັນກຶນດ້ວຍບົດຮຽນສັ້ນ ແລະເກມທີ່ມ່ວນ.",
+    start: "ເລີ່ມບົດຮຽນມື້ນີ້",
+    explore: "ເບິ່ງເກມ",
+  }),
+  ne: translated({
+    navLearn: "सिक्नुहोस्",
+    navGames: "खेलहरू",
+    navProgress: "मेरो प्रगति",
+    eyebrow: "दिनको १० मिनेट · नयाँ सिक्नेका लागि",
+    headlineTop: "कोरियन टाइप गर्नुहोस्।",
+    headlineBottom: "खेल्दै सिक्नुहोस्।",
+    description: "छोटो पाठ र रमाइला खेलमार्फत हाङ्गुल टाइपिङ अभ्यास गर्नुहोस्।",
+    start: "आजको पाठ सुरु गर्नुहोस्",
+    explore: "खेलहरू हेर्नुहोस्",
+  }),
+  si: translated({
+    navLearn: "ඉගෙන ගන්න",
+    navGames: "ක්‍රීඩා",
+    navProgress: "මගේ ප්‍රගතිය",
+    eyebrow: "දිනකට මිනිත්තු 10 · ආරම්භකයින් සඳහා",
+    headlineTop: "කොරියානු ටයිප් කරන්න.",
+    headlineBottom: "ක්‍රීඩා කරමින් ඉගෙන ගන්න.",
+    description: "කෙටි පාඩම් සහ විනෝද ක්‍රීඩා සමඟ හන්ගුල් ටයිප් කිරීම පුහුණු වන්න.",
+    start: "අද පාඩම අරඹන්න",
+    explore: "ක්‍රීඩා බලන්න",
+  }),
+  kk: translated({
+    navLearn: "Үйрену",
+    navGames: "Ойындар",
+    navProgress: "Менің жетістігім",
+    eyebrow: "Күніне 10 минут · бастаушыларға",
+    headlineTop: "Корейше теріңіз.",
+    headlineBottom: "Ойнап үйреніңіз.",
+    description: "Қысқа сабақтар мен қызықты ойындар арқылы хангыль теруді жаттықтырыңыз.",
+    start: "Бүгінгі сабақты бастау",
+    explore: "Ойындарды көру",
+  }),
+  uz: translated({
+    navLearn: "O‘rganish",
+    navGames: "O‘yinlar",
+    navProgress: "Mening natijam",
+    eyebrow: "Kuniga 10 daqiqa · yangi boshlovchilar uchun",
+    headlineTop: "Koreyscha yozing.",
+    headlineBottom: "O‘ynab o‘rganing.",
+    description: "Qisqa darslar va qiziqarli o‘yinlar orqali Hangul yozishni mashq qiling.",
+    start: "Bugungi darsni boshlash",
+    explore: "O‘yinlarni ko‘rish",
+  }),
+  mn: translated({
+    navLearn: "Сурах",
+    navGames: "Тоглоом",
+    navProgress: "Миний ахиц",
+    eyebrow: "Өдөрт 10 минут · анхан шатанд",
+    headlineTop: "Солонгосоор бичээрэй.",
+    headlineBottom: "Тоглонгоо сураарай.",
+    description: "Богино хичээл, хөгжилтэй тоглоомоор Хангыл шивэх чадвараа хөгжүүлээрэй.",
+    start: "Өнөөдрийн хичээлийг эхлүүлэх",
+    explore: "Тоглоом үзэх",
+  }),
 };
+
+const localeGroups: Array<{ label: string; options: Array<{ value: Locale; label: string }> }> = [
+  {
+    label: "Global",
+    options: [
+      { value: "en", label: "English" },
+      { value: "ko", label: "한국어" },
+      { value: "es", label: "Español" },
+      { value: "pt-BR", label: "Português (Brasil)" },
+      { value: "fr", label: "Français" },
+    ],
+  },
+  {
+    label: "East Asia",
+    options: [
+      { value: "ja", label: "日本語" },
+      { value: "zh-Hans", label: "简体中文" },
+      { value: "zh-Hant", label: "繁體中文" },
+      { value: "mn", label: "Монгол" },
+    ],
+  },
+  {
+    label: "Southeast Asia",
+    options: [
+      { value: "fil", label: "Filipino" },
+      { value: "th", label: "ไทย" },
+      { value: "id", label: "Bahasa Indonesia" },
+      { value: "ms", label: "Bahasa Melayu" },
+      { value: "vi", label: "Tiếng Việt" },
+      { value: "my", label: "မြန်မာ" },
+      { value: "km", label: "ខ្មែរ" },
+      { value: "lo", label: "ລາວ" },
+    ],
+  },
+  {
+    label: "South Asia",
+    options: [
+      { value: "hi", label: "हिन्दी" },
+      { value: "ur", label: "اردو" },
+      { value: "bn", label: "বাংলা" },
+      { value: "ta", label: "தமிழ்" },
+      { value: "ne", label: "नेपाली" },
+      { value: "si", label: "සිංහල" },
+    ],
+  },
+  {
+    label: "Middle East & Central Asia",
+    options: [
+      { value: "ar", label: "العربية" },
+      { value: "fa", label: "فارسی" },
+      { value: "tr", label: "Türkçe" },
+      { value: "kk", label: "Қазақша" },
+      { value: "uz", label: "O‘zbekcha" },
+      { value: "ru", label: "Русский" },
+    ],
+  },
+  {
+    label: "Europe",
+    options: [
+      { value: "de", label: "Deutsch" },
+      { value: "it", label: "Italiano" },
+      { value: "pl", label: "Polski" },
+      { value: "nl", label: "Nederlands" },
+    ],
+  },
+];
+
+const rtlLocales = new Set<Locale>(["ar", "fa", "ur"]);
+
+const localeByBrowserCode: Record<string, Locale> = {
+  en: "en", ko: "ko", es: "es", pt: "pt-BR", ja: "ja", zh: "zh-Hans",
+  fr: "fr", de: "de", it: "it", pl: "pl", nl: "nl", ru: "ru", tr: "tr",
+  ar: "ar", fa: "fa", ur: "ur", fil: "fil", tl: "fil", th: "th", id: "id",
+  ms: "ms", vi: "vi", my: "my", km: "km", lo: "lo", hi: "hi", bn: "bn",
+  ta: "ta", ne: "ne", si: "si", kk: "kk", uz: "uz", mn: "mn",
+};
+
+function resolveBrowserLocale(languages: readonly string[]): Locale {
+  for (const language of languages) {
+    const normalized = language.toLowerCase();
+    if (normalized === "zh-tw" || normalized === "zh-hk" || normalized === "zh-mo" || normalized.includes("hant")) {
+      return "zh-Hant";
+    }
+    if (normalized === "pt-br") return "pt-BR";
+    const matched = localeByBrowserCode[normalized.split("-")[0]];
+    if (matched) return matched;
+  }
+  return "en";
+}
 
 const targetSentence = "저는 음악을 좋아해요.";
 const guideKeys = ["ㅈ", "ㅓ", "ㄴ", "ㅡ", "ㄴ", "ㅇ", "ㅡ", "ㅁ", "ㅇ", "ㅏ", "ㄱ"];
@@ -239,8 +683,26 @@ export default function Home() {
   const dailyProgress = Math.min(100, 65 + Math.round(sentenceProgress * 0.15));
 
   useEffect(() => {
+    try {
+      const savedLocale = window.localStorage.getItem("hangeul-pop-locale");
+      if (savedLocale && savedLocale in copy) {
+        setLocale(savedLocale as Locale);
+      } else {
+        setLocale(resolveBrowserLocale(navigator.languages));
+      }
+    } catch {
+      setLocale(resolveBrowserLocale(navigator.languages));
+    }
+  }, []);
+
+  useEffect(() => {
     document.documentElement.lang = locale;
-    document.documentElement.dir = locale === "ar" ? "rtl" : "ltr";
+    document.documentElement.dir = rtlLocales.has(locale) ? "rtl" : "ltr";
+    try {
+      window.localStorage.setItem("hangeul-pop-locale", locale);
+    } catch {
+      // The language still applies for this session when storage is unavailable.
+    }
   }, [locale]);
 
   function submitTetris(event: FormEvent<HTMLFormElement>) {
@@ -261,7 +723,7 @@ export default function Home() {
   }
 
   return (
-    <main className="site-shell" dir={locale === "ar" ? "rtl" : "ltr"}>
+    <main className="site-shell" dir={rtlLocales.has(locale) ? "rtl" : "ltr"}>
       <a className="skip-link" href="#practice">Skip to practice</a>
 
       <header className="topbar" aria-label="Primary navigation">
@@ -277,12 +739,13 @@ export default function Home() {
         <label className="language-picker">
           <span className="sr-only">Interface language</span>
           <select value={locale} onChange={(event) => setLocale(event.target.value as Locale)}>
-            <option value="en">English</option>
-            <option value="ko">한국어</option>
-            <option value="es">Español</option>
-            <option value="ja">日本語</option>
-            <option value="fr">Français</option>
-            <option value="ar">العربية</option>
+            {localeGroups.map((group) => (
+              <optgroup label={group.label} key={group.label}>
+                {group.options.map((option) => (
+                  <option value={option.value} key={option.value}>{option.label}</option>
+                ))}
+              </optgroup>
+            ))}
           </select>
         </label>
       </header>
@@ -303,7 +766,7 @@ export default function Home() {
           </div>
           <div className="trust-row" aria-label="Service highlights">
             <span><b>14</b> learning levels</span>
-            <span><b>6</b> interface languages</span>
+            <span><b>{Object.keys(copy).length}</b> interface languages</span>
             <span><b>0</b> sign-up steps</span>
           </div>
         </div>

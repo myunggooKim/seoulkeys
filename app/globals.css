@@ -175,7 +175,7 @@ footer {
 }
 
 .language-picker select {
-  min-width: 138px;
+  min-width: 184px;
   appearance: none;
   padding: 11px 34px 11px 34px;
   border: 1.5px solid var(--line);
@@ -1201,7 +1201,7 @@ footer > div {
   }
 
   .language-picker select {
-    min-width: 116px;
+    min-width: 148px;
     padding-inline: 30px 20px;
   }
 
