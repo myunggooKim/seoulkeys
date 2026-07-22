@@ -816,7 +816,7 @@ footer {
 
 .activity-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -844,8 +844,12 @@ footer {
 .activity-card.purple .activity-number { background: var(--purple); color: white; }
 .activity-card.pink .activity-number { background: var(--pink); }
 .activity-card.cyan .activity-number { background: var(--cyan); }
+.activity-card.orange .activity-number { background: #ff9a62; }
 .activity-card.stripe {
   background: repeating-linear-gradient(130deg, #ffe7f0 0 18px, #fff5b9 18px 36px);
+}
+.activity-card.sunset {
+  background: linear-gradient(145deg, #fff3c7, #ffd4df 54%, #dcd2ff);
 }
 
 .activity-number {
@@ -947,6 +951,12 @@ footer {
 
 .game-demo .button {
   margin-block-start: 12px;
+}
+
+.game-demo .button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+  transform: none;
 }
 
 .tetris-board {
@@ -1139,6 +1149,206 @@ footer {
   color: var(--muted);
   font-size: 10px;
   font-weight: 750;
+}
+
+.screen-demo,
+.travel-demo {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(300px, 0.9fr) minmax(340px, 1.1fr);
+  align-items: stretch;
+  gap: clamp(24px, 4vw, 54px);
+}
+
+.scene-frame {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  min-height: 310px;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 24px;
+  border: 3px solid var(--ink);
+  border-radius: 22px;
+  background: #17172b;
+  box-shadow: 7px 7px 0 var(--pink);
+  color: white;
+}
+
+.scene-genre,
+.travel-situation {
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 9px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.scene-visual {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.scene-visual > b {
+  position: relative;
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.18);
+  font-size: clamp(46px, 8vw, 88px);
+  letter-spacing: -0.08em;
+}
+
+.spotlight {
+  position: absolute;
+  width: 230px;
+  height: 230px;
+  border-radius: 50%;
+  filter: blur(8px);
+  opacity: 0.55;
+}
+
+.spotlight-one {
+  inset-block-start: -70px;
+  inset-inline-start: -40px;
+  background: var(--purple);
+}
+
+.spotlight-two {
+  inset-block-start: 20px;
+  inset-inline-end: -80px;
+  background: var(--pink);
+}
+
+.scene-frame > *:not(.scene-visual) {
+  position: relative;
+  z-index: 2;
+}
+
+.scene-frame blockquote,
+.travel-scene blockquote {
+  margin: 18px 0 8px;
+  font-size: clamp(24px, 3vw, 38px);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  line-height: 1.25;
+}
+
+.scene-frame > p {
+  margin: 0 !important;
+  color: rgba(255, 255, 255, 0.72) !important;
+  font-size: 12px !important;
+}
+
+.scene-form,
+.travel-form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.scene-form label,
+.travel-form label {
+  margin-block: 12px 7px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.scene-form textarea,
+.travel-form input {
+  width: 100%;
+  padding: 13px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--ivory);
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.scene-form textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.scene-result {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-block-start: 9px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.scene-result .complete {
+  color: #0f7656;
+}
+
+.travel-scene {
+  min-height: 310px;
+  padding: 22px;
+  border: 3px solid var(--ink);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(133, 255, 75, 0.82) 0 54px, transparent 55px),
+    linear-gradient(145deg, #fff1a6, #ffcfb2 52%, #b8f3ff);
+  box-shadow: 7px 7px 0 var(--cyan);
+}
+
+.travel-mode-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-block-end: 32px;
+}
+
+.travel-mode-tabs button {
+  padding: 8px 10px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.travel-mode-tabs button.active {
+  background: var(--ink);
+  color: white;
+}
+
+.travel-scene blockquote {
+  color: var(--ink);
+}
+
+.travel-scene > p {
+  margin: 0 !important;
+  color: #51514b !important;
+  font-size: 13px !important;
+}
+
+.phrase-dots {
+  display: flex;
+  gap: 7px;
+  margin-block-start: 26px;
+}
+
+.phrase-dots button {
+  width: 25px;
+  height: 8px;
+  padding: 0;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+}
+
+.phrase-dots button.active {
+  width: 48px;
+  background: var(--purple);
 }
 
 .learning-path {
@@ -1373,6 +1583,8 @@ footer > div {
 
   .game-demo,
   .kpop-demo,
+  .screen-demo,
+  .travel-demo,
   .free-note {
     grid-template-columns: 1fr;
   }

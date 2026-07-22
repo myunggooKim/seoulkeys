@@ -8,7 +8,8 @@ type Locale =
   | "ar" | "fa" | "ur" | "fil" | "th" | "id" | "ms" | "vi"
   | "my" | "km" | "lo" | "hi" | "bn" | "ta" | "ne" | "si"
   | "kk" | "uz" | "mn";
-type ActivityId = "home" | "tetris" | "missing" | "crossword" | "kpop";
+type ActivityId = "home" | "tetris" | "missing" | "crossword" | "travel" | "kpop" | "screen";
+type TravelMode = "inKorea" | "welcome";
 type KeyboardLayout = "qwerty" | "azerty" | "qwertz";
 type KeyboardRow = "top" | "home" | "bottom";
 
@@ -761,6 +762,37 @@ const tetrisWords = [
   { korean: "한국", meaning: "Korea" },
 ];
 
+const screenPracticeLines = [
+  {
+    korean: "오늘도 잘해냈어. 내일은 더 빛날 거야.",
+    translation: "You did well today. Tomorrow will shine even brighter.",
+    genre: "Healing drama",
+  },
+  {
+    korean: "포기하지 마. 우리의 이야기는 아직 끝나지 않았어.",
+    translation: "Don’t give up. Our story isn’t over yet.",
+    genre: "Youth movie",
+  },
+  {
+    korean: "어디에 있든, 다시 만날 사람은 결국 만나게 돼.",
+    translation: "Wherever we are, people meant to meet will find each other again.",
+    genre: "Romance drama",
+  },
+];
+
+const travelPhrases: Record<TravelMode, Array<{ korean: string; meaning: string; situation: string }>> = {
+  inKorea: [
+    { korean: "화장실이 어디예요?", meaning: "Where is the restroom?", situation: "Finding a place" },
+    { korean: "이 주소로 가 주세요.", meaning: "Please take me to this address.", situation: "Taking a taxi" },
+    { korean: "이거 얼마예요?", meaning: "How much is this?", situation: "Shopping" },
+  ],
+  welcome: [
+    { korean: "한국에서 오셨어요?", meaning: "Are you from Korea?", situation: "Starting a conversation" },
+    { korean: "제가 도와드릴까요?", meaning: "May I help you?", situation: "Offering help" },
+    { korean: "우리 동네 맛집을 알려 드릴게요.", meaning: "I’ll show you a good local restaurant.", situation: "Sharing a local tip" },
+  ],
+};
+
 const learningLevels = [
   "Hangul principle",
   "Home row",
@@ -774,8 +806,10 @@ const learningLevels = [
   "Phrases",
   "Sentences",
   "Dictation",
+  "Travel & local conversations",
   "Long-form",
   "K-POP challenge",
+  "K-Drama & movie lines",
 ];
 
 const activities: Array<{
@@ -824,6 +858,15 @@ const activities: Array<{
     accent: "cyan",
   },
   {
+    id: "travel",
+    kicker: "REAL-LIFE KOREAN · 3 MIN",
+    title: "Travel & Say Hello",
+    korean: "여행 회화·한국인에게 말 걸기",
+    description: "Travel in Korea or welcome Korean visitors in your country.",
+    time: "2 paths · 6 scenes",
+    accent: "orange",
+  },
+  {
     id: "kpop",
     kicker: "REWARD CHALLENGE",
     title: "Licensed K-POP Lyrics",
@@ -831,6 +874,15 @@ const activities: Array<{
     description: "Unlock official lyric typing after long-form Level 5.",
     time: "Locked · Level 4/5",
     accent: "stripe",
+  },
+  {
+    id: "screen",
+    kicker: "SCENE CHALLENGE",
+    title: "K-Drama & Movie Lines",
+    korean: "K-드라마·영화 명대사",
+    description: "Type memorable licensed dialogue, one dramatic scene at a time.",
+    time: "Preview · 3 scenes",
+    accent: "sunset",
   },
 ];
 
@@ -846,6 +898,11 @@ export default function Home() {
   const [tetrisMessage, setTetrisMessage] = useState("Type the falling word.");
   const [missingAnswer, setMissingAnswer] = useState("");
   const [crosswordAnswer, setCrosswordAnswer] = useState("");
+  const [screenInput, setScreenInput] = useState("");
+  const [screenIndex, setScreenIndex] = useState(0);
+  const [travelMode, setTravelMode] = useState<TravelMode>("inKorea");
+  const [travelIndex, setTravelIndex] = useState(0);
+  const [travelInput, setTravelInput] = useState("");
 
   const t = copy[locale];
   const keyboardText = keyboardHelpCopy[locale] ?? englishKeyboardCopy;
@@ -861,6 +918,17 @@ export default function Home() {
   const sentenceProgress = Math.min(100, Math.round((typedChars.length / targetChars.length) * 100));
   const sentenceComplete = typed === targetSentence;
   const dailyProgress = Math.min(100, 65 + Math.round(sentenceProgress * 0.15));
+  const currentScreenLine = screenPracticeLines[screenIndex % screenPracticeLines.length];
+  const screenComplete = screenInput.trim() === currentScreenLine.korean;
+  const screenChars = Array.from(screenInput);
+  const screenTargetChars = Array.from(currentScreenLine.korean);
+  const screenCorrectChars = screenChars.reduce(
+    (total, character, index) => total + (character === screenTargetChars[index] ? 1 : 0),
+    0,
+  );
+  const screenAccuracy = screenChars.length === 0 ? 100 : Math.round((screenCorrectChars / screenChars.length) * 100);
+  const currentTravelPhrase = travelPhrases[travelMode][travelIndex % travelPhrases[travelMode].length];
+  const travelComplete = travelInput.trim() === currentTravelPhrase.korean;
 
   useEffect(() => {
     try {
@@ -957,7 +1025,7 @@ export default function Home() {
             <a className="button button-secondary" href="#games">{t.explore}</a>
           </div>
           <div className="trust-row" aria-label="Service highlights">
-            <span><b>14</b> learning levels</span>
+            <span><b>{learningLevels.length}</b> learning levels</span>
             <span><b>{Object.keys(copy).length}</b> interface languages</span>
             <span><b>0</b> sign-up steps</span>
           </div>
@@ -1177,6 +1245,83 @@ export default function Home() {
             </>
           )}
 
+          {activeActivity === "travel" && (
+            <div className="travel-demo">
+              <div className="travel-scene">
+                <div className="travel-mode-tabs" role="group" aria-label="Travel conversation mode">
+                  <button
+                    type="button"
+                    className={travelMode === "inKorea" ? "active" : ""}
+                    onClick={() => {
+                      setTravelMode("inKorea");
+                      setTravelIndex(0);
+                      setTravelInput("");
+                    }}
+                  >
+                    ✈ Travel in Korea
+                  </button>
+                  <button
+                    type="button"
+                    className={travelMode === "welcome" ? "active" : ""}
+                    onClick={() => {
+                      setTravelMode("welcome");
+                      setTravelIndex(0);
+                      setTravelInput("");
+                    }}
+                  >
+                    👋 Welcome Koreans
+                  </button>
+                </div>
+                <span className="travel-situation">{currentTravelPhrase.situation}</span>
+                <blockquote lang="ko">{currentTravelPhrase.korean}</blockquote>
+                <p>{currentTravelPhrase.meaning}</p>
+                <div className="phrase-dots" aria-label={`Phrase ${travelIndex + 1} of ${travelPhrases[travelMode].length}`}>
+                  {travelPhrases[travelMode].map((phrase, index) => (
+                    <button
+                      type="button"
+                      className={index === travelIndex ? "active" : ""}
+                      aria-label={`Open phrase ${index + 1}`}
+                      onClick={() => {
+                        setTravelIndex(index);
+                        setTravelInput("");
+                      }}
+                      key={phrase.korean}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="travel-form">
+                <p className="demo-label">REAL-LIFE DIALOGUE · PHRASE {travelIndex + 1}/3</p>
+                <h3>Type it, then say it.</h3>
+                <p>Copy the Korean phrase to build typing memory. A later speaking lesson can add native audio and pronunciation feedback.</p>
+                <label htmlFor="travel-phrase-input">Korean phrase</label>
+                <input
+                  id="travel-phrase-input"
+                  lang="ko"
+                  value={travelInput}
+                  onChange={(event) => setTravelInput(event.target.value)}
+                  placeholder="한국어 문장을 입력하세요"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <p className={`form-message ${travelComplete ? "success" : ""}`} aria-live="polite">
+                  {!travelInput ? "Type the phrase exactly as shown." : travelComplete ? "Perfect — you’re ready to use it!" : "Keep going. Check the spacing and punctuation."}
+                </p>
+                <button
+                  className="button button-primary"
+                  type="button"
+                  disabled={!travelComplete}
+                  onClick={() => {
+                    setTravelIndex((index) => (index + 1) % travelPhrases[travelMode].length);
+                    setTravelInput("");
+                  }}
+                >
+                  Next phrase <span aria-hidden="true">→</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {activeActivity === "kpop" && (
             <div className="kpop-demo">
               <div className="record-disc" aria-hidden="true"><span>ㅎ</span></div>
@@ -1189,6 +1334,50 @@ export default function Home() {
                 <div><span>Long-form typing</span><b>Level 4 / 5</b></div>
                 <div className="meter-track" role="progressbar" aria-label="K-POP challenge unlock" aria-valuemin={0} aria-valuemax={5} aria-valuenow={4}><span style={{ width: "80%" }} /></div>
                 <small>Next: finish 2 paragraphs above 95% accuracy</small>
+              </div>
+            </div>
+          )}
+
+          {activeActivity === "screen" && (
+            <div className="screen-demo">
+              <div className="scene-frame">
+                <span className="scene-genre">{currentScreenLine.genre}</span>
+                <div className="scene-visual" aria-hidden="true">
+                  <span className="spotlight spotlight-one" />
+                  <span className="spotlight spotlight-two" />
+                  <b>SCENE {String(screenIndex + 1).padStart(2, "0")}</b>
+                </div>
+                <blockquote lang="ko">“{currentScreenLine.korean}”</blockquote>
+                <p>{currentScreenLine.translation}</p>
+              </div>
+              <div className="scene-form">
+                <p className="demo-label">ORIGINAL PRACTICE DIALOGUE · LICENSE-SAFE PREVIEW</p>
+                <h3>Type the scene. Feel the emotion.</h3>
+                <p>Practice with original dialogue now. Quotes from real dramas and movies are added only after official permission.</p>
+                <label htmlFor="screen-line-input">Korean dialogue</label>
+                <textarea
+                  id="screen-line-input"
+                  lang="ko"
+                  value={screenInput}
+                  onChange={(event) => setScreenInput(event.target.value)}
+                  placeholder="명대사를 그대로 입력하세요"
+                  spellCheck={false}
+                />
+                <div className="scene-result" aria-live="polite">
+                  <span>{screenChars.length} / {screenTargetChars.length}</span>
+                  <b className={screenComplete ? "complete" : ""}>{screenComplete ? "Scene complete!" : `${screenAccuracy}% accurate`}</b>
+                </div>
+                <button
+                  className="button button-primary"
+                  type="button"
+                  disabled={!screenComplete}
+                  onClick={() => {
+                    setScreenIndex((index) => (index + 1) % screenPracticeLines.length);
+                    setScreenInput("");
+                  }}
+                >
+                  Next scene <span aria-hidden="true">→</span>
+                </button>
               </div>
             </div>
           )}
@@ -1208,7 +1397,7 @@ export default function Home() {
         </div>
         <ol className="level-track">
           {learningLevels.map((level, index) => (
-            <li className={index < 4 ? "done" : index === 4 ? "current" : index === learningLevels.length - 1 ? "reward" : ""} key={level}>
+            <li className={index < 4 ? "done" : index === 4 ? "current" : index >= learningLevels.length - 2 ? "reward" : ""} key={level}>
               <span>{index + 1}</span>
               <p>{level}</p>
             </li>

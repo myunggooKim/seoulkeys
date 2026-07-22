@@ -40,6 +40,10 @@ test("server-renders the Hangeul Pop learning experience", async () => {
   assert.match(html, /Português \(Brasil\)/);
   assert.match(html, /العربية/);
   assert.match(html, /ไทย/);
+  assert.match(html, /K-Drama &amp; Movie Lines/);
+  assert.match(html, /K-드라마·영화 명대사/);
+  assert.match(html, /Travel &amp; Say Hello/);
+  assert.match(html, /여행 회화·한국인에게 말 걸기/);
 });
 
 test("keeps local-key mappings and responsive keyboard guidance in source", async () => {
@@ -53,7 +57,13 @@ test("keeps local-key mappings and responsive keyboard guidance in source", asyn
   assert.match(page, /hangeul-pop-keyboard-layout/);
   assert.match(page, /activePracticeKey\?\.code === key\.code/);
   assert.match(page, /const keyboardHelpCopy/);
+  assert.match(page, /const screenPracticeLines/);
+  assert.match(page, /const travelPhrases/);
+  assert.match(page, /ORIGINAL PRACTICE DIALOGUE · LICENSE-SAFE PREVIEW/);
+  assert.match(page, /Welcome Koreans/);
   assert.match(css, /\.keyboard-map/);
   assert.match(css, /\.keyboard-row kbd\.active/);
   assert.match(css, /\.keyboard-tools/);
+  assert.match(css, /\.screen-demo/);
+  assert.match(css, /\.travel-demo/);
 });
