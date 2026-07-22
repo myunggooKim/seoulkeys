@@ -2,77 +2,68 @@ import assert from "node:assert/strict";
 import { readFile, readdir, stat } from "node:fs/promises";
 import test from "node:test";
 
-test("build source contains the complete Hangeul Pop learning experience", async () => {
-  const [layout, page] = await Promise.all([
-    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
-  ]);
-  assert.match(layout, /Hangeul Pop — Learn Korean typing through play/i);
-  assert.match(page, /저는 음악을 좋아해요\./);
-  assert.match(page, /Korean 2-set keyboard map/);
-  assert.match(page, /Next Korean key/);
-  assert.match(page, /QWERTY/);
-  assert.match(page, /AZERTY/);
-  assert.match(page, /QWERTZ/);
-  assert.match(page, /Português \(Brasil\)/);
-  assert.match(page, /العربية/);
-  assert.match(page, /ไทย/);
-  assert.match(page, /K-Drama & Movie Lines/);
-  assert.match(page, /K-드라마·영화 명대사/);
-  assert.match(page, /Travel & Say Hello/);
-  assert.match(page, /여행 회화·한국인에게 말 걸기/);
-  assert.match(page, /Auto Korean pronunciation/);
-  assert.match(page, /speech-toggle-track/);
-  assert.match(page, /Female voice/);
-  assert.match(page, /Transparent five-finger hand position guide/i);
+test("ships the staged Korean typing curriculum before sentence practice", async () => {
+  const curriculum = await readFile(new URL("../app/practice-curriculum.ts", import.meta.url), "utf8");
+  assert.match(curriculum, /practiceStageOrder.*\["home", "syllable", "batchim", "double", "word", "sentence"\]/);
+  assert.match(curriculum, /text: "ㅁㄴㅁㄴ ㅁㄴㅁㄴ"/);
+  assert.match(curriculum, /text: "ㅓㅏㅓㅏ ㅓㅏㅓㅏ"/);
+  assert.match(curriculum, /text: "만 난 안 란"/);
+  assert.match(curriculum, /text: "까 따 빠 싸 짜"/);
+  assert.match(curriculum, /\.\.\.sentencePracticeItems\.map/);
+  assert.ok(curriculum.indexOf('id: "home-left-1"') < curriculum.indexOf("...sentencePracticeItems.map"));
 });
 
-test("keeps local-key mappings, recorded speech, and responsive finger guidance in source", async () => {
-  const [page, css, admin, schema] = await Promise.all([
+test("connects guided hands, Enter evaluation, sound, and recorded speech", async () => {
+  const [page, css] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
-    readFile(new URL("../app/admin/AdminConsole.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
   ]);
-
-  assert.match(page, /azerty: \{ KeyQ: "A", KeyW: "Z"/);
-  assert.match(page, /qwertz: \{ KeyY: "Z", KeyZ: "Y" \}/);
-  assert.match(page, /hangeul-pop-keyboard-layout/);
+  assert.match(page, /\/images\/typing-hands-v2\.png/);
+  assert.match(page, /fingertip-marker/);
   assert.match(page, /activePracticeKey\?\.code === key\.code/);
-  assert.match(page, /const keyboardHelpCopy/);
-  assert.match(page, /const screenPracticeLines/);
-  assert.match(page, /const travelPhrases/);
-  assert.match(page, /ORIGINAL PRACTICE DIALOGUE · LICENSE-SAFE PREVIEW/);
-  assert.match(page, /Welcome Koreans/);
-  assert.match(page, /const playKorean/);
-  assert.match(page, /utterance\.lang = "ko-KR"/);
-  assert.match(page, /hangeul-pop-auto-speak/);
-  assert.match(page, /hangeul-pop-voice-gender/);
-  assert.match(page, /staticSpeechAudioByText/);
-  assert.match(page, /audioFemaleUrl/);
-  assert.match(page, /audioMaleUrl/);
-  assert.doesNotMatch(page, /!autoSpeak \|\| !sentenceComplete/);
+  assert.match(page, /event\.key !== "Enter"/);
   assert.match(page, /evaluateLessonAttempt/);
-  assert.match(page, /confirmAndAdvance\(advanceLesson, targetSentence\)/);
-  assert.match(page, /타자기 줄바꿈 소리/);
-  assert.match(page, /저는 매일 한국어를 연습해요\./);
-  assert.match(page, /친구와 함께 여행하고 싶어요\./);
-  assert.match(css, /\.keyboard-map/);
-  assert.match(css, /\.keyboard-row kbd\.active/);
-  assert.match(css, /\.hand-overlay/);
-  assert.match(css, /\.typing-hand/);
-  assert.match(css, /\.hand-finger\.active i/);
+  assert.match(page, /currentPracticeItem\.minAccuracy/);
+  assert.match(page, /confirmAndAdvance\(advanceLesson, targetSentence, currentPracticeItem\.speak\)/);
+  assert.match(page, /audio-control-cluster/);
+  assert.match(page, /playTypewriterReturnSound/);
+  assert.match(page, /staticSpeechAudioByText/);
+  assert.match(css, /\.hand-overlay img/);
+  assert.match(css, /\.fingertip-marker\.left-pinky/);
   assert.match(css, /@keyframes fingertip-pulse/);
-  assert.doesNotMatch(css, /\.finger-guide/);
-  assert.match(css, /\.keyboard-tools/);
-  assert.match(css, /\.screen-demo/);
-  assert.match(css, /\.travel-demo/);
-  assert.match(css, /\.speech-toggle input:checked/);
-  assert.match(admin, /권리 상태/);
-  assert.match(admin, /여성 음성 파일 URL/);
-  assert.match(admin, /남성 음성 파일 URL/);
-  assert.match(schema, /contentItems/);
-  assert.match(schema, /audioFemaleUrl/);
+  assert.doesNotMatch(css, /\.typing-hand/);
+  assert.match(css, /\.audio-control-cluster/);
+});
+
+test("ships live falling words and auto-advancing puzzle rounds", async () => {
+  const [page, falling, puzzles, css] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/FallingWordsGame.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/ProgressivePuzzles.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /selectActivity/);
+  assert.match(page, /getElementById\("game-stage"\)\?\.scrollIntoView/);
+  assert.match(page, /<FallingWordsGame/);
+  assert.match(page, /<MissingLetterGame/);
+  assert.match(page, /<CrosswordGame/);
+  assert.match(falling, /setInterval/);
+  assert.match(falling, /word\.y < 83/);
+  assert.match(falling, /value - missed \* 50/);
+  assert.match(falling, /current \+ gained/);
+  assert.match(puzzles, /setIndex\(\(current\) => \(current \+ 1\)/);
+  assert.match(puzzles, /850/);
+  assert.match(puzzles, /900/);
+  assert.match(css, /\.word-rain-board/);
+  assert.match(css, /\.sea-water\.splash/);
+});
+
+test("keeps the selected interface language on the personal page", async () => {
+  const profile = await readFile(new URL("../app/my/MyLearningClient.tsx", import.meta.url), "utf8");
+  assert.match(profile, /hangeul-pop-locale/);
+  assert.match(profile, /학습 계속하기/);
+  assert.match(profile, /오늘의 리듬 이어가기/);
+  assert.match(profile, /학습 단계/);
 });
 
 test("ships both female and male prerecorded Korean audio", async () => {

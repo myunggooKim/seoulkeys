@@ -1,8 +1,11 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FallingWordsGame } from "./FallingWordsGame";
 import { decomposeHangulCharacter } from "./hangul-keyboard";
 import { evaluateLessonAttempt, type LessonEvaluation } from "./lesson-evaluation";
+import { practiceCurriculum, practiceStageLabels, practiceStageOrder, sentencePracticeItems } from "./practice-curriculum";
+import { CrosswordGame, MissingLetterGame } from "./ProgressivePuzzles";
 
 type Locale =
   | "en" | "ko" | "es" | "pt-BR" | "ja" | "zh-Hans" | "zh-Hant"
@@ -626,14 +629,6 @@ function resolveBrowserLocale(languages: readonly string[]): Locale {
   return "en";
 }
 
-const lessonSentences = [
-  "저는 음악을 좋아해요.",
-  "오늘은 기분이 좋아요.",
-  "저는 매일 한국어를 연습해요.",
-  "천천히 말씀해 주세요.",
-  "친구와 함께 여행하고 싶어요.",
-];
-
 const koreanKeyRows: Array<{ row: KeyboardRow; keys: KoreanKey[] }> = [
   {
     row: "top",
@@ -662,6 +657,7 @@ const koreanKeyRows: Array<{ row: KeyboardRow; keys: KoreanKey[] }> = [
       { jamo: "ㅓ", code: "KeyJ", row: "home" },
       { jamo: "ㅏ", code: "KeyK", row: "home" },
       { jamo: "ㅣ", code: "KeyL", row: "home" },
+      { jamo: ";", code: "Semicolon", row: "home" },
     ],
   },
   {
@@ -704,6 +700,8 @@ function sentenceToPracticeSequence(sentence: string): KoreanKey[] {
       sequence.push({ jamo: "Space", code: "Space", row: "bottom" });
     } else if (character === ".") {
       sequence.push({ jamo: ".", code: "Period", row: "bottom" });
+    } else if (character === ";") {
+      sequence.push({ jamo: ";", code: "Semicolon", row: "home" });
     } else {
       const key = keyForJamo(character);
       if (key) sequence.push(key);
@@ -722,6 +720,7 @@ const keyboardLegends: Record<KeyboardLayout, Partial<Record<string, string>>> =
 function keyboardLegend(layout: KeyboardLayout, code: string) {
   if (code === "Space") return "SPACE";
   if (code === "Period") return layout === "azerty" ? ":" : ".";
+  if (code === "Semicolon") return layout === "azerty" ? "M" : ";";
   return keyboardLegends[layout][code] ?? code.replace("Key", "");
 }
 
@@ -738,10 +737,12 @@ const fingerByCode: Record<string, string> = {
   KeyY: "right-index", KeyU: "right-index", KeyH: "right-index", KeyJ: "right-index", KeyN: "right-index", KeyM: "right-index",
   KeyI: "right-middle", KeyK: "right-middle",
   KeyO: "right-ring", KeyL: "right-ring",
-  KeyP: "right-pinky",
+  KeyP: "right-pinky", Semicolon: "right-pinky",
   Period: "right-ring",
   Space: "right-thumb",
 };
+
+const basicHomeRowCodes = new Set(["KeyA", "KeyS", "KeyD", "KeyF", "KeyJ", "KeyK", "KeyL", "Semicolon"]);
 
 function formatPracticeTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
@@ -883,49 +884,60 @@ function playTypewriterReturnSound() {
 
   const context = new AudioContextConstructor();
   if (context.state === "suspended") void context.resume();
-  const now = context.currentTime;
-  const noiseBuffer = context.createBuffer(1, Math.floor(context.sampleRate * 0.16), context.sampleRate);
+  const now = context.currentTime + 0.01;
+
+  // A real carriage return is a short ratcheting scrape followed by a clear bell.
+  const noiseBuffer = context.createBuffer(1, Math.floor(context.sampleRate * 0.5), context.sampleRate);
   const noiseData = noiseBuffer.getChannelData(0);
   for (let index = 0; index < noiseData.length; index += 1) {
-    noiseData[index] = (Math.random() * 2 - 1) * (1 - index / noiseData.length);
+    noiseData[index] = Math.random() * 2 - 1;
+  }
+  const scrape = context.createBufferSource();
+  const scrapeFilter = context.createBiquadFilter();
+  const scrapeGain = context.createGain();
+  scrape.buffer = noiseBuffer;
+  scrapeFilter.type = "bandpass";
+  scrapeFilter.frequency.setValueAtTime(1450, now);
+  scrapeFilter.frequency.exponentialRampToValueAtTime(620, now + 0.43);
+  scrapeFilter.Q.value = 1.15;
+  scrapeGain.gain.setValueAtTime(0.001, now);
+  scrapeGain.gain.linearRampToValueAtTime(0.14, now + 0.025);
+  scrapeGain.gain.setValueAtTime(0.12, now + 0.35);
+  scrapeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.46);
+  scrape.connect(scrapeFilter).connect(scrapeGain).connect(context.destination);
+  scrape.start(now);
+  scrape.stop(now + 0.48);
+
+  for (let index = 0; index < 14; index += 1) {
+    const start = now + index * 0.029;
+    const ratchet = context.createOscillator();
+    const ratchetGain = context.createGain();
+    ratchet.type = index % 2 ? "square" : "sawtooth";
+    ratchet.frequency.setValueAtTime(118 + index * 4, start);
+    ratchet.frequency.exponentialRampToValueAtTime(72, start + 0.018);
+    ratchetGain.gain.setValueAtTime(0.11, start);
+    ratchetGain.gain.exponentialRampToValueAtTime(0.001, start + 0.024);
+    ratchet.connect(ratchetGain).connect(context.destination);
+    ratchet.start(start);
+    ratchet.stop(start + 0.026);
   }
 
-  const carriage = context.createBufferSource();
-  const carriageFilter = context.createBiquadFilter();
-  const carriageGain = context.createGain();
-  carriage.buffer = noiseBuffer;
-  carriageFilter.type = "bandpass";
-  carriageFilter.frequency.setValueAtTime(2200, now);
-  carriageFilter.Q.setValueAtTime(0.8, now);
-  carriageGain.gain.setValueAtTime(0.22, now);
-  carriageGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
-  carriage.connect(carriageFilter).connect(carriageGain).connect(context.destination);
+  [1180, 1760].forEach((frequency, index) => {
+    const bell = context.createOscillator();
+    const bellGain = context.createGain();
+    const start = now + 0.43;
+    bell.type = index ? "sine" : "triangle";
+    bell.frequency.setValueAtTime(frequency, start);
+    bell.frequency.exponentialRampToValueAtTime(frequency * 0.97, start + 0.55);
+    bellGain.gain.setValueAtTime(0.001, start);
+    bellGain.gain.linearRampToValueAtTime(index ? 0.09 : 0.2, start + 0.012);
+    bellGain.gain.exponentialRampToValueAtTime(0.001, start + 0.66);
+    bell.connect(bellGain).connect(context.destination);
+    bell.start(start);
+    bell.stop(start + 0.68);
+  });
 
-  const clack = context.createOscillator();
-  const clackGain = context.createGain();
-  clack.type = "square";
-  clack.frequency.setValueAtTime(150, now);
-  clack.frequency.exponentialRampToValueAtTime(72, now + 0.075);
-  clackGain.gain.setValueAtTime(0.18, now);
-  clackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-  clack.connect(clackGain).connect(context.destination);
-
-  const bell = context.createOscillator();
-  const bellGain = context.createGain();
-  bell.type = "triangle";
-  bell.frequency.setValueAtTime(920, now + 0.035);
-  bell.frequency.exponentialRampToValueAtTime(610, now + 0.18);
-  bellGain.gain.setValueAtTime(0.001, now);
-  bellGain.gain.linearRampToValueAtTime(0.17, now + 0.04);
-  bellGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
-  bell.connect(bellGain).connect(context.destination);
-
-  carriage.start(now);
-  clack.start(now);
-  clack.stop(now + 0.085);
-  bell.start(now + 0.035);
-  bell.stop(now + 0.29);
-  window.setTimeout(() => void context.close(), 420);
+  window.setTimeout(() => void context.close(), 1250);
 }
 
 function playSuccessChime() {
@@ -933,6 +945,7 @@ function playSuccessChime() {
     ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AudioContextConstructor) return;
   const context = new AudioContextConstructor();
+  if (context.state === "suspended") void context.resume();
   const now = context.currentTime;
   [523.25, 659.25, 783.99].forEach((frequency, index) => {
     const oscillator = context.createOscillator();
@@ -949,13 +962,6 @@ function playSuccessChime() {
   });
   window.setTimeout(() => void context.close(), 420);
 }
-
-const tetrisWords = [
-  { korean: "사랑", meaning: "love" },
-  { korean: "음악", meaning: "music" },
-  { korean: "친구", meaning: "friend" },
-  { korean: "한국", meaning: "Korea" },
-];
 
 const screenPracticeLines = [
   {
@@ -996,7 +1002,7 @@ function staticVoicePair(slug: string) {
 }
 
 const staticSpeechAudioByText = new Map<string, { female: string; male: string }>([
-  ...lessonSentences.map((text, index) => [text, staticVoicePair(`lesson-${String(index + 1).padStart(2, "0")}`)] as const),
+  ...sentencePracticeItems.map((text, index) => [text, staticVoicePair(`lesson-${String(index + 1).padStart(2, "0")}`)] as const),
   ...travelPhrases.inKorea.map((item, index) => [item.korean, staticVoicePair(`travel-korea-${String(index + 1).padStart(2, "0")}`)] as const),
   ...travelPhrases.welcome.map((item, index) => [item.korean, staticVoicePair(`travel-welcome-${String(index + 1).padStart(2, "0")}`)] as const),
   ...screenPracticeLines.map((item, index) => [item.korean, staticVoicePair(`scene-${String(index + 1).padStart(2, "0")}`)] as const),
@@ -1004,12 +1010,12 @@ const staticSpeechAudioByText = new Map<string, { female: string; male: string }
 
 const learningLevels = [
   "Hangul principle",
-  "Home row",
-  "Lower row",
-  "Upper row",
-  "Syllables",
+  "Home-row consonants & vowels",
+  "Basic syllables",
+  "Lower & upper rows",
   "Final consonants",
   "Double consonants",
+  "Compound vowels",
   "Easy words",
   "Daily words",
   "Phrases",
@@ -1042,10 +1048,10 @@ const activities: Array<{
   {
     id: "tetris",
     kicker: "GAME · 2 MIN",
-    title: "Word Tetris",
-    korean: "단어 테트리스",
-    description: "Type each Korean word before it reaches the floor.",
-    time: "Best · 1,240",
+    title: "Word Rain",
+    korean: "단어 비 내리기",
+    description: "Catch falling Korean words before they splash into the sea.",
+    time: "Live · Score attack",
     accent: "purple",
   },
   {
@@ -1118,12 +1124,6 @@ export default function Home() {
   const [lessonKeystrokes, setLessonKeystrokes] = useState(0);
   const [lessonMistakes, setLessonMistakes] = useState(0);
   const [activeActivity, setActiveActivity] = useState<ActivityId>("home");
-  const [tetrisInput, setTetrisInput] = useState("");
-  const [tetrisIndex, setTetrisIndex] = useState(0);
-  const [tetrisScore, setTetrisScore] = useState(320);
-  const [tetrisMessage, setTetrisMessage] = useState("Type the falling word.");
-  const [missingAnswer, setMissingAnswer] = useState("");
-  const [crosswordAnswer, setCrosswordAnswer] = useState("");
   const [screenInput, setScreenInput] = useState("");
   const [screenIndex, setScreenIndex] = useState(0);
   const [managedContent, setManagedContent] = useState<PublishedContentItem[]>([]);
@@ -1142,7 +1142,8 @@ export default function Home() {
   const keyboardText = keyboardHelpCopy[locale] ?? englishKeyboardCopy;
   const speechText = speechHelpCopy[locale] ?? englishSpeechCopy;
   const returnSoundText = returnSoundCopy[locale] ?? englishReturnSoundCopy;
-  const targetSentence = lessonSentences[lessonIndex];
+  const currentPracticeItem = practiceCurriculum[lessonIndex];
+  const targetSentence = currentPracticeItem.text;
   const practiceSequence = useMemo(() => sentenceToPracticeSequence(targetSentence), [targetSentence]);
   const activePracticeKey = practiceSequence[guideStep] ?? null;
   const activeFinger = activePracticeKey ? fingerByCode[activePracticeKey.code] ?? null : null;
@@ -1157,14 +1158,15 @@ export default function Home() {
   const sentenceProgress = Math.min(100, Math.round((typedChars.length / targetChars.length) * 100));
   const sentenceComplete = typed === targetSentence;
   const completedSentences = lessonFinished
-    ? lessonSentences.length
-    : Math.min(lessonSentences.length, lessonIndex + (lessonAccepted ? 1 : 0));
+    ? practiceCurriculum.length
+    : Math.min(practiceCurriculum.length, lessonIndex + (lessonAccepted ? 1 : 0));
   const scoredSentenceProgress = lessonAccepted ? 100 : Math.min(95, sentenceProgress);
   const dailyProgress = lessonStarted
     ? lessonFinished
       ? 100
-      : Math.min(100, Math.round(((lessonIndex + scoredSentenceProgress / 100) / lessonSentences.length) * 100))
+      : Math.min(100, Math.round(((lessonIndex + scoredSentenceProgress / 100) / practiceCurriculum.length) * 100))
     : 0;
+  const currentStageIndex = practiceStageOrder.indexOf(currentPracticeItem.kind);
   const managedScreenLines = useMemo(() => managedContent
     .filter((item) => item.category === "kdrama" || item.category === "movie")
     .map((item) => ({
@@ -1290,18 +1292,18 @@ export default function Home() {
     playNeuralVoice();
   }, [finishSpeech, managedContent, neuralTtsAvailable, voiceGender]);
 
-  const confirmAndAdvance = useCallback((action: () => void, text: string) => {
+  const confirmAndAdvance = useCallback((action: () => void, text: string, shouldSpeak = true) => {
     if (returnSoundEnabled) playTypewriterReturnSound();
     setAdvanceQueued(true);
-    if (autoSpeak && speechSupported) {
+    if (shouldSpeak && autoSpeak && speechSupported) {
       pendingActionRef.current = action;
-      window.setTimeout(() => playKorean(text), returnSoundEnabled ? 360 : 0);
+      window.setTimeout(() => playKorean(text), returnSoundEnabled ? 900 : 0);
       return;
     }
     window.setTimeout(() => {
       setAdvanceQueued(false);
       action();
-    }, returnSoundEnabled ? 560 : 0);
+    }, returnSoundEnabled ? 1180 : 0);
   }, [autoSpeak, playKorean, returnSoundEnabled, speechSupported]);
 
   const advanceLesson = useCallback(() => {
@@ -1310,7 +1312,7 @@ export default function Home() {
     setLessonEvaluation(null);
     setLessonKeystrokes(0);
     setLessonMistakes(0);
-    if (lessonIndex >= lessonSentences.length - 1) {
+    if (lessonIndex >= practiceCurriculum.length - 1) {
       setLessonFinished(true);
       return;
     }
@@ -1364,10 +1366,11 @@ export default function Home() {
           lessonIndex?: number;
           lessonStarted?: boolean;
           lessonFinished?: boolean;
+          totalSteps?: number;
         };
         const today = new Date().toLocaleDateString("en-CA");
-        if (dailyLesson.date === today) {
-          setLessonIndex(Math.min(Math.max(0, dailyLesson.lessonIndex ?? 0), lessonSentences.length - 1));
+        if (dailyLesson.date === today && dailyLesson.totalSteps === practiceCurriculum.length) {
+          setLessonIndex(Math.min(Math.max(0, dailyLesson.lessonIndex ?? 0), practiceCurriculum.length - 1));
           setLessonStarted(Boolean(dailyLesson.lessonStarted));
           setLessonFinished(Boolean(dailyLesson.lessonFinished));
         }
@@ -1468,6 +1471,7 @@ export default function Home() {
         lessonIndex,
         lessonStarted,
         lessonFinished,
+        totalSteps: practiceCurriculum.length,
       }));
     } catch {
       // Daily progress remains available for this session when storage is unavailable.
@@ -1484,11 +1488,12 @@ export default function Home() {
         const serverProgress = profile.progress as {
           currentLesson: number;
           completedSentences: number;
+          totalSentences: number;
           typingSeconds: number;
           lessonFinished: boolean;
         };
-        if (serverProgress.completedSentences > completedSentences || serverProgress.lessonFinished) {
-          setLessonIndex(Math.min(serverProgress.currentLesson, lessonSentences.length - 1));
+        if (serverProgress.totalSentences === practiceCurriculum.length && (serverProgress.completedSentences > completedSentences || serverProgress.lessonFinished)) {
+          setLessonIndex(Math.min(serverProgress.currentLesson, practiceCurriculum.length - 1));
           setLessonStarted(serverProgress.completedSentences > 0 || serverProgress.lessonFinished);
           setLessonFinished(serverProgress.lessonFinished);
           setElapsedSeconds(serverProgress.typingSeconds);
@@ -1509,7 +1514,7 @@ export default function Home() {
     const payload = {
       currentLesson: lessonIndex,
       completedSentences,
-      totalSentences: lessonSentences.length,
+      totalSentences: practiceCurriculum.length,
       typingSeconds: elapsedSeconds,
       accuracy,
       lessonFinished,
@@ -1539,20 +1544,6 @@ export default function Home() {
     return () => window.clearInterval(timer);
   }, [lessonFinished, lessonStarted]);
 
-  function submitTetris(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const current = tetrisWords[tetrisIndex % tetrisWords.length];
-    if (tetrisInput.trim() === current.korean) {
-      if (returnSoundEnabled) playSuccessChime();
-      setTetrisScore((score) => score + 100);
-      setTetrisIndex((index) => index + 1);
-      setTetrisInput("");
-      setTetrisMessage("Perfect! +100");
-    } else {
-      setTetrisMessage(`Try again — ${current.meaning}`);
-    }
-  }
-
   function startTodayLesson() {
     if (!lessonStarted || lessonFinished) {
       speechRequestRef.current += 1;
@@ -1576,9 +1567,30 @@ export default function Home() {
       setLessonMistakes(0);
     }
     window.setTimeout(() => {
-      document.getElementById("practice")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      document.getElementById("practice")?.scrollIntoView({ behavior: "smooth", block: "start" });
       document.getElementById("hero-typing-input")?.focus();
     }, 0);
+  }
+
+  function resetCurrentPractice() {
+    setTyped("");
+    setGuideStep(0);
+    setLessonAccepted(false);
+    setLessonEvaluation(null);
+    setLessonKeystrokes(0);
+    setLessonMistakes(0);
+    window.setTimeout(() => document.getElementById("hero-typing-input")?.focus(), 0);
+  }
+
+  function selectActivity(activity: ActivityId) {
+    setActiveActivity(activity);
+    window.setTimeout(() => {
+      document.getElementById("game-stage")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      const inputId: Partial<Record<ActivityId, string>> = {
+        tetris: "word-rain-input", travel: "travel-phrase-input", kpop: "kpop-line-input", screen: "screen-line-input",
+      };
+      if (inputId[activity]) document.getElementById(inputId[activity]!)?.focus();
+    }, 80);
   }
 
   return (
@@ -1596,45 +1608,28 @@ export default function Home() {
           <a href="/my">{t.navProgress}</a>
         </nav>
         <div className="header-tools">
-          <label
-            className={`speech-toggle ${!speechSupported ? "unavailable" : ""}`}
-            title={speechSupported ? speechText.label : speechText.unavailable}
-          >
-            <input
-              type="checkbox"
-              checked={autoSpeak}
-              disabled={!speechSupported}
-              onChange={(event) => setAutoSpeak(event.target.checked)}
-              aria-label={`${speechText.label}: ${autoSpeak ? speechText.on : speechText.off}`}
-            />
-            <span className="speech-toggle-track" aria-hidden="true"><i /></span>
-            <span className="speech-toggle-copy">
-              <b>{speechText.label}</b>
-              <small>{speechSupported ? autoSpeak ? speechText.on : speechText.off : speechText.unavailable}</small>
-            </span>
-          </label>
-          <label className="voice-picker" title="Korean pronunciation voice">
-            <span aria-hidden="true">{voiceGender === "female" ? "♀" : "♂"}</span>
-            <span className="sr-only">Korean voice</span>
-            <select value={voiceGender} onChange={(event) => setVoiceGender(event.target.value as VoiceGender)}>
-              <option value="female">Female voice</option>
-              <option value="male">Male voice</option>
-            </select>
-            <i>{neuralTtsAvailable ? "AI" : "MP3"}</i>
-          </label>
-          <label className="speech-toggle return-sound-toggle" title={returnSoundText.label}>
-            <input
-              type="checkbox"
-              checked={returnSoundEnabled}
-              onChange={(event) => setReturnSoundEnabled(event.target.checked)}
-              aria-label={`${returnSoundText.label}: ${returnSoundEnabled ? returnSoundText.on : returnSoundText.off}`}
-            />
-            <span className="speech-toggle-track" aria-hidden="true"><i /></span>
-            <span className="speech-toggle-copy">
-              <b>{returnSoundText.label}</b>
-              <small>{returnSoundEnabled ? returnSoundText.on : returnSoundText.off}</small>
-            </span>
-          </label>
+          <div className="audio-control-cluster" aria-label={locale === "ko" ? "소리 설정" : "Sound settings"}>
+            <label className={`speech-toggle ${!speechSupported ? "unavailable" : ""}`} title={speechSupported ? speechText.label : speechText.unavailable}>
+              <input type="checkbox" checked={autoSpeak} disabled={!speechSupported} onChange={(event) => setAutoSpeak(event.target.checked)} aria-label={`${speechText.label}: ${autoSpeak ? speechText.on : speechText.off}`} />
+              <span className="speech-toggle-track" aria-hidden="true"><i /></span>
+              <span className="speech-toggle-copy"><b>{locale === "ko" ? "자동 발음" : "Auto voice"}</b><small>{speechSupported ? autoSpeak ? speechText.on : speechText.off : "—"}</small></span>
+            </label>
+            <label className="voice-picker" title="Korean pronunciation voice">
+              <span aria-hidden="true">{voiceGender === "female" ? "♀" : "♂"}</span>
+              <span className="sr-only">Korean voice</span>
+              <select value={voiceGender} onChange={(event) => setVoiceGender(event.target.value as VoiceGender)}>
+                <option value="female">{locale === "ko" ? "여성 목소리" : "Female voice"}</option>
+                <option value="male">{locale === "ko" ? "남성 목소리" : "Male voice"}</option>
+              </select>
+              <i>{neuralTtsAvailable ? "AI" : "MP3"}</i>
+            </label>
+            <label className="speech-toggle return-sound-toggle" title={returnSoundText.label}>
+              <input type="checkbox" checked={returnSoundEnabled} onChange={(event) => setReturnSoundEnabled(event.target.checked)} aria-label={`${returnSoundText.label}: ${returnSoundEnabled ? returnSoundText.on : returnSoundText.off}`} />
+              <span className="speech-toggle-track" aria-hidden="true"><i /></span>
+              <span className="speech-toggle-copy"><b>{locale === "ko" ? "타자기" : "Typewriter"}</b><small>{returnSoundEnabled ? returnSoundText.on : returnSoundText.off}</small></span>
+            </label>
+            <button className="sound-preview-button" type="button" onClick={playTypewriterReturnSound} aria-label={locale === "ko" ? "타자기 줄바꿈 소리 시험" : "Preview typewriter return sound"}>▶</button>
+          </div>
           <label className="language-picker">
             <span className="sr-only">Interface language</span>
             <select value={locale} onChange={(event) => setLocale(event.target.value as Locale)}>
@@ -1677,16 +1672,27 @@ export default function Home() {
           <article className="practice-card">
             <div className="practice-card-header">
               <div>
-                <p className="card-kicker">{t.upNext}</p>
-                <h2>{t.practiceTitle}</h2>
+                <p className="card-kicker">{locale === "ko" ? `현재 단계 · ${currentPracticeItem.stageKo}` : `CURRENT STAGE · ${currentPracticeItem.stageEn}`}</p>
+                <h2>{locale === "ko" ? currentPracticeItem.instructionKo : currentPracticeItem.instructionEn}</h2>
               </div>
               <a className="streak" href="/my">{accountSummary ? `${accountSummary.streakDays} day streak · ${accountSummary.coins} beats` : "My learning page"}</a>
             </div>
 
+            <ol className="curriculum-progress" aria-label={locale === "ko" ? "한글 타자 학습 단계" : "Korean typing learning stages"}>
+              {practiceStageOrder.map((kind, index) => {
+                const firstItem = practiceCurriculum.findIndex((item) => item.kind === kind);
+                const nextFirstItem = practiceStageOrder[index + 1]
+                  ? practiceCurriculum.findIndex((item) => item.kind === practiceStageOrder[index + 1])
+                  : practiceCurriculum.length;
+                const state = lessonIndex >= nextFirstItem ? "done" : currentStageIndex === index ? "current" : lessonIndex < firstItem ? "locked" : "done";
+                return <li className={state} key={kind}><span>{state === "done" ? "✓" : index + 1}</span><b>{locale === "ko" ? practiceStageLabels[kind].ko : practiceStageLabels[kind].en}</b></li>;
+              })}
+            </ol>
+
             <div className="typing-panel">
               <div className="typing-meta">
-                <span>{lessonStarted ? `Sentence ${lessonIndex + 1} / ${lessonSentences.length}` : `Ready · ${lessonSentences.length} sentences`}</span>
-                <span>{typedChars.length} / {targetChars.length} letters</span>
+                <span>{locale === "ko" ? `${currentPracticeItem.stageKo} ${lessonIndex + 1} / ${practiceCurriculum.length}` : `${currentPracticeItem.stageEn} ${lessonIndex + 1} / ${practiceCurriculum.length}`}</span>
+                <span>{typedChars.length} / {targetChars.length} · {locale === "ko" ? `통과 ${currentPracticeItem.minAccuracy}%` : `pass ${currentPracticeItem.minAccuracy}%`}</span>
               </div>
               <p className="target-sentence" lang="ko" aria-label={targetSentence} key={targetSentence}>
                 {targetChars.map((character, index) => {
@@ -1724,11 +1730,21 @@ export default function Home() {
                   if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
                   event.preventDefault();
                   if (lessonAccepted || advanceQueued) return;
-                  const evaluation = evaluateLessonAttempt(typed, targetSentence, lessonKeystrokes, lessonMistakes);
+                  let evaluation = evaluateLessonAttempt(typed, targetSentence, lessonKeystrokes, lessonMistakes);
+                  if (evaluation.accepted && evaluation.accuracy < currentPracticeItem.minAccuracy) {
+                    evaluation = {
+                      ...evaluation,
+                      accepted: false,
+                      label: `정확도 ${currentPracticeItem.minAccuracy}%가 필요해요`,
+                      message: "속도는 괜찮아요. 입력을 지우고 손가락 자리를 보며 한 번 더 연습하세요.",
+                    };
+                  } else if (evaluation.accepted && !currentPracticeItem.speak) {
+                    evaluation = { ...evaluation, message: "자리 검사 완료 · 타자기 줄바꿈 소리 후 다음 연습으로 이동합니다." };
+                  }
                   setLessonEvaluation(evaluation);
                   if (!evaluation.accepted) return;
                   setLessonAccepted(true);
-                  confirmAndAdvance(advanceLesson, targetSentence);
+                  confirmAndAdvance(advanceLesson, targetSentence, currentPracticeItem.speak);
                 }}
                 placeholder="여기에 입력하세요"
                 autoComplete="off"
@@ -1739,9 +1755,11 @@ export default function Home() {
                 {lessonFinished
                   ? "Today’s lesson is complete. Great work!"
                   : advanceQueued
-                    ? "🔊 Pronunciation is playing. The next sentence will open when it finishes."
+                    ? currentPracticeItem.speak
+                      ? "↵ 타자기 줄바꿈 소리 후 발음을 읽고 다음 연습으로 이동합니다."
+                      : "↵ 타자기 줄바꿈 소리 후 다음 자리 연습으로 이동합니다."
                     : sentenceComplete
-                      ? "✓ 문장 입력 완료 · Enter ↵를 눌러 검사하세요."
+                      ? "✓ 입력 완료 · Enter ↵를 눌러 정확도를 검사하세요."
                       : typedChars.length
                         ? `${accuracy}% accurate · keep going`
                         : "Follow the highlighted key position below."}
@@ -1758,24 +1776,16 @@ export default function Home() {
                     <div><dt>완성도</dt><dd>{lessonEvaluation.completeness}%</dd></div>
                     <div><dt>입력 정확도</dt><dd>{lessonEvaluation.accuracy}%</dd></div>
                   </dl>
+                  {!lessonEvaluation.accepted && sentenceComplete && <button className="retry-practice" type="button" onClick={resetCurrentPractice}>↻ 다시 연습</button>}
                 </div>
               )}
-
-              <button
-                className={`inline-sound-control ${returnSoundEnabled ? "on" : ""}`}
-                type="button"
-                aria-pressed={returnSoundEnabled}
-                onClick={() => setReturnSoundEnabled((enabled) => !enabled)}
-              >
-                <span aria-hidden="true">↵</span> 타자기 줄바꿈 소리 {returnSoundEnabled ? "켜짐" : "꺼짐"}
-              </button>
 
               {lessonFinished ? (
                 <div className="lesson-finish-card">
                   <span className="finish-mark" aria-hidden="true">✓</span>
                   <div>
                     <small>DAILY LESSON COMPLETE</small>
-                    <h3>{lessonSentences.length} sentences finished</h3>
+                    <h3>{practiceCurriculum.length} learning steps finished</h3>
                     <p>{formatPracticeTime(elapsedSeconds)} practice · progress saved on this device</p>
                   </div>
                   <button className="button button-primary" type="button" onClick={startTodayLesson}>Practice again</button>
@@ -1818,7 +1828,7 @@ export default function Home() {
                     ))}
                   </div>
 
-                  <div className="keyboard-map" aria-label={keyboardText.mapTitle}>
+                  <div className={`keyboard-map ${currentPracticeItem.kind === "home" ? "home-row-only" : ""}`} aria-label={keyboardText.mapTitle}>
                     <div className="keyboard-map-legend">
                       <b>{keyboardText.mapTitle}</b>
                       <span><i className="legend-hangul" /> {keyboardText.hangul}</span>
@@ -1828,7 +1838,7 @@ export default function Home() {
                       <div className={`keyboard-row ${row}`} key={row}>
                         {keys.map((key) => (
                           <kbd
-                            className={activePracticeKey?.code === key.code ? "active" : ""}
+                            className={`${activePracticeKey?.code === key.code ? "active" : ""} ${currentPracticeItem.kind === "home" && !basicHomeRowCodes.has(key.code) ? "muted-key" : ""}`}
                             aria-label={`${key.jamo}: ${keyboardText.press} ${keyboardLegend(keyboardLayout, key.code)}`}
                             key={key.code}
                           >
@@ -1838,23 +1848,11 @@ export default function Home() {
                         ))}
                       </div>
                     ))}
-                    <div className="hand-overlay" aria-label="Transparent five-finger hand position guide">
-                      <div className="typing-hand left-hand" aria-label="Left hand">
-                        <span className={`hand-finger pinky ${activeFinger === "left-pinky" ? "active" : ""}`}><i /></span>
-                        <span className={`hand-finger ring ${activeFinger === "left-ring" ? "active" : ""}`}><i /></span>
-                        <span className={`hand-finger middle ${activeFinger === "left-middle" ? "active" : ""}`}><i /></span>
-                        <span className={`hand-finger index ${activeFinger === "left-index" ? "active" : ""}`}><i /></span>
-                        <span className={`hand-finger thumb ${activeFinger === "left-thumb" ? "active" : ""}`}><i /></span>
-                        <span className="hand-palm" /><span className="hand-wrist" /><b>LEFT</b>
-                      </div>
-                      <div className="typing-hand right-hand" aria-label="Right hand">
-                        <span className={`hand-finger pinky ${activeFinger === "right-pinky" ? "active" : ""}`}><i /></span>
-                        <span className={`hand-finger ring ${activeFinger === "right-ring" ? "active" : ""}`}><i /></span>
-                        <span className={`hand-finger middle ${activeFinger === "right-middle" ? "active" : ""}`}><i /></span>
-                        <span className={`hand-finger index ${activeFinger === "right-index" ? "active" : ""}`}><i /></span>
-                        <span className={`hand-finger thumb ${activeFinger === "right-thumb" ? "active" : ""}`}><i /></span>
-                        <span className="hand-palm" /><span className="hand-wrist" /><b>RIGHT</b>
-                      </div>
+                    <div className="hand-overlay" aria-label="Transparent complete hand position guide">
+                      {/* Static teaching art is served directly so it also works in the edge preview runtime. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/images/typing-hands-v2.png" width={1776} height={888} alt="" aria-hidden="true" />
+                      {activeFinger && <span className={`fingertip-marker ${activeFinger}`} aria-hidden="true"><i /></span>}
                     </div>
                   </div>
                 </>
@@ -1868,7 +1866,7 @@ export default function Home() {
                 <div className="meter-track" role="progressbar" aria-label="Today’s practice" aria-valuemin={0} aria-valuemax={100} aria-valuenow={dailyProgress}>
                   <span style={{ width: `${dailyProgress}%` }} />
                 </div>
-                <small>{lessonFinished ? "Daily typing goal reached" : `${completedSentences} of ${lessonSentences.length} sentences complete`}</small>
+                <small>{lessonFinished ? "Daily typing goal reached" : `${completedSentences} of ${practiceCurriculum.length} learning steps complete`}</small>
               </div>
             </div>
           </article>
@@ -1890,7 +1888,7 @@ export default function Home() {
               className={`activity-card ${activity.accent} ${activeActivity === activity.id ? "selected" : ""}`}
               type="button"
               key={activity.id}
-              onClick={() => setActiveActivity(activity.id)}
+              onClick={() => selectActivity(activity.id)}
               aria-pressed={activeActivity === activity.id}
             >
               <span className="activity-number">0{index + 1}</span>
@@ -1902,7 +1900,7 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="game-demo" aria-live="polite">
+        <div className="game-demo" id="game-stage" aria-live="polite" tabIndex={-1}>
           {activeActivity === "home" && (
             <div className="demo-copy">
               <p className="demo-label">FOUNDATION · LESSON 02</p>
@@ -1913,74 +1911,15 @@ export default function Home() {
           )}
 
           {activeActivity === "tetris" && (
-            <>
-              <div className="tetris-board" aria-label="Word Tetris practice area">
-                <span className="falling-word" lang="ko">{tetrisWords[tetrisIndex % tetrisWords.length].korean}</span>
-                <span className="tetris-block block-a" /><span className="tetris-block block-b" /><span className="tetris-block block-c" />
-              </div>
-              <form className="demo-form" onSubmit={submitTetris}>
-                <p className="demo-label">WORD TETRIS · SCORE {tetrisScore}</p>
-                <h3>Type it before it lands.</h3>
-                <label htmlFor="tetris-input">Korean word</label>
-                <div className="inline-form">
-                  <input id="tetris-input" lang="ko" value={tetrisInput} onChange={(event) => setTetrisInput(event.target.value)} autoComplete="off" />
-                  <button className="button button-primary" type="submit">Drop</button>
-                </div>
-                <p className="form-message">{tetrisMessage}</p>
-              </form>
-            </>
+            <FallingWordsGame koreanUi={locale === "ko"} soundEnabled={returnSoundEnabled} onSuccessSound={playSuccessChime} />
           )}
 
           {activeActivity === "missing" && (
-            <div className="missing-demo">
-              <p className="demo-label">MISSING LETTER · WORD 3/12</p>
-              <h3>Complete the word for “Hangul”.</h3>
-              <div className="missing-word" lang="ko">한 <span>{missingAnswer || "?"}</span></div>
-              <div className="answer-options" aria-label="Choose the missing syllable">
-                {["국", "글", "강"].map((answer) => (
-                  <button
-                    type="button"
-                    className={missingAnswer === answer ? "chosen" : ""}
-                    onClick={() => {
-                      setMissingAnswer(answer);
-                      if (answer === "글" && returnSoundEnabled) playSuccessChime();
-                    }}
-                    key={answer}
-                  >{answer}</button>
-                ))}
-              </div>
-              <p className={`form-message ${missingAnswer === "글" ? "success" : ""}`}>
-                {!missingAnswer ? "Choose one syllable." : missingAnswer === "글" ? "Correct — 한글!" : "Almost. Try another syllable."}
-              </p>
-            </div>
+            <MissingLetterGame koreanUi={locale === "ko"} soundEnabled={returnSoundEnabled} onSuccessSound={playSuccessChime} />
           )}
 
           {activeActivity === "crossword" && (
-            <>
-              <div className="crossword-grid" role="grid" aria-label="Mini Korean crossword">
-                <span className="blank" /><span lang="ko">한</span><span className="blank" /><span lang="ko">말</span>
-                <span lang="ko">음</span><span lang="ko">국</span><span className="blank" /><span lang="ko">씀</span>
-                <span className="blank" /><input
-                  lang="ko"
-                  maxLength={1}
-                  value={crosswordAnswer}
-                  onChange={(event) => {
-                    setCrosswordAnswer(event.target.value);
-                    if (event.target.value === "글" && returnSoundEnabled) playSuccessChime();
-                  }}
-                  aria-label="Crossword answer for Korean writing system"
-                /><span className="blank" /><span className="blank" />
-                <span lang="ko">노</span><span lang="ko">래</span><span className="blank" /><span lang="ko">집</span>
-              </div>
-              <div className="demo-copy">
-                <p className="demo-label">DAILY CROSSWORD · CLUE 2</p>
-                <h3>Across: Korean writing system</h3>
-                <p>Type one syllable to finish 한＿.</p>
-                <p className={`form-message ${crosswordAnswer === "글" ? "success" : ""}`}>
-                  {!crosswordAnswer ? "One square left." : crosswordAnswer === "글" ? "Solved — 한글!" : "Check the crossing sound."}
-                </p>
-              </div>
-            </>
+            <CrosswordGame koreanUi={locale === "ko"} soundEnabled={returnSoundEnabled} onSuccessSound={playSuccessChime} />
           )}
 
           {activeActivity === "travel" && (

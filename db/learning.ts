@@ -84,10 +84,13 @@ export async function saveLearningProgress(email: string, displayName: string, u
   const currentProgress = profile.progress;
   if (!currentProgress) throw new Error("Learning progress is unavailable.");
 
-  const completedSentences = Math.max(
-    currentProgress.completedSentences,
-    Math.min(update.totalSentences, Math.max(0, update.completedSentences)),
-  );
+  const curriculumChanged = currentProgress.totalSentences !== update.totalSentences;
+  const completedSentences = curriculumChanged
+    ? Math.min(update.totalSentences, Math.max(0, update.completedSentences))
+    : Math.max(
+      currentProgress.completedSentences,
+      Math.min(update.totalSentences, Math.max(0, update.completedSentences)),
+    );
   const targetXp = completedSentences * 100 + (update.lessonFinished ? 500 : 0);
   const xpDelta = Math.max(0, targetXp - currentProgress.awardedXp);
 
