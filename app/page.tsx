@@ -729,7 +729,10 @@ function practiceKeyLegend(layout: KeyboardLayout, key: KoreanKey) {
   return key.shift ? `Shift+${legend}` : legend;
 }
 
-const fingerByCode: Record<string, string> = {
+type FingerId = "left-pinky" | "left-ring" | "left-middle" | "left-index" | "left-thumb"
+  | "right-thumb" | "right-index" | "right-middle" | "right-ring" | "right-pinky";
+
+const fingerByCode: Record<string, FingerId> = {
   KeyQ: "left-pinky", KeyA: "left-pinky", KeyZ: "left-pinky",
   KeyW: "left-ring", KeyS: "left-ring", KeyX: "left-ring",
   KeyE: "left-middle", KeyD: "left-middle", KeyC: "left-middle",
@@ -740,6 +743,19 @@ const fingerByCode: Record<string, string> = {
   KeyP: "right-pinky", Semicolon: "right-pinky",
   Period: "right-ring",
   Space: "right-thumb",
+};
+
+const fingerGuideById: Record<FingerId, { ko: string; en: string; shortKo: string; shortEn: string }> = {
+  "left-pinky": { ko: "왼손 새끼손가락", en: "Left pinky", shortKo: "왼손 · 새끼", shortEn: "LEFT · PINKY" },
+  "left-ring": { ko: "왼손 약지", en: "Left ring finger", shortKo: "왼손 · 약지", shortEn: "LEFT · RING" },
+  "left-middle": { ko: "왼손 가운데손가락", en: "Left middle finger", shortKo: "왼손 · 가운데", shortEn: "LEFT · MIDDLE" },
+  "left-index": { ko: "왼손 검지", en: "Left index finger", shortKo: "왼손 · 검지", shortEn: "LEFT · INDEX" },
+  "left-thumb": { ko: "왼손 엄지", en: "Left thumb", shortKo: "왼손 · 엄지", shortEn: "LEFT · THUMB" },
+  "right-thumb": { ko: "오른손 엄지", en: "Right thumb", shortKo: "오른손 · 엄지", shortEn: "RIGHT · THUMB" },
+  "right-index": { ko: "오른손 검지", en: "Right index finger", shortKo: "오른손 · 검지", shortEn: "RIGHT · INDEX" },
+  "right-middle": { ko: "오른손 가운데손가락", en: "Right middle finger", shortKo: "오른손 · 가운데", shortEn: "RIGHT · MIDDLE" },
+  "right-ring": { ko: "오른손 약지", en: "Right ring finger", shortKo: "오른손 · 약지", shortEn: "RIGHT · RING" },
+  "right-pinky": { ko: "오른손 새끼손가락", en: "Right pinky", shortKo: "오른손 · 새끼", shortEn: "RIGHT · PINKY" },
 };
 
 const basicHomeRowCodes = new Set(["KeyA", "KeyS", "KeyD", "KeyF", "KeyJ", "KeyK", "KeyL", "Semicolon"]);
@@ -1147,6 +1163,7 @@ export default function Home() {
   const practiceSequence = useMemo(() => sentenceToPracticeSequence(targetSentence), [targetSentence]);
   const activePracticeKey = practiceSequence[guideStep] ?? null;
   const activeFinger = activePracticeKey ? fingerByCode[activePracticeKey.code] ?? null : null;
+  const activeFingerGuide = activeFinger ? fingerGuideById[activeFinger] : null;
   const upcomingPracticeKeys = practiceSequence.slice(guideStep, guideStep + 7);
   const targetChars = useMemo(() => Array.from(targetSentence), [targetSentence]);
   const typedChars = Array.from(typed);
@@ -1689,7 +1706,9 @@ export default function Home() {
               })}
             </ol>
 
-            <div className="typing-panel">
+            <div className="practice-workspace">
+              <div className="practice-input-column">
+                <div className="typing-panel">
               <div className="typing-meta">
                 <span>{locale === "ko" ? `${currentPracticeItem.stageKo} ${lessonIndex + 1} / ${practiceCurriculum.length}` : `${currentPracticeItem.stageEn} ${lessonIndex + 1} / ${practiceCurriculum.length}`}</span>
                 <span>{typedChars.length} / {targetChars.length} · {locale === "ko" ? `통과 ${currentPracticeItem.minAccuracy}%` : `pass ${currentPracticeItem.minAccuracy}%`}</span>
@@ -1780,6 +1799,8 @@ export default function Home() {
                 </div>
               )}
 
+                </div>
+
               {lessonFinished ? (
                 <div className="lesson-finish-card">
                   <span className="finish-mark" aria-hidden="true">✓</span>
@@ -1828,6 +1849,20 @@ export default function Home() {
                     ))}
                   </div>
 
+                </>
+              )}
+            </div>
+
+              {!lessonFinished && (
+                <div className="practice-guidance-column">
+                  <div className="finger-callout" aria-live="polite">
+                    <span aria-hidden="true">☝</span>
+                    <div>
+                      <small>{locale === "ko" ? "지금 사용할 손가락" : "USE THIS FINGER"}</small>
+                      <b>{activeFingerGuide ? locale === "ko" ? activeFingerGuide.ko : activeFingerGuide.en : keyboardText.complete}</b>
+                    </div>
+                    {activePracticeKey && <kbd>{practiceKeyLegend(keyboardLayout, activePracticeKey)}</kbd>}
+                  </div>
                   <div className={`keyboard-map ${currentPracticeItem.kind === "home" ? "home-row-only" : ""}`} aria-label={keyboardText.mapTitle}>
                     <div className="keyboard-map-legend">
                       <b>{keyboardText.mapTitle}</b>
@@ -1848,14 +1883,16 @@ export default function Home() {
                         ))}
                       </div>
                     ))}
-                    <div className="hand-overlay" aria-label="Transparent complete hand position guide">
+                    <div className="hand-overlay" aria-label={activeFingerGuide ? locale === "ko" ? `${activeFingerGuide.ko} 전체 강조 안내` : `${activeFingerGuide.en} full-finger guide` : "Complete hand position guide"}>
                       {/* Static teaching art is served directly so it also works in the edge preview runtime. */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src="/images/typing-hands-v2.png" width={1776} height={888} alt="" aria-hidden="true" />
+                      {activeFinger && <span className={`finger-trace ${activeFinger}`} aria-hidden="true" />}
                       {activeFinger && <span className={`fingertip-marker ${activeFinger}`} aria-hidden="true"><i /></span>}
+                      {activeFingerGuide && <span className={`finger-name-tag ${activeFinger}`} aria-hidden="true">{locale === "ko" ? activeFingerGuide.shortKo : activeFingerGuide.shortEn}</span>}
                     </div>
                   </div>
-                </>
+                </div>
               )}
             </div>
 

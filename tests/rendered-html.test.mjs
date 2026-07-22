@@ -20,6 +20,10 @@ test("connects guided hands, Enter evaluation, sound, and recorded speech", asyn
   ]);
   assert.match(page, /\/images\/typing-hands-v2\.png/);
   assert.match(page, /fingertip-marker/);
+  assert.match(page, /finger-trace/);
+  assert.match(page, /finger-callout/);
+  assert.match(page, /왼손 새끼손가락/);
+  assert.match(page, /practice-workspace/);
   assert.match(page, /activePracticeKey\?\.code === key\.code/);
   assert.match(page, /event\.key !== "Enter"/);
   assert.match(page, /evaluateLessonAttempt/);
@@ -30,12 +34,14 @@ test("connects guided hands, Enter evaluation, sound, and recorded speech", asyn
   assert.match(page, /staticSpeechAudioByText/);
   assert.match(css, /\.hand-overlay img/);
   assert.match(css, /\.fingertip-marker\.left-pinky/);
+  assert.match(css, /\.finger-trace\.left-pinky/);
+  assert.match(css, /\.practice-workspace/);
   assert.match(css, /@keyframes fingertip-pulse/);
   assert.doesNotMatch(css, /\.typing-hand/);
   assert.match(css, /\.audio-control-cluster/);
 });
 
-test("ships live falling words and auto-advancing puzzle rounds", async () => {
+test("ships Enter-confirmed falling words and auto-advancing puzzle rounds", async () => {
   const [page, falling, puzzles, css] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/FallingWordsGame.tsx", import.meta.url), "utf8"),
@@ -51,11 +57,18 @@ test("ships live falling words and auto-advancing puzzle rounds", async () => {
   assert.match(falling, /word\.y < 83/);
   assert.match(falling, /value - missed \* 50/);
   assert.match(falling, /current \+ gained/);
+  assert.match(falling, /function submitWord/);
+  assert.match(falling, /event\.key !== "Enter"/);
+  assert.match(falling, /setInputEpoch/);
+  assert.match(falling, /오타가 있어요\. 단어는 사라지지 않았습니다/);
+  assert.doesNotMatch(falling, /onChange=\{\(event\) => captureWord/);
   assert.match(puzzles, /setIndex\(\(current\) => \(current \+ 1\)/);
   assert.match(puzzles, /850/);
   assert.match(puzzles, /900/);
   assert.match(css, /\.word-rain-board/);
   assert.match(css, /\.sea-water\.splash/);
+  assert.match(css, /\.capture-burst/);
+  assert.match(css, /\.word-rain-console input\.input-error/);
 });
 
 test("keeps the selected interface language on the personal page", async () => {
