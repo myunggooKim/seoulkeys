@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { decomposeHangulCharacter } from "./hangul-keyboard";
 
 type Locale =
   | "en" | "ko" | "es" | "pt-BR" | "ja" | "zh-Hans" | "zh-Hant"
@@ -678,18 +679,6 @@ const koreanKeyRows: Array<{ row: KeyboardRow; keys: KoreanKey[] }> = [
 
 const koreanKeys = koreanKeyRows.flatMap(({ keys }) => keys);
 const keyByJamo = new Map(koreanKeys.map((key) => [key.jamo, key]));
-const initialJamo = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
-const medialJamo = [
-  ["ㅏ"], ["ㅐ"], ["ㅑ"], ["ㅒ"], ["ㅓ"], ["ㅔ"], ["ㅕ"], ["ㅖ"], ["ㅗ"],
-  ["ㅗ", "ㅏ"], ["ㅗ", "ㅐ"], ["ㅗ", "ㅣ"], ["ㅛ"], ["ㅜ"], ["ㅜ", "ㅓ"],
-  ["ㅜ", "ㅔ"], ["ㅜ", "ㅣ"], ["ㅠ"], ["ㅡ"], ["ㅡ", "ㅣ"], ["ㅣ"],
-];
-const finalJamo = [
-  [], ["ㄱ"], ["ㄱ", "ㅅ"], ["ㄴ"], ["ㄴ", "ㅈ"], ["ㄴ", "ㅎ"], ["ㄷ"], ["ㄹ"],
-  ["ㄹ", "ㄱ"], ["ㄹ", "ㅁ"], ["ㄹ", "ㅂ"], ["ㄹ", "ㅅ"], ["ㄹ", "ㅌ"], ["ㄹ", "ㅍ"],
-  ["ㄹ", "ㅎ"], ["ㅁ"], ["ㅂ"], ["ㅂ", "ㅅ"], ["ㅅ"], ["ㅅ", "ㅅ"], ["ㅇ"], ["ㅈ"],
-  ["ㅊ"], ["ㅋ"], ["ㅌ"], ["ㅍ"], ["ㅎ"],
-];
 const shiftedJamo: Record<string, string> = {
   "ㄲ": "ㄱ", "ㄸ": "ㄷ", "ㅃ": "ㅂ", "ㅆ": "ㅅ", "ㅉ": "ㅈ", "ㅒ": "ㅐ", "ㅖ": "ㅔ",
 };
@@ -704,13 +693,8 @@ function sentenceToPracticeSequence(sentence: string): KoreanKey[] {
   const sequence: KoreanKey[] = [];
 
   for (const character of Array.from(sentence)) {
-    const codePoint = character.codePointAt(0) ?? 0;
-    if (codePoint >= 0xac00 && codePoint <= 0xd7a3) {
-      const syllableIndex = codePoint - 0xac00;
-      const initialIndex = Math.floor(syllableIndex / 588);
-      const medialIndex = Math.floor((syllableIndex % 588) / 28);
-      const finalIndex = syllableIndex % 28;
-      const jamoSequence = [initialJamo[initialIndex], ...medialJamo[medialIndex], ...finalJamo[finalIndex]];
+    const jamoSequence = decomposeHangulCharacter(character);
+    if (jamoSequence) {
       for (const jamo of jamoSequence) {
         const key = keyForJamo(jamo);
         if (key) sequence.push(key);
