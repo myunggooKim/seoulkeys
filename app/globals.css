@@ -3304,6 +3304,17 @@ footer > div {
 }
 
 @media (max-width: 1120px) {
+  .nav-links {
+    justify-content: flex-end;
+    gap: 0;
+  }
+
+  .nav-links a:not([href="/my"]) {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
   .topbar {
     grid-template-columns: minmax(0, 1fr) auto;
   }
