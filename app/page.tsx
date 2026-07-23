@@ -760,6 +760,15 @@ const fingerGuideById: Record<FingerId, { ko: string; en: string; shortKo: strin
 
 const basicHomeRowCodes = new Set(["KeyA", "KeyS", "KeyD", "KeyF", "KeyJ", "KeyK", "KeyL", "Semicolon"]);
 
+type KeyReach = "top" | "home" | "bottom" | "space";
+
+function keyReachForCode(code: string): KeyReach {
+  if (code === "Space") return "space";
+  if (["KeyQ", "KeyW", "KeyE", "KeyR", "KeyT", "KeyY", "KeyU", "KeyI", "KeyO", "KeyP"].includes(code)) return "top";
+  if (["KeyZ", "KeyX", "KeyC", "KeyV", "KeyB", "KeyN", "KeyM", "Period"].includes(code)) return "bottom";
+  return "home";
+}
+
 function formatPracticeTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
   const seconds = (totalSeconds % 60).toString().padStart(2, "0");
@@ -1085,7 +1094,7 @@ const activities: Array<{
     title: "Korean Crossword",
     korean: "가로세로 퀴즈",
     description: "Connect clues, sounds, and meanings.",
-    time: "4 clues · Daily",
+    time: "5 clues · 3 boards",
     accent: "cyan",
   },
   {
@@ -1129,6 +1138,7 @@ export default function Home() {
   const [lessonIndex, setLessonIndex] = useState(0);
   const [lessonStarted, setLessonStarted] = useState(false);
   const [lessonFinished, setLessonFinished] = useState(false);
+  const [lessonPaused, setLessonPaused] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [progressLoaded, setProgressLoaded] = useState(false);
   const [privacyNoticeVisible, setPrivacyNoticeVisible] = useState(false);
@@ -1139,6 +1149,8 @@ export default function Home() {
   const [lessonAccepted, setLessonAccepted] = useState(false);
   const [lessonKeystrokes, setLessonKeystrokes] = useState(0);
   const [lessonMistakes, setLessonMistakes] = useState(0);
+  const [pressedFinger, setPressedFinger] = useState<FingerId | null>(null);
+  const [pressedCode, setPressedCode] = useState<string | null>(null);
   const [activeActivity, setActiveActivity] = useState<ActivityId>("home");
   const [screenInput, setScreenInput] = useState("");
   const [screenIndex, setScreenIndex] = useState(0);
@@ -1153,6 +1165,7 @@ export default function Home() {
   const activeAudioUrlRef = useRef<string | null>(null);
   const speechRequestRef = useRef(0);
   const speakingRef = useRef(false);
+  const fingerReleaseTimerRef = useRef<number | null>(null);
 
   const t = copy[locale];
   const keyboardText = keyboardHelpCopy[locale] ?? englishKeyboardCopy;
@@ -1164,6 +1177,9 @@ export default function Home() {
   const activePracticeKey = practiceSequence[guideStep] ?? null;
   const activeFinger = activePracticeKey ? fingerByCode[activePracticeKey.code] ?? null : null;
   const activeFingerGuide = activeFinger ? fingerGuideById[activeFinger] : null;
+  const displayedFinger = pressedFinger ?? activeFinger;
+  const displayedFingerGuide = displayedFinger ? fingerGuideById[displayedFinger] : null;
+  const handReach = keyReachForCode(pressedCode ?? activePracticeKey?.code ?? "");
   const upcomingPracticeKeys = practiceSequence.slice(guideStep, guideStep + 7);
   const targetChars = useMemo(() => Array.from(targetSentence), [targetSentence]);
   const typedChars = Array.from(typed);
@@ -1403,6 +1419,10 @@ export default function Home() {
     return () => window.clearTimeout(hydrationTimer);
   }, []);
 
+  useEffect(() => () => {
+    if (fingerReleaseTimerRef.current) window.clearTimeout(fingerReleaseTimerRef.current);
+  }, []);
+
   useEffect(() => {
     let active = true;
     void fetch("/api/tts", { headers: { accept: "application/json" } })
@@ -1556,10 +1576,10 @@ export default function Home() {
   }, [completedSentences, lessonFinished, lessonIndex, lessonStarted, progressLoaded]);
 
   useEffect(() => {
-    if (!lessonStarted || lessonFinished) return;
+    if (!lessonStarted || lessonFinished || lessonPaused) return;
     const timer = window.setInterval(() => setElapsedSeconds((seconds) => seconds + 1), 1000);
     return () => window.clearInterval(timer);
-  }, [lessonFinished, lessonStarted]);
+  }, [lessonFinished, lessonPaused, lessonStarted]);
 
   function startTodayLesson() {
     if (!lessonStarted || lessonFinished) {
@@ -1575,6 +1595,7 @@ export default function Home() {
       setLessonIndex(0);
       setLessonStarted(true);
       setLessonFinished(false);
+      setLessonPaused(false);
       setElapsedSeconds(0);
       setTyped("");
       setGuideStep(0);
@@ -1602,7 +1623,7 @@ export default function Home() {
   function selectActivity(activity: ActivityId) {
     setActiveActivity(activity);
     window.setTimeout(() => {
-      document.getElementById("game-stage")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      document.getElementById("game-stage")?.scrollIntoView({ behavior: "smooth", block: "start" });
       const inputId: Partial<Record<ActivityId, string>> = {
         tetris: "word-rain-input", travel: "travel-phrase-input", kpop: "kpop-line-input", screen: "screen-line-input",
       };
@@ -1686,7 +1707,7 @@ export default function Home() {
         <div className="practice-stage" id="practice">
           <div className="stage-orbit orbit-one" aria-hidden="true" />
           <div className="stage-orbit orbit-two" aria-hidden="true" />
-          <article className="practice-card">
+          <article className={`practice-card ${lessonPaused ? "is-paused" : ""}`}>
             <div className="practice-card-header">
               <div>
                 <p className="card-kicker">{locale === "ko" ? `현재 단계 · ${currentPracticeItem.stageKo}` : `CURRENT STAGE · ${currentPracticeItem.stageEn}`}</p>
@@ -1709,6 +1730,12 @@ export default function Home() {
             <div className="practice-workspace">
               <div className="practice-input-column">
                 <div className="typing-panel">
+              {lessonPaused && (
+                <div className="practice-pause-banner" role="status">
+                  <span aria-hidden="true">Ⅱ</span>
+                  <div><b>{locale === "ko" ? "연습 일시정지" : "Practice paused"}</b><small>{locale === "ko" ? "타이머와 손 동작이 멈췄습니다." : "The timer and hand motion are paused."}</small></div>
+                </div>
+              )}
               <div className="typing-meta">
                 <span>{locale === "ko" ? `${currentPracticeItem.stageKo} ${lessonIndex + 1} / ${practiceCurriculum.length}` : `${currentPracticeItem.stageEn} ${lessonIndex + 1} / ${practiceCurriculum.length}`}</span>
                 <span>{typedChars.length} / {targetChars.length} · {locale === "ko" ? `통과 ${currentPracticeItem.minAccuracy}%` : `pass ${currentPracticeItem.minAccuracy}%`}</span>
@@ -1726,7 +1753,7 @@ export default function Home() {
                 className="typing-input"
                 lang="ko"
                 value={typed}
-                disabled={lessonFinished || lessonAccepted}
+                disabled={lessonFinished || lessonAccepted || lessonPaused}
                 onFocus={() => setLessonStarted(true)}
                 onChange={(event) => {
                   const nextValue = event.target.value;
@@ -1746,6 +1773,12 @@ export default function Home() {
                   setGuideStep(Math.min(sentenceToPracticeSequence(nextValue).length, practiceSequence.length));
                 }}
                 onKeyDown={(event) => {
+                  const physicalFinger = fingerByCode[event.code];
+                  if (physicalFinger && event.key !== "Enter") {
+                    if (fingerReleaseTimerRef.current) window.clearTimeout(fingerReleaseTimerRef.current);
+                    setPressedFinger(physicalFinger);
+                    setPressedCode(event.code);
+                  }
                   if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
                   event.preventDefault();
                   if (lessonAccepted || advanceQueued) return;
@@ -1764,6 +1797,18 @@ export default function Home() {
                   if (!evaluation.accepted) return;
                   setLessonAccepted(true);
                   confirmAndAdvance(advanceLesson, targetSentence, currentPracticeItem.speak);
+                }}
+                onKeyUp={() => {
+                  if (fingerReleaseTimerRef.current) window.clearTimeout(fingerReleaseTimerRef.current);
+                  fingerReleaseTimerRef.current = window.setTimeout(() => {
+                    setPressedFinger(null);
+                    setPressedCode(null);
+                  }, 260);
+                }}
+                onBlur={() => {
+                  if (fingerReleaseTimerRef.current) window.clearTimeout(fingerReleaseTimerRef.current);
+                  setPressedFinger(null);
+                  setPressedCode(null);
                 }}
                 placeholder="여기에 입력하세요"
                 autoComplete="off"
@@ -1883,13 +1928,16 @@ export default function Home() {
                         ))}
                       </div>
                     ))}
-                    <div className="hand-overlay" aria-label={activeFingerGuide ? locale === "ko" ? `${activeFingerGuide.ko} 전체 강조 안내` : `${activeFingerGuide.en} full-finger guide` : "Complete hand position guide"}>
-                      {/* Static teaching art is served directly so it also works in the edge preview runtime. */}
+                    <div className={`hand-overlay ${pressedFinger ? "is-pressing" : "is-demonstrating"} target-${handReach}`} aria-label={displayedFingerGuide ? locale === "ko" ? `${displayedFingerGuide.ko}으로 키를 누르는 손 모양` : `${displayedFingerGuide.en} pressing motion` : "Complete hand position guide"}>
+                      {/* The resting hand and the clipped moving finger use the same anatomical artwork, so the guide changes pose without abstract lines. */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/images/typing-hands-v2.png" width={1776} height={888} alt="" aria-hidden="true" />
-                      {activeFinger && <span className={`finger-trace ${activeFinger}`} aria-hidden="true" />}
-                      {activeFinger && <span className={`fingertip-marker ${activeFinger}`} aria-hidden="true"><i /></span>}
-                      {activeFingerGuide && <span className={`finger-name-tag ${activeFinger}`} aria-hidden="true">{locale === "ko" ? activeFingerGuide.shortKo : activeFingerGuide.shortEn}</span>}
+                      <img className="hand-rest-image" src="/images/typing-hands-v2.png" width={1776} height={888} alt="" aria-hidden="true" />
+                      {displayedFinger && (
+                        <span className={`hand-press-layer ${displayedFinger}`} aria-hidden="true" key={`${displayedFinger}-${activePracticeKey?.code ?? "complete"}`}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src="/images/typing-hands-v2.png" width={1776} height={888} alt="" />
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1897,7 +1945,26 @@ export default function Home() {
             </div>
 
             <div className="daily-meter" id="progress">
-              <div className="daily-time"><b>{formatPracticeTime(elapsedSeconds)}</b><span>/10 min</span></div>
+              <div className="daily-time">
+                <div><b>{formatPracticeTime(elapsedSeconds)}</b><span>/10 min</span></div>
+                <button
+                  className={`timer-pause-button ${lessonPaused ? "paused" : ""}`}
+                  type="button"
+                  disabled={!lessonStarted || lessonFinished}
+                  aria-pressed={lessonPaused}
+                  aria-label={lessonPaused ? locale === "ko" ? "연습 타이머 다시 시작" : "Resume practice timer" : locale === "ko" ? "연습 타이머 일시정지" : "Pause practice timer"}
+                  onClick={() => {
+                    setLessonPaused((paused) => !paused);
+                    if (fingerReleaseTimerRef.current) window.clearTimeout(fingerReleaseTimerRef.current);
+                    setPressedFinger(null);
+                    setPressedCode(null);
+                    if (lessonPaused) window.setTimeout(() => document.getElementById("hero-typing-input")?.focus(), 0);
+                  }}
+                >
+                  <span aria-hidden="true">{lessonPaused ? "▶" : "Ⅱ"}</span>
+                  {lessonPaused ? locale === "ko" ? "계속" : "Resume" : locale === "ko" ? "정지" : "Pause"}
+                </button>
+              </div>
               <div className="meter-copy">
                 <div><span>Today’s practice</span><b>{dailyProgress}%</b></div>
                 <div className="meter-track" role="progressbar" aria-label="Today’s practice" aria-valuemin={0} aria-valuemax={100} aria-valuenow={dailyProgress}>

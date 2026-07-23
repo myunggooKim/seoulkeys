@@ -13,18 +13,24 @@ test("ships the staged Korean typing curriculum before sentence practice", async
   assert.ok(curriculum.indexOf('id: "home-left-1"') < curriculum.indexOf("...sentencePracticeItems.map"));
 });
 
-test("connects guided hands, Enter evaluation, sound, and recorded speech", async () => {
+test("connects animated anatomical hands, pausable practice, Enter evaluation, sound, and recorded speech", async () => {
   const [page, css] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
   assert.match(page, /\/images\/typing-hands-v2\.png/);
-  assert.match(page, /fingertip-marker/);
-  assert.match(page, /finger-trace/);
+  assert.match(page, /hand-rest-image/);
+  assert.match(page, /hand-press-layer/);
+  assert.match(page, /pressedFinger/);
+  assert.match(page, /pressedCode/);
   assert.match(page, /finger-callout/);
   assert.match(page, /왼손 새끼손가락/);
   assert.match(page, /practice-workspace/);
   assert.match(page, /activePracticeKey\?\.code === key\.code/);
+  assert.match(page, /lessonFinished \|\| lessonPaused/);
+  assert.match(page, /aria-pressed=\{lessonPaused\}/);
+  assert.match(page, /setLessonPaused\(\(paused\) => !paused\)/);
+  assert.match(page, /연습 타이머 일시정지/);
   assert.match(page, /event\.key !== "Enter"/);
   assert.match(page, /evaluateLessonAttempt/);
   assert.match(page, /currentPracticeItem\.minAccuracy/);
@@ -33,15 +39,19 @@ test("connects guided hands, Enter evaluation, sound, and recorded speech", asyn
   assert.match(page, /playTypewriterReturnSound/);
   assert.match(page, /staticSpeechAudioByText/);
   assert.match(css, /\.hand-overlay img/);
-  assert.match(css, /\.fingertip-marker\.left-pinky/);
-  assert.match(css, /\.finger-trace\.left-pinky/);
+  assert.match(css, /\.hand-press-layer\.left-pinky/);
+  assert.match(css, /\.hand-press-layer\.right-index/);
   assert.match(css, /\.practice-workspace/);
-  assert.match(css, /@keyframes fingertip-pulse/);
+  assert.match(css, /@keyframes real-finger-demonstrate/);
+  assert.match(css, /@keyframes real-finger-press/);
+  assert.match(css, /\.practice-card\.is-paused \.hand-press-layer/);
+  assert.doesNotMatch(page, /fingertip-marker|finger-trace/);
+  assert.doesNotMatch(css, /\.fingertip-marker|\.finger-trace/);
   assert.doesNotMatch(css, /\.typing-hand/);
   assert.match(css, /\.audio-control-cluster/);
 });
 
-test("ships Enter-confirmed falling words and auto-advancing puzzle rounds", async () => {
+test("ships Enter-confirmed falling words, advancing missing letters, and a real checked crossword", async () => {
   const [page, falling, puzzles, css] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/FallingWordsGame.tsx", import.meta.url), "utf8"),
@@ -64,11 +74,23 @@ test("ships Enter-confirmed falling words and auto-advancing puzzle rounds", asy
   assert.doesNotMatch(falling, /onChange=\{\(event\) => captureWord/);
   assert.match(puzzles, /setIndex\(\(current\) => \(current \+ 1\)/);
   assert.match(puzzles, /850/);
-  assert.match(puzzles, /900/);
+  assert.match(puzzles, /function buildCrossword/);
+  assert.match(puzzles, /answer: "한글"/);
+  assert.match(puzzles, /answer: "외국인"/);
+  assert.match(puzzles, /function checkPuzzle/);
+  assert.match(puzzles, /setWrongCells\(mistakes\)/);
+  assert.match(puzzles, /event\.key === "ArrowLeft"/);
+  assert.match(puzzles, /event\.key === "Enter"/);
+  assert.match(puzzles, /current \+ 500/);
+  assert.match(puzzles, /function nextPuzzle/);
+  assert.doesNotMatch(puzzles, /900/);
   assert.match(css, /\.word-rain-board/);
   assert.match(css, /\.sea-water\.splash/);
   assert.match(css, /\.capture-burst/);
   assert.match(css, /\.word-rain-console input\.input-error/);
+  assert.match(css, /\.crossword-cell\.active-word/);
+  assert.match(css, /\.crossword-cell\.wrong/);
+  assert.match(css, /@keyframes crossword-correct/);
 });
 
 test("keeps the selected interface language on the personal page", async () => {

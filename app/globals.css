@@ -451,6 +451,7 @@ footer {
 }
 
 .practice-workspace {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(265px, 0.82fr) minmax(360px, 1.18fr);
   align-items: stretch;
@@ -1221,103 +1222,104 @@ footer {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  opacity: 0.62;
   filter: drop-shadow(0 4px 5px rgba(21, 21, 21, 0.12));
 }
 
-.finger-trace {
-  position: absolute;
-  z-index: 5;
-  width: 5.2%;
-  height: 43%;
-  border: 2px solid rgba(109, 74, 255, .95);
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgba(255, 216, 77, .96), rgba(255, 77, 141, .48));
-  box-shadow: 0 0 0 5px rgba(255, 216, 77, .2), 0 0 25px rgba(109, 74, 255, .55);
-  transform: translate(-50%, -3%);
-  transform-origin: 50% 10%;
-  mix-blend-mode: multiply;
-  animation: finger-flow 860ms ease-in-out infinite;
+.hand-rest-image {
+  opacity: .36;
+  transition: opacity 180ms ease, filter 180ms ease;
 }
 
-.fingertip-marker {
+.hand-press-layer {
+  --press-y: 1%;
+  --press-scale: .96;
+  --press-rotate: 0deg;
   position: absolute;
   z-index: 6;
-  width: 21px;
-  height: 21px;
-  border: 2px solid var(--ink);
-  border-radius: 50%;
-  background: var(--yellow);
-  box-shadow: 0 0 0 6px rgba(255, 216, 65, 0.46), 0 0 22px rgba(255, 91, 155, 0.94);
-  transform: translate(-50%, -50%);
-  animation: fingertip-pulse 720ms ease-in-out infinite;
+  inset: 0;
+  overflow: hidden;
+  transform-origin: var(--origin-x, 50%) var(--origin-y, 46%);
+  filter: drop-shadow(0 8px 5px rgba(109, 74, 255, .24));
+  will-change: transform;
 }
 
-.fingertip-marker i {
+.hand-press-layer img {
+  opacity: .98;
+  filter: saturate(1.32) contrast(1.04) drop-shadow(0 0 7px rgba(255, 77, 141, .58));
+}
+
+.hand-press-layer::after {
   position: absolute;
-  inset: 5px;
-  border-radius: 50%;
-  background: var(--pink);
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 77, 141, .58), rgba(255, 216, 77, .48));
+  content: "";
+  mix-blend-mode: multiply;
+  -webkit-mask: url("/images/typing-hands-v2.png") center / contain no-repeat;
+  mask: url("/images/typing-hands-v2.png") center / contain no-repeat;
 }
 
-.fingertip-marker.left-pinky { left: 18.6%; top: 21.5%; }
-.fingertip-marker.left-ring { left: 23.5%; top: 12%; }
-.fingertip-marker.left-middle { left: 28.5%; top: 8.5%; }
-.fingertip-marker.left-index { left: 34.2%; top: 13%; }
-.fingertip-marker.left-thumb { left: 40%; top: 39%; }
-.fingertip-marker.right-thumb { left: 59.7%; top: 39%; }
-.fingertip-marker.right-index { left: 65.6%; top: 13%; }
-.fingertip-marker.right-middle { left: 71.3%; top: 8.5%; }
-.fingertip-marker.right-ring { left: 76.6%; top: 12%; }
-.fingertip-marker.right-pinky { left: 81.6%; top: 21.5%; }
-
-.finger-trace.left-pinky { left: 18.6%; top: 21.5%; height: 38%; transform: translate(-50%, -3%) rotate(14deg); }
-.finger-trace.left-ring { left: 23.5%; top: 12%; height: 45%; transform: translate(-50%, -3%) rotate(7deg); }
-.finger-trace.left-middle { left: 28.5%; top: 8.5%; height: 48%; }
-.finger-trace.left-index { left: 34.2%; top: 13%; height: 45%; transform: translate(-50%, -3%) rotate(-9deg); }
-.finger-trace.left-thumb { left: 40%; top: 39%; width: 6.5%; height: 31%; transform: translate(-50%, -3%) rotate(-34deg); }
-.finger-trace.right-thumb { left: 59.7%; top: 39%; width: 6.5%; height: 31%; transform: translate(-50%, -3%) rotate(34deg); }
-.finger-trace.right-index { left: 65.6%; top: 13%; height: 45%; transform: translate(-50%, -3%) rotate(9deg); }
-.finger-trace.right-middle { left: 71.3%; top: 8.5%; height: 48%; }
-.finger-trace.right-ring { left: 76.6%; top: 12%; height: 45%; transform: translate(-50%, -3%) rotate(-7deg); }
-.finger-trace.right-pinky { left: 81.6%; top: 21.5%; height: 38%; transform: translate(-50%, -3%) rotate(-14deg); }
-
-.finger-name-tag {
-  position: absolute;
-  z-index: 8;
-  inset-block-end: 3px;
-  padding: 5px 8px;
-  border: 1.5px solid var(--ink);
-  border-radius: 999px;
-  background: var(--ink);
-  color: var(--paper);
-  font-size: 8px;
-  font-weight: 950;
-  letter-spacing: .04em;
-  box-shadow: 2px 2px 0 var(--pink);
-  animation: tag-pop 260ms ease-out both;
+.hand-overlay.is-demonstrating .hand-press-layer {
+  animation: real-finger-demonstrate 1.35s cubic-bezier(.22,.75,.25,1) infinite;
 }
 
-.finger-name-tag.left-pinky,
-.finger-name-tag.left-ring,
-.finger-name-tag.left-middle,
-.finger-name-tag.left-index,
-.finger-name-tag.left-thumb { inset-inline-start: 7%; }
-
-.finger-name-tag.right-pinky,
-.finger-name-tag.right-ring,
-.finger-name-tag.right-middle,
-.finger-name-tag.right-index,
-.finger-name-tag.right-thumb { inset-inline-end: 7%; }
-
-@keyframes fingertip-pulse {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); }
-  50% { transform: translate(-50%, -50%) scale(1.2); }
+.hand-overlay.is-pressing .hand-press-layer {
+  animation: real-finger-press 170ms ease-out both;
 }
 
-@keyframes finger-flow {
-  0%, 100% { filter: saturate(1); opacity: .72; }
-  50% { filter: saturate(1.35); opacity: 1; box-shadow: 0 0 0 8px rgba(255, 216, 77, .24), 0 0 32px rgba(109, 74, 255, .72); }
+.hand-overlay.target-top .hand-press-layer { --press-y: -2%; --press-scale: 1.04; }
+.hand-overlay.target-home .hand-press-layer { --press-y: 1%; --press-scale: .96; }
+.hand-overlay.target-bottom .hand-press-layer { --press-y: 4%; --press-scale: .9; }
+.hand-overlay.target-space .hand-press-layer { --press-y: 2%; --press-scale: .93; }
+
+.hand-press-layer.left-pinky {
+  --origin-x: 20%; --press-rotate: 2deg;
+  clip-path: polygon(16.5% 20%, 20.5% 19%, 22.4% 27%, 21.8% 38%, 23.1% 45%, 20.5% 49%, 17.2% 43%, 16.2% 29%);
+}
+.hand-press-layer.left-ring {
+  --origin-x: 24%; --press-rotate: 1deg;
+  clip-path: polygon(21.2% 11%, 24% 10%, 26.2% 13%, 26.6% 35%, 28% 44%, 24.5% 49%, 21.4% 42%, 21% 22%);
+}
+.hand-press-layer.left-middle {
+  --origin-x: 29%;
+  clip-path: polygon(26.7% 7%, 29% 6%, 30.7% 9%, 30.7% 35%, 32% 44%, 29% 50%, 26.2% 43%, 26% 18%);
+}
+.hand-press-layer.left-index {
+  --origin-x: 34%; --press-rotate: -2deg;
+  clip-path: polygon(31.4% 12%, 34% 11%, 35.7% 15%, 35.2% 36%, 36.2% 45%, 33.3% 50%, 30.8% 43%, 31% 23%);
+}
+.hand-press-layer.left-thumb {
+  --origin-x: 39%; --origin-y: 53%; --press-rotate: -5deg;
+  clip-path: polygon(35% 37%, 39% 34%, 42% 39%, 42% 51%, 39% 58%, 35% 53%, 34% 44%);
+}
+.hand-press-layer.right-thumb {
+  --origin-x: 61%; --origin-y: 53%; --press-rotate: 5deg;
+  clip-path: polygon(58% 39%, 61% 34%, 65% 37%, 66% 44%, 65% 53%, 61% 58%, 58% 51%);
+}
+.hand-press-layer.right-index {
+  --origin-x: 66%; --press-rotate: 2deg;
+  clip-path: polygon(64.3% 15%, 66% 11%, 68.6% 12%, 69% 23%, 69.2% 43%, 66.7% 50%, 63.8% 45%, 64.8% 36%);
+}
+.hand-press-layer.right-middle {
+  --origin-x: 71%;
+  clip-path: polygon(69.3% 9%, 71% 6%, 73.3% 7%, 74% 18%, 73.8% 43%, 71% 50%, 68% 44%, 69.3% 35%);
+}
+.hand-press-layer.right-ring {
+  --origin-x: 76%; --press-rotate: -1deg;
+  clip-path: polygon(73.8% 13%, 76% 10%, 78.8% 11%, 79% 22%, 78.6% 42%, 75.5% 49%, 72% 44%, 73.4% 35%);
+}
+.hand-press-layer.right-pinky {
+  --origin-x: 80%; --press-rotate: -2deg;
+  clip-path: polygon(77.6% 27%, 79.5% 19%, 83.5% 20%, 83.8% 29%, 82.8% 43%, 79.5% 49%, 76.9% 45%, 78.2% 38%);
+}
+
+@keyframes real-finger-demonstrate {
+  0%, 28%, 100% { transform: translateY(0) scaleY(1) rotate(0); }
+  58%, 78% { transform: translateY(var(--press-y)) scaleY(var(--press-scale)) rotate(var(--press-rotate)); }
+}
+
+@keyframes real-finger-press {
+  from { transform: translateY(0) scaleY(1); }
+  to { transform: translateY(var(--press-y)) scaleY(var(--press-scale)) rotate(var(--press-rotate)); }
 }
 
 @keyframes finger-nudge {
@@ -1325,9 +1327,39 @@ footer {
   50% { transform: translateY(-3px) rotate(7deg); }
 }
 
-@keyframes tag-pop {
-  from { opacity: 0; transform: scale(.72) translateY(8px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+.practice-pause-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-block-end: 10px;
+  padding: 9px 11px;
+  border: 1.5px solid var(--ink);
+  border-radius: 11px;
+  background: #e9e4ff;
+  box-shadow: 2px 2px 0 var(--ink);
+  animation: lesson-slide-in 180ms ease-out both;
+}
+
+.practice-pause-banner > span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--purple);
+  color: white;
+  font-weight: 950;
+}
+
+.practice-pause-banner div { display: grid; gap: 2px; }
+.practice-pause-banner b { font-size: 11px; }
+.practice-pause-banner small { color: var(--muted); font-size: 8px; font-weight: 750; }
+
+.practice-card.is-paused .hand-press-layer,
+.practice-card.is-paused .keyboard-row kbd.active,
+.practice-card.is-paused .stage-orbit {
+  animation-play-state: paused;
 }
 
 .daily-meter {
@@ -1344,6 +1376,12 @@ footer {
 
 .daily-time {
   display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.daily-time > div {
+  display: flex;
   align-items: baseline;
   gap: 3px;
 }
@@ -1352,6 +1390,30 @@ footer {
   font-size: 25px;
   letter-spacing: -0.06em;
 }
+
+.timer-pause-button {
+  display: inline-flex;
+  min-width: 65px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding-inline: 9px;
+  border: 1px solid #6d6d68;
+  border-radius: 999px;
+  background: #30302d;
+  color: white;
+  font: inherit;
+  font-size: 8px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.timer-pause-button span { color: var(--yellow); font-size: 11px; }
+.timer-pause-button:hover:not(:disabled) { border-color: var(--yellow); transform: translateY(-1px); }
+.timer-pause-button.paused { background: var(--yellow); color: var(--ink); }
+.timer-pause-button.paused span { color: var(--purple); }
+.timer-pause-button:disabled { cursor: not-allowed; opacity: .38; }
 
 @keyframes lesson-slide-in {
   from { opacity: 0; transform: translateX(18px); }
@@ -1535,6 +1597,7 @@ footer {
   border-radius: 28px;
   background: var(--paper);
   box-shadow: var(--shadow);
+  scroll-margin-block-start: 18px;
 }
 
 .demo-copy {
@@ -1870,10 +1933,37 @@ footer {
 .crossword-game-wrap {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: minmax(260px, .8fr) minmax(300px, 1.2fr);
-  align-items: center;
-  gap: clamp(30px, 6vw, 90px);
+  grid-template-columns: minmax(330px, .86fr) minmax(420px, 1.14fr);
+  align-items: start;
+  gap: clamp(30px, 5vw, 72px);
   width: 100%;
+}
+
+.crossword-board-column {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  max-width: 470px;
+  justify-self: center;
+}
+
+.crossword-board-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 4px;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.crossword-board-heading b {
+  padding: 5px 9px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--lime);
+  letter-spacing: 0;
 }
 
 .crossword-copy .puzzle-progress {
@@ -1882,36 +1972,260 @@ footer {
 
 .crossword-grid {
   display: grid;
-  width: min(320px, 100%);
+  width: min(430px, 100%);
   aspect-ratio: 1;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  padding: 12px;
-  border: 3px solid var(--ink);
-  border-radius: 20px;
+  gap: 3px;
+  padding: 8px;
+  border: 4px solid var(--ink);
+  border-radius: 18px;
   background: var(--ink);
+  box-shadow: 7px 7px 0 color-mix(in srgb, var(--purple) 34%, transparent);
+  transition: box-shadow .25s ease, transform .25s ease;
 }
 
-.crossword-grid span,
-.crossword-grid input {
+.crossword-block {
+  min-width: 0;
+  border-radius: 3px;
+  background:
+    radial-gradient(circle at 30% 30%, rgb(255 255 255 / .055) 0 2px, transparent 3px),
+    #262623;
+}
+
+.crossword-cell {
+  position: relative;
   display: grid;
   min-width: 0;
+  overflow: hidden;
   place-items: center;
   border: 0;
-  border-radius: 5px;
+  border-radius: 4px;
   background: var(--paper);
+  box-shadow: inset 0 0 0 2px transparent;
+  transition: background .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.crossword-cell small {
+  position: absolute;
+  z-index: 2;
+  inset-block-start: 4px;
+  inset-inline-start: 5px;
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
+  font-size: 10px;
+  font-weight: 950;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.crossword-cell input {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
   text-align: center;
-  font-size: 20px;
+  font-family: inherit;
+  font-size: clamp(22px, 4vw, 34px);
+  font-weight: 950;
+  caret-color: var(--purple);
+}
+
+.crossword-cell.active-word {
+  background: #fff5ae;
+}
+
+.crossword-cell.selected {
+  z-index: 3;
+  background: var(--yellow);
+  box-shadow: inset 0 0 0 4px var(--purple);
+  transform: scale(.96);
+}
+
+.crossword-cell.wrong {
+  background: #ffd9df;
+  box-shadow: inset 0 0 0 4px #d82f49;
+  animation: crossword-wrong .35s ease both;
+}
+
+.crossword-cell.correct {
+  background: var(--lime);
+  box-shadow: inset 0 0 0 2px #668d00;
+  animation: crossword-correct .44s cubic-bezier(.2, 1.5, .4, 1) both;
+}
+
+.crossword-game-wrap.solved .crossword-grid {
+  transform: rotate(-.35deg) translateY(-3px);
+  box-shadow: 9px 9px 0 color-mix(in srgb, var(--lime) 70%, var(--ink));
+}
+
+.crossword-direction-legend {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.crossword-direction-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.crossword-direction-legend i {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 2px solid var(--ink);
+  border-radius: 7px;
+  background: var(--paper);
+  color: var(--purple);
+  font-style: normal;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.crossword-copy h3 {
+  margin-block: 8px 6px;
+}
+
+.crossword-status {
+  min-height: 46px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 2px solid color-mix(in srgb, var(--ink) 22%, transparent);
+  border-radius: 12px;
+  background: rgb(255 255 255 / .58);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.crossword-status.incomplete {
+  border-color: #dc9c00;
+  background: #fff5c8;
+  color: #6c4b00;
+}
+
+.crossword-status.wrong {
+  border-color: #d82f49;
+  background: #fff0f2;
+  color: #8f152a;
+}
+
+.crossword-status.solved {
+  border-color: #668d00;
+  background: #efffc6;
+  color: #365500;
+}
+
+.crossword-clues {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.crossword-clues section {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+}
+
+.crossword-clues h4 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .02em;
+}
+
+.crossword-clues button {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 9px;
+  border: 2px solid color-mix(in srgb, var(--ink) 24%, transparent);
+  border-radius: 11px;
+  background: rgb(255 255 255 / .68);
+  color: var(--ink);
+  text-align: start;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.crossword-clues button:hover {
+  border-color: var(--purple);
+  transform: translateY(-1px);
+}
+
+.crossword-clues button.active {
+  border-color: var(--ink);
+  background: #e9e1ff;
+  box-shadow: 3px 3px 0 var(--purple);
+  transform: translate(-2px, -2px);
+}
+
+.crossword-clues button > b {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 11px;
+}
+
+.crossword-clues button > span {
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.crossword-clues button > small {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.crossword-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-block-start: 16px;
+}
+
+.crossword-clear {
+  padding: 10px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
   font-weight: 900;
 }
 
-.crossword-grid .blank {
-  background: #2d2d2a;
+.crossword-clear:hover {
+  background: var(--yellow);
+  transform: translateY(-1px);
 }
 
-.crossword-grid input {
-  outline: 4px solid var(--yellow);
-  outline-offset: -4px;
+@keyframes crossword-wrong {
+  0%, 100% { transform: translateX(0); }
+  30% { transform: translateX(-4px); }
+  65% { transform: translateX(4px); }
+}
+
+@keyframes crossword-correct {
+  from { transform: scale(.82); }
+  to { transform: scale(1); }
 }
 
 .kpop-demo {
@@ -3279,6 +3593,30 @@ footer > div {
     inset-block-start: 50px;
     transform: scale(0.88);
     transform-origin: center bottom;
+  }
+
+  .crossword-board-column {
+    max-width: 390px;
+  }
+
+  .crossword-grid {
+    padding: 6px;
+    gap: 2px;
+    border-width: 3px;
+    border-radius: 14px;
+    box-shadow: 5px 5px 0 color-mix(in srgb, var(--purple) 34%, transparent);
+  }
+
+  .crossword-cell input {
+    font-size: clamp(21px, 8vw, 30px);
+  }
+
+  .crossword-clues {
+    grid-template-columns: 1fr;
+  }
+
+  .crossword-actions > * {
+    flex: 1;
   }
 
   .lesson-evaluation {
