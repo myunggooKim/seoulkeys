@@ -112,3 +112,10 @@ test("ships both female and male prerecorded Korean audio", async () => {
     }
   }
 });
+
+test("keeps header controls out of the progress navigation at laptop widths", async () => {
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(css, /grid-template-columns: auto minmax\(0, 1fr\) auto/);
+  assert.match(css, /@media \(max-width: 1360px\)[\s\S]*?\.audio-control-cluster \.speech-toggle-copy[\s\S]*?display: none/);
+  assert.match(css, /@media \(max-width: 1120px\)[\s\S]*?\.nav-links[\s\S]*?display: none/);
+});
