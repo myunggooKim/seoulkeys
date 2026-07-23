@@ -4,15 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FallingWordsGame } from "./FallingWordsGame";
 import { decomposeHangulCharacter } from "./hangul-keyboard";
 import { evaluateLessonAttempt, type LessonEvaluation } from "./lesson-evaluation";
+import {
+  type Locale,
+  readManualLocalePreference,
+  resolveVisitorLocale,
+  saveManualLocalePreference,
+} from "./locale-detection";
 import { practiceCurriculum, practiceStageLabels, practiceStageOrder, sentencePracticeItems } from "./practice-curriculum";
 import { CrosswordGame, MissingLetterGame } from "./ProgressivePuzzles";
 
-type Locale =
-  | "en" | "ko" | "es" | "pt-BR" | "ja" | "zh-Hans" | "zh-Hant"
-  | "fr" | "de" | "it" | "pl" | "nl" | "ru" | "tr"
-  | "ar" | "fa" | "ur" | "fil" | "th" | "id" | "ms" | "vi"
-  | "my" | "km" | "lo" | "hi" | "bn" | "ta" | "ne" | "si"
-  | "kk" | "uz" | "mn";
 type ActivityId = "home" | "tetris" | "missing" | "crossword" | "travel" | "kpop" | "screen";
 type TravelMode = "inKorea" | "welcome";
 type KeyboardLayout = "qwerty" | "azerty" | "qwertz";
@@ -608,27 +608,6 @@ const localeGroups: Array<{ label: string; options: Array<{ value: Locale; label
 
 const rtlLocales = new Set<Locale>(["ar", "fa", "ur"]);
 
-const localeByBrowserCode: Record<string, Locale> = {
-  en: "en", ko: "ko", es: "es", pt: "pt-BR", ja: "ja", zh: "zh-Hans",
-  fr: "fr", de: "de", it: "it", pl: "pl", nl: "nl", ru: "ru", tr: "tr",
-  ar: "ar", fa: "fa", ur: "ur", fil: "fil", tl: "fil", th: "th", id: "id",
-  ms: "ms", vi: "vi", my: "my", km: "km", lo: "lo", hi: "hi", bn: "bn",
-  ta: "ta", ne: "ne", si: "si", kk: "kk", uz: "uz", mn: "mn",
-};
-
-function resolveBrowserLocale(languages: readonly string[]): Locale {
-  for (const language of languages) {
-    const normalized = language.toLowerCase();
-    if (normalized === "zh-tw" || normalized === "zh-hk" || normalized === "zh-mo" || normalized.includes("hant")) {
-      return "zh-Hant";
-    }
-    if (normalized === "pt-br") return "pt-BR";
-    const matched = localeByBrowserCode[normalized.split("-")[0]];
-    if (matched) return matched;
-  }
-  return "en";
-}
-
 const koreanKeyRows: Array<{ row: KeyboardRow; keys: KoreanKey[] }> = [
   {
     row: "top",
@@ -1166,6 +1145,7 @@ export default function Home() {
   const speechRequestRef = useRef(0);
   const speakingRef = useRef(false);
   const fingerReleaseTimerRef = useRef<number | null>(null);
+  const manualLocaleRef = useRef(false);
 
   const t = copy[locale];
   const keyboardText = keyboardHelpCopy[locale] ?? englishKeyboardCopy;
@@ -1372,19 +1352,36 @@ export default function Home() {
   }, [publishedKpopItems.length]);
 
   useEffect(() => {
+    let active = true;
     const hydrationTimer = window.setTimeout(() => {
       try {
-      const savedLocale = window.localStorage.getItem("hangeul-pop-locale");
+      const manualLocale = readManualLocalePreference(window.localStorage);
       const savedKeyboardLayout = window.localStorage.getItem("hangeul-pop-keyboard-layout");
       const savedAutoSpeak = window.localStorage.getItem("hangeul-pop-auto-speak");
       const savedVoiceGender = window.localStorage.getItem("hangeul-pop-voice-gender");
       const savedReturnSound = window.localStorage.getItem("hangeul-pop-return-sound");
       const savedDailyLesson = window.localStorage.getItem("hangeul-pop-daily-lesson");
       const savedPrivacyNotice = window.localStorage.getItem("hangeul-pop-privacy-notice");
-      if (savedLocale && savedLocale in copy) {
-        setLocale(savedLocale as Locale);
+      if (manualLocale) {
+        manualLocaleRef.current = true;
+        setLocale(manualLocale);
       } else {
-        setLocale(resolveBrowserLocale(navigator.languages));
+        const languages = navigator.languages?.length ? navigator.languages : [navigator.language];
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        setLocale(resolveVisitorLocale({ languages, timeZone }));
+        void fetch("/api/locale", { headers: { accept: "application/json" }, cache: "no-store" })
+          .then(async (response) => response.ok ? response.json() : null)
+          .then((visitor) => {
+            if (!active || manualLocaleRef.current) return;
+            setLocale(resolveVisitorLocale({
+              languages,
+              timeZone,
+              countryCode: typeof visitor?.countryCode === "string" ? visitor.countryCode : null,
+            }));
+          })
+          .catch(() => {
+            // Browser language and time zone already provide an offline-safe default.
+          });
       }
       if (savedKeyboardLayout === "qwerty" || savedKeyboardLayout === "azerty" || savedKeyboardLayout === "qwertz") {
         setKeyboardLayout(savedKeyboardLayout);
@@ -1409,14 +1406,21 @@ export default function Home() {
         }
       }
       } catch {
-        setLocale(resolveBrowserLocale(navigator.languages));
+        const languages = navigator.languages?.length ? navigator.languages : [navigator.language];
+        setLocale(resolveVisitorLocale({
+          languages,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }));
       }
       const supported = "Audio" in window || ("speechSynthesis" in window && "SpeechSynthesisUtterance" in window);
       setSpeechSupported(supported);
       if (!supported) setAutoSpeak(false);
       setProgressLoaded(true);
     }, 0);
-    return () => window.clearTimeout(hydrationTimer);
+    return () => {
+      active = false;
+      window.clearTimeout(hydrationTimer);
+    };
   }, []);
 
   useEffect(() => () => {
@@ -1454,11 +1458,6 @@ export default function Home() {
   useEffect(() => {
     document.documentElement.lang = locale;
     document.documentElement.dir = rtlLocales.has(locale) ? "rtl" : "ltr";
-    try {
-      window.localStorage.setItem("hangeul-pop-locale", locale);
-    } catch {
-      // The language still applies for this session when storage is unavailable.
-    }
   }, [locale]);
 
   useEffect(() => {
@@ -1620,6 +1619,16 @@ export default function Home() {
     window.setTimeout(() => document.getElementById("hero-typing-input")?.focus(), 0);
   }
 
+  function chooseInterfaceLocale(nextLocale: Locale) {
+    manualLocaleRef.current = true;
+    setLocale(nextLocale);
+    try {
+      saveManualLocalePreference(window.localStorage, nextLocale);
+    } catch {
+      // The selected language still applies for this session when storage is unavailable.
+    }
+  }
+
   function selectActivity(activity: ActivityId) {
     setActiveActivity(activity);
     window.setTimeout(() => {
@@ -1670,7 +1679,7 @@ export default function Home() {
           </div>
           <label className="language-picker">
             <span className="sr-only">Interface language</span>
-            <select value={locale} onChange={(event) => setLocale(event.target.value as Locale)}>
+            <select value={locale} onChange={(event) => chooseInterfaceLocale(event.target.value as Locale)}>
               {localeGroups.map((group) => (
                 <optgroup label={group.label} key={group.label}>
                   {group.options.map((option) => (

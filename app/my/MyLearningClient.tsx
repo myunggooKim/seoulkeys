@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useSyncExternalStore } from "react";
+import { readManualLocalePreference, resolveVisitorLocale } from "../locale-detection";
 
 type MyLearningClientProps = {
   identity: { email: string };
@@ -35,16 +36,25 @@ function subscribeToLocale() {
 }
 
 function getKoreanLocaleSnapshot() {
-  const locale = window.localStorage.getItem("hangeul-pop-locale");
-  return locale === "ko" || locale === null;
+  const locale = readManualLocalePreference(window.localStorage)
+    ?? resolveVisitorLocale({
+      languages: navigator.languages?.length ? navigator.languages : [navigator.language],
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    });
+  return locale === "ko";
 }
 
 export default function MyLearningClient({ identity, signOutPath, user, progress, rewards }: MyLearningClientProps) {
   const koreanUi = useSyncExternalStore(subscribeToLocale, getKoreanLocaleSnapshot, () => true);
 
   useEffect(() => {
-    const locale = window.localStorage.getItem("hangeul-pop-locale");
-    document.documentElement.lang = koreanUi ? "ko" : locale ?? "en";
+    const locale = readManualLocalePreference(window.localStorage)
+      ?? resolveVisitorLocale({
+        languages: navigator.languages?.length ? navigator.languages : [navigator.language],
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      });
+    document.documentElement.lang = locale;
+    document.documentElement.dir = locale === "ar" || locale === "fa" || locale === "ur" ? "rtl" : "ltr";
   }, [koreanUi]);
 
   const level = Math.floor(user.totalXp / 500) + 1;

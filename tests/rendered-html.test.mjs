@@ -95,10 +95,20 @@ test("ships Enter-confirmed falling words, advancing missing letters, and a real
 
 test("keeps the selected interface language on the personal page", async () => {
   const profile = await readFile(new URL("../app/my/MyLearningClient.tsx", import.meta.url), "utf8");
-  assert.match(profile, /hangeul-pop-locale/);
+  assert.match(profile, /readManualLocalePreference/);
+  assert.match(profile, /resolveVisitorLocale/);
   assert.match(profile, /학습 계속하기/);
   assert.match(profile, /오늘의 리듬 이어가기/);
   assert.match(profile, /학습 단계/);
+});
+
+test("detects visitor locale before saving an explicit language preference", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(page, /readManualLocalePreference/);
+  assert.match(page, /resolveVisitorLocale\(\{ languages, timeZone \}\)/);
+  assert.match(page, /fetch\("\/api\/locale"/);
+  assert.match(page, /saveManualLocalePreference\(window\.localStorage, nextLocale\)/);
+  assert.doesNotMatch(page, /localStorage\.setItem\("hangeul-pop-locale", locale\)/);
 });
 
 test("ships both female and male prerecorded Korean audio", async () => {
