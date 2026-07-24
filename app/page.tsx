@@ -1206,6 +1206,7 @@ export default function Home() {
   const [lessonAccepted, setLessonAccepted] = useState(false);
   const [lessonKeystrokes, setLessonKeystrokes] = useState(0);
   const [lessonMistakes, setLessonMistakes] = useState(0);
+  const [practiceComposing, setPracticeComposing] = useState(false);
   const [stagePerformance, setStagePerformance] = useState(createStagePerformance);
   const [masteryPrompt, setMasteryPrompt] = useState<MasteryPrompt | null>(null);
   const [practiceCoachMessage, setPracticeCoachMessage] = useState("");
@@ -1423,6 +1424,7 @@ export default function Home() {
     setLessonEvaluation(null);
     setLessonKeystrokes(0);
     setLessonMistakes(0);
+    setPracticeComposing(false);
     setMasteryPrompt(null);
     setPracticeCoachMessage(coachMessage);
     setLastAttemptCpm(0);
@@ -1504,6 +1506,96 @@ export default function Home() {
     setSessionRounds((rounds) => rounds + 1);
     preparePracticeItem(indices[0], coaching);
   }, [currentPracticeItem.kind, currentStageIndex, lessonIndex, locale, preparePracticeItem, stagePerformance]);
+
+  const resetCurrentPractice = useCallback(() => {
+    setTyped("");
+    setGuideStep(0);
+    setLessonAccepted(false);
+    setLessonEvaluation(null);
+    setLessonKeystrokes(0);
+    setLessonMistakes(0);
+    setPracticeComposing(false);
+    setLastAttemptCpm(0);
+    attemptStartedAtRef.current = null;
+    window.setTimeout(focusPracticeInput, 0);
+  }, [focusPracticeInput]);
+
+  const submitPracticeAttempt = useCallback(() => {
+    if (lessonAccepted || advanceQueued) return;
+    let evaluation = evaluateLessonAttempt(typed, targetSentence, lessonKeystrokes, lessonMistakes);
+    if (evaluation.accepted && evaluation.accuracy < currentPracticeItem.minAccuracy) {
+      evaluation = {
+        ...evaluation,
+        accepted: false,
+        label: `정확도 ${currentPracticeItem.minAccuracy}%가 필요해요`,
+        message: "손을 그대로 두세요. 잠시 후 같은 자리를 자동으로 다시 시작합니다.",
+      };
+    } else if (evaluation.accepted && !currentPracticeItem.speak) {
+      evaluation = { ...evaluation, message: "자리 검사 완료 · 다음 과제가 자동으로 이어집니다." };
+    }
+    setLessonEvaluation(evaluation);
+    if (!evaluation.accepted) return;
+    const activeMilliseconds = attemptStartedAtRef.current
+      ? Math.max(1000, performance.now() - attemptStartedAtRef.current)
+      : 60000;
+    const typedUnits = Math.max(1, targetChars.filter((character) => character !== " ").length);
+    const attemptCpm = Math.min(999, Math.round(typedUnits / (activeMilliseconds / 60000)));
+    setLastAttemptCpm(attemptCpm);
+    setLessonAccepted(true);
+    confirmAndAdvance(
+      () => advanceLesson(evaluation.accuracy, attemptCpm),
+      targetSentence,
+      currentPracticeItem.speak,
+    );
+  }, [
+    advanceLesson,
+    advanceQueued,
+    confirmAndAdvance,
+    currentPracticeItem.minAccuracy,
+    currentPracticeItem.speak,
+    lessonAccepted,
+    lessonKeystrokes,
+    lessonMistakes,
+    targetChars,
+    targetSentence,
+    typed,
+  ]);
+
+  useEffect(() => {
+    if (
+      currentPracticeItem.kind === "sentence"
+      || !sentenceComplete
+      || lessonAccepted
+      || advanceQueued
+      || lessonPaused
+      || lessonFinished
+      || masteryPrompt
+      || practiceComposing
+    ) return;
+    const timer = window.setTimeout(submitPracticeAttempt, 180);
+    return () => window.clearTimeout(timer);
+  }, [
+    advanceQueued,
+    currentPracticeItem.kind,
+    lessonAccepted,
+    lessonFinished,
+    lessonPaused,
+    masteryPrompt,
+    practiceComposing,
+    sentenceComplete,
+    submitPracticeAttempt,
+  ]);
+
+  useEffect(() => {
+    if (
+      currentPracticeItem.kind === "sentence"
+      || !sentenceComplete
+      || !lessonEvaluation
+      || lessonEvaluation.accepted
+    ) return;
+    const timer = window.setTimeout(resetCurrentPractice, 1050);
+    return () => window.clearTimeout(timer);
+  }, [currentPracticeItem.kind, lessonEvaluation, resetCurrentPractice, sentenceComplete]);
 
   const advanceTravelPhrase = useCallback(() => {
     setTravelIndex((index) => (index + 1) % travelPhrases[travelMode].length);
@@ -1752,10 +1844,18 @@ export default function Home() {
   }, [completedSentences, lessonFinished, lessonIndex, lessonStarted, progressLoaded]);
 
   useEffect(() => {
-    if (!lessonStarted || lessonFinished || lessonPaused || masteryPrompt) return;
+    if (
+      !lessonStarted
+      || lessonFinished
+      || lessonPaused
+      || masteryPrompt
+      || sentenceComplete
+      || lessonAccepted
+      || advanceQueued
+    ) return;
     const timer = window.setInterval(() => setElapsedSeconds((seconds) => seconds + 1), 1000);
     return () => window.clearInterval(timer);
-  }, [lessonFinished, lessonPaused, lessonStarted, masteryPrompt]);
+  }, [advanceQueued, lessonAccepted, lessonFinished, lessonPaused, lessonStarted, masteryPrompt, sentenceComplete]);
 
   useEffect(() => {
     if (!practiceFocusMode || !lessonStarted || lessonFinished || lessonPaused || masteryPrompt || lessonAccepted) return;
@@ -1809,6 +1909,7 @@ export default function Home() {
       setLessonEvaluation(null);
       setLessonKeystrokes(0);
       setLessonMistakes(0);
+      setPracticeComposing(false);
       setStagePerformance(createStagePerformance());
       setMasteryPrompt(null);
       setPracticeCoachMessage("");
@@ -1834,18 +1935,6 @@ export default function Home() {
       if (!nextPaused) focusPracticeInput();
       window.requestAnimationFrame(() => window.scrollTo({ ...stableScroll, behavior: "auto" }));
     });
-  }
-
-  function resetCurrentPractice() {
-    setTyped("");
-    setGuideStep(0);
-    setLessonAccepted(false);
-    setLessonEvaluation(null);
-    setLessonKeystrokes(0);
-    setLessonMistakes(0);
-    setLastAttemptCpm(0);
-    attemptStartedAtRef.current = null;
-    window.setTimeout(focusPracticeInput, 0);
   }
 
   function chooseInterfaceLocale(nextLocale: Locale) {
@@ -2055,33 +2144,10 @@ export default function Home() {
                   }
                   if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
                   event.preventDefault();
-                  if (lessonAccepted || advanceQueued) return;
-                  let evaluation = evaluateLessonAttempt(typed, targetSentence, lessonKeystrokes, lessonMistakes);
-                  if (evaluation.accepted && evaluation.accuracy < currentPracticeItem.minAccuracy) {
-                    evaluation = {
-                      ...evaluation,
-                      accepted: false,
-                      label: `정확도 ${currentPracticeItem.minAccuracy}%가 필요해요`,
-                      message: "속도는 괜찮아요. 입력을 지우고 손가락 자리를 보며 한 번 더 연습하세요.",
-                    };
-                  } else if (evaluation.accepted && !currentPracticeItem.speak) {
-                    evaluation = { ...evaluation, message: "자리 검사 완료 · 타자기 줄바꿈 소리 후 다음 연습으로 이동합니다." };
-                  }
-                  setLessonEvaluation(evaluation);
-                  if (!evaluation.accepted) return;
-                  const activeMilliseconds = attemptStartedAtRef.current
-                    ? Math.max(1000, performance.now() - attemptStartedAtRef.current)
-                    : 60000;
-                  const typedUnits = Math.max(1, targetChars.filter((character) => character !== " ").length);
-                  const attemptCpm = Math.min(999, Math.round(typedUnits / (activeMilliseconds / 60000)));
-                  setLastAttemptCpm(attemptCpm);
-                  setLessonAccepted(true);
-                  confirmAndAdvance(
-                    () => advanceLesson(evaluation.accuracy, attemptCpm),
-                    targetSentence,
-                    currentPracticeItem.speak,
-                  );
+                  submitPracticeAttempt();
                 }}
+                onCompositionStart={() => setPracticeComposing(true)}
+                onCompositionEnd={() => setPracticeComposing(false)}
                 onKeyUp={() => {
                   if (fingerReleaseTimerRef.current) window.clearTimeout(fingerReleaseTimerRef.current);
                   fingerReleaseTimerRef.current = window.setTimeout(() => {
@@ -2111,7 +2177,9 @@ export default function Home() {
                       ? "↵ 타자기 줄바꿈 소리 후 발음을 읽고 다음 연습으로 이동합니다."
                       : "↵ 타자기 줄바꿈 소리 후 다음 자리 연습으로 이동합니다."
                     : sentenceComplete
-                      ? "✓ 입력 완료 · Enter ↵를 눌러 정확도를 검사하세요."
+                      ? currentPracticeItem.kind === "sentence"
+                        ? "✓ 문장 입력 완료 · Enter ↵를 눌러 정확도를 검사하세요."
+                        : "✓ 자리 입력 완료 · 검사 후 다음 과제가 자동으로 이어집니다."
                       : typedChars.length
                         ? `${accuracy}% accurate · keep going`
                         : "Follow the highlighted key position below."}
@@ -2214,7 +2282,14 @@ export default function Home() {
                   ) : (
                     <div className="next-key-card complete" aria-live="polite">
                       <span aria-hidden="true">✓</span>
-                      <b>{keyboardText.complete}</b>
+                      <span className="next-key-copy">
+                        <small>{keyboardText.complete}</small>
+                        <b>
+                          {currentPracticeItem.kind === "sentence"
+                            ? locale === "ko" ? "손을 그대로 두고 Enter ↵" : "Keep your hands still · press Enter ↵"
+                            : locale === "ko" ? "손을 그대로 · 다음 과제 자동 준비 중" : "Hands ready · next drill loading"}
+                        </b>
+                      </span>
                     </div>
                   )}
 

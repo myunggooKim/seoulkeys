@@ -34,6 +34,10 @@ test("connects animated anatomical hands, pausable practice, Enter evaluation, s
   assert.match(page, /연습 타이머 일시정지/);
   assert.match(page, /event\.key !== "Enter"/);
   assert.match(page, /evaluateLessonAttempt/);
+  assert.match(page, /currentPracticeItem\.kind === "sentence"\s*\|\| !sentenceComplete/);
+  assert.match(page, /window\.setTimeout\(submitPracticeAttempt, 180\)/);
+  assert.match(page, /\|\| sentenceComplete\s*\|\| lessonAccepted\s*\|\| advanceQueued/);
+  assert.match(page, /다음 과제가 자동으로 이어집니다/);
   assert.match(page, /currentPracticeItem\.minAccuracy/);
   assert.match(page, /confirmAndAdvance\(\s*\(\) => advanceLesson\(evaluation\.accuracy, attemptCpm\)/);
   assert.match(page, /masteryPrompt/);
@@ -102,6 +106,8 @@ test("ships Enter-confirmed falling words, advancing missing letters, and a real
   assert.match(falling, /playGameEffect\("blast"/);
   assert.match(falling, /playGameEffect\("damage"/);
   assert.match(falling, /WAVE \{waveClear\.toString/);
+  assert.doesNotMatch(falling, /if \(paused \|\| gameOver \|\| briefing \|\| waveClear\) return/);
+  assert.doesNotMatch(falling, /disabled=\{briefing \|\| paused \|\| gameOver \|\| Boolean\(waveClear\)\}/);
   assert.match(falling, /Alt\+M/);
   assert.match(falling, /recentWordsRef/);
   assert.match(falling, /fresh\.length \? fresh : unlocked/);
@@ -109,6 +115,13 @@ test("ships Enter-confirmed falling words, advancing missing letters, and a real
   assert.match(falling, /CITY DESTROYED · MISSION FAILED/);
   assert.match(falling, /createStereoPanner/);
   assert.match(falling, /state\.danger > 0\.68/);
+  assert.match(falling, /threatPressure/);
+  assert.match(falling, /state\.threatCount/);
+  assert.match(falling, /RETRO_STEP_MS - threatPressure \* 52/);
+  assert.match(falling, /city-skyline-back/);
+  assert.match(falling, /city-smoke/);
+  assert.match(falling, /city-rubble/);
+  assert.match(falling, /missile-plume/);
   assert.doesNotMatch(falling, /onChange=\{\(event\) => captureWord/);
   assert.match(puzzles, /setPuzzleIndex\(isLevelEnd \? 0 : puzzleIndex \+ 1\)/);
   assert.match(puzzles, /1450/);
@@ -139,6 +152,10 @@ test("ships Enter-confirmed falling words, advancing missing letters, and a real
   assert.match(css, /\.neon-city/);
   assert.match(css, /\.neon-city\.damage-5/);
   assert.match(css, /\.city-damage-layer/);
+  assert.match(css, /\.city-smoke/);
+  assert.match(css, /\.city-rubble/);
+  assert.match(css, /\.missile-plume/);
+  assert.match(css, /@keyframes city-smoke-rise/);
   assert.match(css, /\.threat-alert\.active/);
   assert.match(css, /@keyframes city-impact/);
   assert.match(css, /@keyframes blast-ring/);

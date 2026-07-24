@@ -127,7 +127,15 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
   const shockTimerRef = useRef<number | null>(null);
   const waveTimerRef = useRef<number | null>(null);
   const audioEngineRef = useRef<RetroAudioEngine | null>(null);
-  const audioStateRef = useRef({ paused: false, gameOver: false, briefing: true, waveClear: false, danger: 0 });
+  const audioStateRef = useRef({
+    paused: false,
+    gameOver: false,
+    briefing: true,
+    waveClear: false,
+    danger: 0,
+    damage: 0,
+    threatCount: 3,
+  });
   const localAudioEnabledRef = useRef(true);
   const recentWordsRef = useRef(["사랑", "음악", "여행"]);
   const [words, setWords] = useState<FallingWord[]>([
@@ -167,7 +175,7 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
   const stopRetroAudio = useCallback(() => {
     const engine = audioEngineRef.current;
     if (!engine) return;
-    window.clearInterval(engine.timer);
+    window.clearTimeout(engine.timer);
     void engine.context.close();
     audioEngineRef.current = null;
   }, []);
@@ -191,26 +199,36 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
     const engine: RetroAudioEngine = { context, music, effects, timer: 0, step: 0 };
     const bassPattern = [110, 110, 146.83, 110, 164.81, 146.83, 98, 123.47];
     const leadPattern = [440, 523.25, 659.25, 523.25, 392, 493.88, 587.33, 493.88];
-    engine.timer = window.setInterval(() => {
+    const playMusicStep = () => {
       const state = audioStateRef.current;
-      if (state.paused || state.gameOver || state.briefing || state.waveClear || context.state !== "running") return;
-      const now = context.currentTime + 0.012;
-      const patternIndex = Math.floor(engine.step / 4) % bassPattern.length;
-      if (engine.step % 4 === 0) {
-        synthTone(context, music, bassPattern[patternIndex], now, 0.26, 0.026, "triangle");
+      const threatPressure = Math.max(0, Math.min(1,
+        Math.max(0, state.threatCount - 2) / 4 * 0.45
+        + state.danger * 0.32
+        + state.damage / MAX_LIVES * 0.34,
+      ));
+      if (!state.paused && !state.gameOver && !state.briefing && context.state === "running") {
+        const now = context.currentTime + 0.012;
+        const pitch = 1 + threatPressure * 0.28;
+        const patternIndex = Math.floor(engine.step / 4) % bassPattern.length;
+        if (engine.step % 4 === 0) {
+          synthTone(context, music, bassPattern[patternIndex] * pitch, now, 0.26, 0.026, "triangle");
+        }
+        if (engine.step % 2 === 0) {
+          synthTone(context, music, leadPattern[(engine.step / 2) % leadPattern.length] * pitch, now, 0.09, 0.012, "square");
+        }
+        if (engine.step % 4 === 2) {
+          noiseHit(context, music, now, 0.045, 0.009);
+        }
+        if (state.danger > 0.68 && engine.step % 8 === 6) {
+          synthTone(context, music, (state.danger > 0.86 ? 880 : 660) * pitch, now, 0.07, 0.028, "square");
+          synthTone(context, music, (state.danger > 0.86 ? 1046.5 : 784) * pitch, now + 0.085, 0.07, 0.022, "square");
+        }
+        engine.step = (engine.step + 1) % 64;
       }
-      if (engine.step % 2 === 0) {
-        synthTone(context, music, leadPattern[(engine.step / 2) % leadPattern.length], now, 0.09, 0.012, "square");
-      }
-      if (engine.step % 4 === 2) {
-        noiseHit(context, music, now, 0.045, 0.009);
-      }
-      if (state.danger > 0.68 && engine.step % 8 === 6) {
-        synthTone(context, music, state.danger > 0.86 ? 880 : 660, now, 0.07, 0.028, "square");
-        synthTone(context, music, state.danger > 0.86 ? 1046.5 : 784, now + 0.085, 0.07, 0.022, "square");
-      }
-      engine.step = (engine.step + 1) % 64;
-    }, RETRO_STEP_MS);
+      const nextStepDelay = Math.round(RETRO_STEP_MS - threatPressure * 52);
+      engine.timer = window.setTimeout(playMusicStep, nextStepDelay);
+    };
+    engine.timer = window.setTimeout(playMusicStep, 0);
     audioEngineRef.current = engine;
     if (context.state === "suspended") void context.resume();
     return engine;
@@ -322,19 +340,27 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
   }, [briefing, focusInput]);
 
   useEffect(() => {
-    audioStateRef.current = { paused, gameOver, briefing, waveClear: Boolean(waveClear), danger };
+    audioStateRef.current = {
+      paused,
+      gameOver,
+      briefing,
+      waveClear: Boolean(waveClear),
+      danger,
+      damage: misses,
+      threatCount: words.length,
+    };
     const engine = audioEngineRef.current;
     if (!engine) return;
-    const audible = !paused && !gameOver && !briefing && !waveClear;
+    const audible = !paused && !gameOver && !briefing;
     engine.music.gain.setTargetAtTime(audible ? 0.72 : 0.015, engine.context.currentTime, 0.045);
-  }, [briefing, danger, gameOver, paused, waveClear]);
+  }, [briefing, danger, gameOver, misses, paused, waveClear, words.length]);
 
   useEffect(() => {
     if (!soundEnabled) stopRetroAudio();
   }, [soundEnabled, stopRetroAudio]);
 
   useEffect(() => {
-    if (paused || gameOver || briefing || waveClear) return;
+    if (paused || gameOver || briefing) return;
     const timer = window.setInterval(() => {
       setWords((current) => {
         let missedNow = 0;
@@ -378,7 +404,7 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
       });
     }, 50);
     return () => window.clearInterval(timer);
-  }, [briefing, desiredWords, gameOver, koreanUi, level, paused, playGameEffect, spawnWord, waveClear]);
+  }, [briefing, desiredWords, gameOver, koreanUi, level, paused, playGameEffect, spawnWord]);
 
   useEffect(() => () => {
     if (burstTimerRef.current) window.clearTimeout(burstTimerRef.current);
@@ -397,7 +423,7 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
   }
 
   function submitWord() {
-    if (composingRef.current || paused || briefing || waveClear) return;
+    if (composingRef.current || paused || briefing) return;
     if (gameOver) {
       resetGame();
       return;
@@ -464,7 +490,7 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
     if (briefing && event.key === "Enter") {
       event.preventDefault();
       startMission();
-    } else if (event.key === "Escape" && !briefing && !waveClear) {
+    } else if (event.key === "Escape" && !briefing) {
       event.preventDefault();
       setPaused((current) => {
         const next = !current;
@@ -516,6 +542,8 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
             style={{ left: `${word.x}%`, top: `${word.y}%` }}
           >
             <i className="word-tether" aria-hidden="true" />
+            <span className="missile-plume" aria-hidden="true"><i /><i /><i /></span>
+            <span className="missile-fins" aria-hidden="true" />
             <span className="target-brackets" aria-hidden="true" />
             <b>{word.korean}</b><small>{word.meaning}</small>
           </span>
@@ -530,9 +558,12 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
         )}
         <div className="defense-grid" aria-hidden="true" />
         <div className={`neon-city damage-${misses}`} aria-hidden="true">
-          <span /><span /><span /><span /><span /><span /><span />
+          <span /><span /><span /><span /><span /><span /><span /><span /><span /><span /><span /><span /><span /><span />
+          <div className="city-skyline-back"><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /></div>
           <b className="city-core"><i /></b>
-          <div className="city-damage-layer"><i /><i /><i /><i /><i /></div>
+          <div className="city-damage-layer"><i /><i /><i /><i /><i /><i /></div>
+          <div className="city-smoke"><i /><i /><i /><i /><i /><i /><i /></div>
+          <div className="city-rubble"><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /></div>
         </div>
         <div className={`sea-water ${splash ? "splash" : ""}`}><i /><i /><i /><b>{koreanUi ? "한글시티 방어선" : "HANGUL CITY BARRIER"}</b></div>
         {briefing && (
@@ -596,7 +627,7 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
             lang="ko"
             ref={inputRef}
             value={input}
-            disabled={briefing || paused || gameOver || Boolean(waveClear)}
+            disabled={briefing || paused || gameOver}
             onChange={(event) => {
               setInput(event.target.value);
               if (inputError) setInputError(false);
@@ -611,7 +642,7 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
               submitWord();
             }}
             onBlur={() => {
-              if (!briefing && !paused && !gameOver && !waveClear) window.setTimeout(focusInput, 0);
+              if (!briefing && !paused && !gameOver) window.setTimeout(focusInput, 0);
             }}
             autoComplete="off"
             spellCheck={false}
