@@ -1121,7 +1121,7 @@ const activities: Array<{
     title: "Home-row practice",
     korean: "기본자리 연습",
     description: "Place your fingers and master ㅁ, ㄴ, ㅇ, ㄹ.",
-    time: "Continue · 67%",
+    time: "Endless · Mastery gates",
     accent: "lime",
   },
   {
@@ -1139,7 +1139,7 @@ const activities: Array<{
     title: "Missing Letter",
     korean: "빠진 글자",
     description: "Complete familiar words one syllable at a time.",
-    time: "12 words · New",
+    time: "18 words · 3 levels",
     accent: "pink",
   },
   {
@@ -1148,7 +1148,7 @@ const activities: Array<{
     title: "Korean Crossword",
     korean: "가로세로 퀴즈",
     description: "Connect clues, sounds, and meanings.",
-    time: "5 clues · 3 boards",
+    time: "6+ clues · 3 boards",
     accent: "cyan",
   },
   {
