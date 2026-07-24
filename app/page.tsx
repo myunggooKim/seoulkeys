@@ -10,7 +10,13 @@ import {
   resolveVisitorLocale,
   saveManualLocalePreference,
 } from "./locale-detection";
-import { practiceCurriculum, practiceStageLabels, practiceStageOrder, sentencePracticeItems } from "./practice-curriculum";
+import {
+  practiceCurriculum,
+  practiceStageLabels,
+  practiceStageOrder,
+  sentencePracticeItems,
+  type PracticeKind,
+} from "./practice-curriculum";
 import { CrosswordGame, MissingLetterGame } from "./ProgressivePuzzles";
 
 type ActivityId = "home" | "tetris" | "missing" | "crossword" | "travel" | "kpop" | "screen";
@@ -18,6 +24,21 @@ type TravelMode = "inKorea" | "welcome";
 type KeyboardLayout = "qwerty" | "azerty" | "qwertz";
 type KeyboardRow = "top" | "home" | "bottom";
 type VoiceGender = "female" | "male";
+
+type StagePerformance = {
+  attempts: number;
+  passes: number;
+  recentAccuracy: number[];
+  recentCpm: number[];
+  bestCpm: number;
+};
+
+type MasteryPrompt = {
+  kind: PracticeKind;
+  nextKind: PracticeKind | null;
+  accuracy: number;
+  cpm: number;
+};
 
 type KoreanKey = {
   jamo: string;
@@ -754,6 +775,36 @@ function formatPracticeTime(totalSeconds: number) {
   return `${minutes}:${seconds}`;
 }
 
+const masteryTargets: Record<PracticeKind, { accuracy: number; cpm: number; labelKo: string; labelEn: string }> = {
+  home: { accuracy: 95, cpm: 45, labelKo: "기본자리 안정", labelEn: "Home-row control" },
+  syllable: { accuracy: 94, cpm: 50, labelKo: "음절 조합", labelEn: "Syllable building" },
+  batchim: { accuracy: 93, cpm: 50, labelKo: "받침 리듬", labelEn: "Final-consonant rhythm" },
+  double: { accuracy: 92, cpm: 48, labelKo: "쌍자음 정확도", labelEn: "Double-consonant control" },
+  word: { accuracy: 94, cpm: 60, labelKo: "낱말 리듬", labelEn: "Word rhythm" },
+  sentence: { accuracy: 94, cpm: 75, labelKo: "문장 유창성", labelEn: "Sentence fluency" },
+};
+
+function createStagePerformance(): Record<PracticeKind, StagePerformance> {
+  return Object.fromEntries(practiceStageOrder.map((kind) => [kind, {
+    attempts: 0,
+    passes: 0,
+    recentAccuracy: [],
+    recentCpm: [],
+    bestCpm: 0,
+  }])) as Record<PracticeKind, StagePerformance>;
+}
+
+function stageItemIndices(kind: PracticeKind) {
+  return practiceCurriculum
+    .map((item, index) => item.kind === kind ? index : -1)
+    .filter((index) => index >= 0);
+}
+
+function average(values: number[]) {
+  if (!values.length) return 0;
+  return Math.round(values.reduce((total, value) => total + value, 0) / values.length);
+}
+
 const englishKeyboardCopy: KeyboardHelpCopy = {
   myKeyboard: "My keyboard",
   nextKey: "Next Korean key",
@@ -944,6 +995,30 @@ function playTypewriterReturnSound() {
   window.setTimeout(() => void context.close(), 1250);
 }
 
+let typingAudioContext: AudioContext | null = null;
+
+function playTypingKeySound(code: string) {
+  const AudioContextConstructor = window.AudioContext
+    ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextConstructor) return;
+  typingAudioContext ??= new AudioContextConstructor();
+  const context = typingAudioContext;
+  if (context.state === "suspended") void context.resume();
+  const now = context.currentTime;
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  const codeTone = Array.from(code).reduce((total, character) => total + character.charCodeAt(0), 0) % 35;
+  oscillator.type = "triangle";
+  oscillator.frequency.setValueAtTime(145 + codeTone, now);
+  oscillator.frequency.exponentialRampToValueAtTime(78, now + 0.038);
+  gain.gain.setValueAtTime(0.001, now);
+  gain.gain.linearRampToValueAtTime(0.045, now + 0.003);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.042);
+  oscillator.connect(gain).connect(context.destination);
+  oscillator.start(now);
+  oscillator.stop(now + 0.045);
+}
+
 function playSuccessChime() {
   const AudioContextConstructor = window.AudioContext
     ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -1128,6 +1203,11 @@ export default function Home() {
   const [lessonAccepted, setLessonAccepted] = useState(false);
   const [lessonKeystrokes, setLessonKeystrokes] = useState(0);
   const [lessonMistakes, setLessonMistakes] = useState(0);
+  const [stagePerformance, setStagePerformance] = useState(createStagePerformance);
+  const [masteryPrompt, setMasteryPrompt] = useState<MasteryPrompt | null>(null);
+  const [practiceCoachMessage, setPracticeCoachMessage] = useState("");
+  const [lastAttemptCpm, setLastAttemptCpm] = useState(0);
+  const [sessionRounds, setSessionRounds] = useState(0);
   const [pressedFinger, setPressedFinger] = useState<FingerId | null>(null);
   const [pressedCode, setPressedCode] = useState<string | null>(null);
   const [activeActivity, setActiveActivity] = useState<ActivityId>("home");
@@ -1146,6 +1226,8 @@ export default function Home() {
   const speakingRef = useRef(false);
   const fingerReleaseTimerRef = useRef<number | null>(null);
   const manualLocaleRef = useRef(false);
+  const practiceInputRef = useRef<HTMLInputElement>(null);
+  const attemptStartedAtRef = useRef<number | null>(null);
 
   const t = copy[locale];
   const keyboardText = keyboardHelpCopy[locale] ?? englishKeyboardCopy;
@@ -1180,6 +1262,10 @@ export default function Home() {
       : Math.min(100, Math.round(((lessonIndex + scoredSentenceProgress / 100) / practiceCurriculum.length) * 100))
     : 0;
   const currentStageIndex = practiceStageOrder.indexOf(currentPracticeItem.kind);
+  const currentStagePerformance = stagePerformance[currentPracticeItem.kind];
+  const currentMasteryTarget = masteryTargets[currentPracticeItem.kind];
+  const currentStageAccuracy = average(currentStagePerformance.recentAccuracy);
+  const currentStageCpm = average(currentStagePerformance.recentCpm);
   const managedScreenLines = useMemo(() => managedContent
     .filter((item) => item.category === "kdrama" || item.category === "movie")
     .map((item) => ({
@@ -1319,21 +1405,99 @@ export default function Home() {
     }, returnSoundEnabled ? 1180 : 0);
   }, [autoSpeak, playKorean, returnSoundEnabled, speechSupported]);
 
-  const advanceLesson = useCallback(() => {
+  const focusPracticeInput = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      practiceInputRef.current?.focus({ preventScroll: true });
+    });
+  }, []);
+
+  const preparePracticeItem = useCallback((index: number, coachMessage = "") => {
     setAdvanceQueued(false);
     setLessonAccepted(false);
     setLessonEvaluation(null);
     setLessonKeystrokes(0);
     setLessonMistakes(0);
-    if (lessonIndex >= practiceCurriculum.length - 1) {
-      setLessonFinished(true);
-      return;
-    }
-    setLessonIndex((index) => index + 1);
+    setMasteryPrompt(null);
+    setPracticeCoachMessage(coachMessage);
+    setLastAttemptCpm(0);
+    attemptStartedAtRef.current = null;
+    setLessonIndex(index);
     setTyped("");
     setGuideStep(0);
-    window.setTimeout(() => document.getElementById("hero-typing-input")?.focus(), 0);
-  }, [lessonIndex]);
+    window.setTimeout(focusPracticeInput, 0);
+  }, [focusPracticeInput]);
+
+  const continueCurrentStage = useCallback(() => {
+    if (!masteryPrompt) return;
+    const indices = stageItemIndices(masteryPrompt.kind);
+    setSessionRounds((rounds) => rounds + 1);
+    preparePracticeItem(indices[0], locale === "ko"
+      ? "좋아요. 같은 단계의 새로운 리듬을 이어갑니다."
+      : "Great. Another round at this stage is ready.");
+  }, [locale, masteryPrompt, preparePracticeItem]);
+
+  const advanceFromMastery = useCallback(() => {
+    if (!masteryPrompt) return;
+    const nextKind = masteryPrompt.nextKind;
+    if (nextKind) {
+      const nextIndex = stageItemIndices(nextKind)[0];
+      preparePracticeItem(nextIndex, locale === "ko"
+        ? `${practiceStageLabels[nextKind].ko} 단계가 열렸습니다. 손은 그대로 두고 시작하세요.`
+        : `${practiceStageLabels[nextKind].en} is unlocked. Keep your hands in position and begin.`);
+      return;
+    }
+    const sentenceIndices = stageItemIndices("sentence");
+    setSessionRounds((rounds) => rounds + 1);
+    preparePracticeItem(sentenceIndices[0], locale === "ko"
+      ? "전체 과정을 통과했습니다. 이제 문장 유창성 무한 연습이 이어집니다."
+      : "Full path cleared. Your endless sentence-fluency round begins now.");
+  }, [locale, masteryPrompt, preparePracticeItem]);
+
+  const advanceLesson = useCallback((attemptAccuracy: number, attemptCpm: number) => {
+    const kind = currentPracticeItem.kind;
+    const indices = stageItemIndices(kind);
+    const position = indices.indexOf(lessonIndex);
+    const recentAccuracy = [...stagePerformance[kind].recentAccuracy, attemptAccuracy].slice(-5);
+    const recentCpm = [...stagePerformance[kind].recentCpm, attemptCpm].slice(-5);
+    const nextPerformance: StagePerformance = {
+      attempts: stagePerformance[kind].attempts + 1,
+      passes: stagePerformance[kind].passes + 1,
+      recentAccuracy,
+      recentCpm,
+      bestCpm: Math.max(stagePerformance[kind].bestCpm, attemptCpm),
+    };
+    setStagePerformance((current) => ({ ...current, [kind]: nextPerformance }));
+
+    const isStageBoundary = position === indices.length - 1;
+    if (!isStageBoundary) {
+      preparePracticeItem(indices[position + 1]);
+      return;
+    }
+
+    const target = masteryTargets[kind];
+    const stageAccuracy = average(recentAccuracy);
+    const stageCpm = average(recentCpm);
+    const enoughPasses = nextPerformance.passes >= Math.min(3, indices.length);
+    const mastered = enoughPasses && stageAccuracy >= target.accuracy && stageCpm >= target.cpm;
+
+    if (mastered) {
+      const nextKind = practiceStageOrder[currentStageIndex + 1] ?? null;
+      setAdvanceQueued(false);
+      setLessonAccepted(true);
+      setMasteryPrompt({ kind, nextKind, accuracy: stageAccuracy, cpm: stageCpm });
+      setPracticeCoachMessage("");
+      window.setTimeout(() => document.getElementById("mastery-advance")?.focus(), 0);
+      return;
+    }
+
+    const accuracyGap = Math.max(0, target.accuracy - stageAccuracy);
+    const speedGap = Math.max(0, target.cpm - stageCpm);
+    const coaching = locale === "ko"
+      ? `한 바퀴 더 이어갑니다 · ${accuracyGap ? `정확도 +${accuracyGap}%` : `속도 +${speedGap}타/분`}이면 단계 선택이 열려요.`
+      : `Another round continues · gain ${accuracyGap ? `${accuracyGap}% accuracy` : `${speedGap} CPM`} to unlock the stage choice.`;
+    setSessionRounds((rounds) => rounds + 1);
+    preparePracticeItem(indices[0], coaching);
+  }, [currentPracticeItem.kind, currentStageIndex, lessonIndex, locale, preparePracticeItem, stagePerformance]);
 
   const advanceTravelPhrase = useCallback(() => {
     setTravelIndex((index) => (index + 1) % travelPhrases[travelMode].length);
@@ -1575,10 +1739,15 @@ export default function Home() {
   }, [completedSentences, lessonFinished, lessonIndex, lessonStarted, progressLoaded]);
 
   useEffect(() => {
-    if (!lessonStarted || lessonFinished || lessonPaused) return;
+    if (!lessonStarted || lessonFinished || lessonPaused || masteryPrompt) return;
     const timer = window.setInterval(() => setElapsedSeconds((seconds) => seconds + 1), 1000);
     return () => window.clearInterval(timer);
-  }, [lessonFinished, lessonPaused, lessonStarted]);
+  }, [lessonFinished, lessonPaused, lessonStarted, masteryPrompt]);
+
+  useEffect(() => {
+    if (!lessonStarted || lessonFinished || lessonPaused || masteryPrompt || lessonAccepted) return;
+    focusPracticeInput();
+  }, [focusPracticeInput, lessonAccepted, lessonFinished, lessonIndex, lessonPaused, lessonStarted, masteryPrompt]);
 
   function startTodayLesson() {
     if (!lessonStarted || lessonFinished) {
@@ -1602,10 +1771,16 @@ export default function Home() {
       setLessonEvaluation(null);
       setLessonKeystrokes(0);
       setLessonMistakes(0);
+      setStagePerformance(createStagePerformance());
+      setMasteryPrompt(null);
+      setPracticeCoachMessage("");
+      setLastAttemptCpm(0);
+      setSessionRounds(0);
+      attemptStartedAtRef.current = null;
     }
     window.setTimeout(() => {
       document.getElementById("practice")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      document.getElementById("hero-typing-input")?.focus();
+      focusPracticeInput();
     }, 0);
   }
 
@@ -1616,7 +1791,9 @@ export default function Home() {
     setLessonEvaluation(null);
     setLessonKeystrokes(0);
     setLessonMistakes(0);
-    window.setTimeout(() => document.getElementById("hero-typing-input")?.focus(), 0);
+    setLastAttemptCpm(0);
+    attemptStartedAtRef.current = null;
+    window.setTimeout(focusPracticeInput, 0);
   }
 
   function chooseInterfaceLocale(nextLocale: Locale) {
@@ -1673,7 +1850,7 @@ export default function Home() {
             <label className="speech-toggle return-sound-toggle" title={returnSoundText.label}>
               <input type="checkbox" checked={returnSoundEnabled} onChange={(event) => setReturnSoundEnabled(event.target.checked)} aria-label={`${returnSoundText.label}: ${returnSoundEnabled ? returnSoundText.on : returnSoundText.off}`} />
               <span className="speech-toggle-track" aria-hidden="true"><i /></span>
-              <span className="speech-toggle-copy"><b>{locale === "ko" ? "타자기" : "Typewriter"}</b><small>{returnSoundEnabled ? returnSoundText.on : returnSoundText.off}</small></span>
+              <span className="speech-toggle-copy"><b>{locale === "ko" ? "타건·줄바꿈" : "Key sounds"}</b><small>{returnSoundEnabled ? returnSoundText.on : returnSoundText.off}</small></span>
             </label>
             <button className="sound-preview-button" type="button" onClick={playTypewriterReturnSound} aria-label={locale === "ko" ? "타자기 줄바꿈 소리 시험" : "Preview typewriter return sound"}>▶</button>
           </div>
@@ -1692,7 +1869,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="hero" id="top">
+      <section className={`hero stage-${currentPracticeItem.kind} ${lessonStarted && !lessonFinished ? "practice-focus-mode" : ""}`} id="top">
         <div className="hero-copy">
           <p className="eyebrow"><span aria-hidden="true" /> {t.eyebrow}</p>
           <h1>
@@ -1716,7 +1893,21 @@ export default function Home() {
         <div className="practice-stage" id="practice">
           <div className="stage-orbit orbit-one" aria-hidden="true" />
           <div className="stage-orbit orbit-two" aria-hidden="true" />
-          <article className={`practice-card ${lessonPaused ? "is-paused" : ""}`}>
+          <article
+            className={`practice-card stage-${currentPracticeItem.kind} ${lessonPaused ? "is-paused" : ""} ${masteryPrompt ? "is-mastered" : ""}`}
+            onKeyDownCapture={(event) => {
+              if (!lessonStarted || lessonFinished || masteryPrompt) return;
+              if (event.key === "Escape") {
+                event.preventDefault();
+                setLessonPaused((paused) => !paused);
+                window.setTimeout(focusPracticeInput, 0);
+              } else if (lessonPaused && event.key === "Enter") {
+                event.preventDefault();
+                setLessonPaused(false);
+                window.setTimeout(focusPracticeInput, 0);
+              }
+            }}
+          >
             <div className="practice-card-header">
               <div>
                 <p className="card-kicker">{locale === "ko" ? `현재 단계 · ${currentPracticeItem.stageKo}` : `CURRENT STAGE · ${currentPracticeItem.stageEn}`}</p>
@@ -1736,7 +1927,7 @@ export default function Home() {
               })}
             </ol>
 
-            <div className="practice-workspace">
+            <div className={`practice-workspace ${masteryPrompt ? "mastery-open" : ""}`}>
               <div className="practice-input-column">
                 <div className="typing-panel">
               {lessonPaused && (
@@ -1761,12 +1952,16 @@ export default function Home() {
                 id="hero-typing-input"
                 className="typing-input"
                 lang="ko"
+                ref={practiceInputRef}
                 value={typed}
-                disabled={lessonFinished || lessonAccepted || lessonPaused}
+                disabled={lessonFinished || lessonAccepted || lessonPaused || Boolean(masteryPrompt)}
                 onFocus={() => setLessonStarted(true)}
                 onChange={(event) => {
                   const nextValue = event.target.value;
                   setLessonStarted(true);
+                  if (!attemptStartedAtRef.current && nextValue.length > 0) {
+                    attemptStartedAtRef.current = performance.now();
+                  }
                   const previousChars = Array.from(typed);
                   const nextChars = Array.from(nextValue);
                   if (nextChars.length > previousChars.length) {
@@ -1782,6 +1977,16 @@ export default function Home() {
                   setGuideStep(Math.min(sentenceToPracticeSequence(nextValue).length, practiceSequence.length));
                 }}
                 onKeyDown={(event) => {
+                  if (
+                    returnSoundEnabled
+                    && !event.repeat
+                    && (event.key.length === 1 || event.key === "Backspace")
+                    && !event.ctrlKey
+                    && !event.metaKey
+                    && !event.altKey
+                  ) {
+                    playTypingKeySound(event.code);
+                  }
                   const physicalFinger = fingerByCode[event.code];
                   if (physicalFinger && event.key !== "Enter") {
                     if (fingerReleaseTimerRef.current) window.clearTimeout(fingerReleaseTimerRef.current);
@@ -1804,8 +2009,18 @@ export default function Home() {
                   }
                   setLessonEvaluation(evaluation);
                   if (!evaluation.accepted) return;
+                  const activeMilliseconds = attemptStartedAtRef.current
+                    ? Math.max(1000, performance.now() - attemptStartedAtRef.current)
+                    : 60000;
+                  const typedUnits = Math.max(1, targetChars.filter((character) => character !== " ").length);
+                  const attemptCpm = Math.min(999, Math.round(typedUnits / (activeMilliseconds / 60000)));
+                  setLastAttemptCpm(attemptCpm);
                   setLessonAccepted(true);
-                  confirmAndAdvance(advanceLesson, targetSentence, currentPracticeItem.speak);
+                  confirmAndAdvance(
+                    () => advanceLesson(evaluation.accuracy, attemptCpm),
+                    targetSentence,
+                    currentPracticeItem.speak,
+                  );
                 }}
                 onKeyUp={() => {
                   if (fingerReleaseTimerRef.current) window.clearTimeout(fingerReleaseTimerRef.current);
@@ -1827,6 +2042,10 @@ export default function Home() {
               <p className={`typing-feedback ${sentenceComplete ? "complete" : ""}`} id="typing-feedback" aria-live="polite">
                 {lessonFinished
                   ? "Today’s lesson is complete. Great work!"
+                  : masteryPrompt
+                    ? locale === "ko"
+                      ? "단계 기준을 통과했습니다 · Enter로 다음 단계, R로 현재 단계 반복"
+                      : "Stage target cleared · Enter advances, R repeats this stage"
                   : advanceQueued
                     ? currentPracticeItem.speak
                       ? "↵ 타자기 줄바꿈 소리 후 발음을 읽고 다음 연습으로 이동합니다."
@@ -1838,6 +2057,10 @@ export default function Home() {
                         : "Follow the highlighted key position below."}
               </p>
 
+              {practiceCoachMessage && !masteryPrompt && (
+                <p className="practice-coach-message" role="status"><span aria-hidden="true">⚡</span>{practiceCoachMessage}</p>
+              )}
+
               {lessonEvaluation && (
                 <div className={`lesson-evaluation ${lessonEvaluation.accepted ? "accepted" : "rejected"}`} aria-live="assertive">
                   <div>
@@ -1848,6 +2071,7 @@ export default function Home() {
                   <dl>
                     <div><dt>완성도</dt><dd>{lessonEvaluation.completeness}%</dd></div>
                     <div><dt>입력 정확도</dt><dd>{lessonEvaluation.accuracy}%</dd></div>
+                    {lastAttemptCpm > 0 && <div><dt>속도</dt><dd>{lastAttemptCpm} 타/분</dd></div>}
                   </dl>
                   {!lessonEvaluation.accepted && sentenceComplete && <button className="retry-practice" type="button" onClick={resetCurrentPractice}>↻ 다시 연습</button>}
                 </div>
@@ -1855,7 +2079,47 @@ export default function Home() {
 
                 </div>
 
-              {lessonFinished ? (
+              {masteryPrompt ? (
+                <div
+                  className="mastery-choice-card"
+                  role="dialog"
+                  aria-labelledby="mastery-title"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      advanceFromMastery();
+                    } else if (event.key.toLowerCase() === "r") {
+                      event.preventDefault();
+                      continueCurrentStage();
+                    }
+                  }}
+                >
+                  <div className="mastery-burst" aria-hidden="true"><span>LEVEL</span><b>UP!</b></div>
+                  <div className="mastery-copy">
+                    <small>{locale === "ko" ? "단계 숙련 기준 통과" : "STAGE MASTERY CLEARED"}</small>
+                    <h3 id="mastery-title">{locale === "ko" ? `${practiceStageLabels[masteryPrompt.kind].ko} 리듬을 익혔어요!` : `${practiceStageLabels[masteryPrompt.kind].en} mastered!`}</h3>
+                    <p>{locale === "ko"
+                      ? `최근 정확도 ${masteryPrompt.accuracy}% · ${masteryPrompt.cpm}타/분. 다음 선택을 기다리는 동안 타이머는 멈춥니다.`
+                      : `${masteryPrompt.accuracy}% recent accuracy · ${masteryPrompt.cpm} CPM. The timer pauses while you choose.`}</p>
+                    <div className="mastery-metrics">
+                      <span><b>{masteryPrompt.accuracy}%</b>{locale === "ko" ? "정확도" : "accuracy"}</span>
+                      <span><b>{masteryPrompt.cpm}</b>{locale === "ko" ? "타/분" : "CPM"}</span>
+                      <span><b>{stagePerformance[masteryPrompt.kind].passes}</b>{locale === "ko" ? "통과 과제" : "passes"}</span>
+                    </div>
+                  </div>
+                  <div className="mastery-actions">
+                    <button id="mastery-advance" className="button button-primary" type="button" onClick={advanceFromMastery}>
+                      <kbd>Enter</kbd>
+                      {locale === "ko"
+                        ? masteryPrompt.nextKind ? `${practiceStageLabels[masteryPrompt.nextKind].ko}로 이동` : "심화 연습 시작"
+                        : masteryPrompt.nextKind ? `Advance to ${practiceStageLabels[masteryPrompt.nextKind].en}` : "Start advanced loop"}
+                    </button>
+                    <button className="button button-secondary" type="button" onClick={continueCurrentStage}>
+                      <kbd>R</kbd>{locale === "ko" ? "이 단계 더 연습" : "Repeat this stage"}
+                    </button>
+                  </div>
+                </div>
+              ) : lessonFinished ? (
                 <div className="lesson-finish-card">
                   <span className="finish-mark" aria-hidden="true">✓</span>
                   <div>
@@ -1907,7 +2171,7 @@ export default function Home() {
               )}
             </div>
 
-              {!lessonFinished && (
+              {!lessonFinished && !masteryPrompt && (
                 <div className="practice-guidance-column">
                   <div className="finger-callout" aria-live="polite">
                     <span aria-hidden="true">☝</span>
@@ -1959,7 +2223,7 @@ export default function Home() {
                 <button
                   className={`timer-pause-button ${lessonPaused ? "paused" : ""}`}
                   type="button"
-                  disabled={!lessonStarted || lessonFinished}
+                  disabled={!lessonStarted || lessonFinished || Boolean(masteryPrompt)}
                   aria-pressed={lessonPaused}
                   aria-label={lessonPaused ? locale === "ko" ? "연습 타이머 다시 시작" : "Resume practice timer" : locale === "ko" ? "연습 타이머 일시정지" : "Pause practice timer"}
                   onClick={() => {
@@ -1967,7 +2231,7 @@ export default function Home() {
                     if (fingerReleaseTimerRef.current) window.clearTimeout(fingerReleaseTimerRef.current);
                     setPressedFinger(null);
                     setPressedCode(null);
-                    if (lessonPaused) window.setTimeout(() => document.getElementById("hero-typing-input")?.focus(), 0);
+                    if (lessonPaused) window.setTimeout(focusPracticeInput, 0);
                   }}
                 >
                   <span aria-hidden="true">{lessonPaused ? "▶" : "Ⅱ"}</span>
@@ -1980,6 +2244,11 @@ export default function Home() {
                   <span style={{ width: `${dailyProgress}%` }} />
                 </div>
                 <small>{lessonFinished ? "Daily typing goal reached" : `${completedSentences} of ${practiceCurriculum.length} learning steps complete`}</small>
+                <div className="mastery-target-line">
+                  <span>{locale === "ko" ? currentMasteryTarget.labelKo : currentMasteryTarget.labelEn}</span>
+                  <b>{currentStageAccuracy || accuracy}% / {currentStageCpm || lastAttemptCpm || 0} CPM</b>
+                  <em>{locale === "ko" ? `목표 ${currentMasteryTarget.accuracy}% · ${currentMasteryTarget.cpm}타/분 · ${sessionRounds + 1}회차` : `Target ${currentMasteryTarget.accuracy}% · ${currentMasteryTarget.cpm} CPM · round ${sessionRounds + 1}`}</em>
+                </div>
               </div>
             </div>
           </article>
@@ -2024,15 +2293,15 @@ export default function Home() {
           )}
 
           {activeActivity === "tetris" && (
-            <FallingWordsGame koreanUi={locale === "ko"} soundEnabled={returnSoundEnabled} onSuccessSound={playSuccessChime} />
+            <FallingWordsGame koreanUi={locale === "ko"} soundEnabled={returnSoundEnabled} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} />
           )}
 
           {activeActivity === "missing" && (
-            <MissingLetterGame koreanUi={locale === "ko"} soundEnabled={returnSoundEnabled} onSuccessSound={playSuccessChime} />
+            <MissingLetterGame koreanUi={locale === "ko"} soundEnabled={returnSoundEnabled} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} />
           )}
 
           {activeActivity === "crossword" && (
-            <CrosswordGame koreanUi={locale === "ko"} soundEnabled={returnSoundEnabled} onSuccessSound={playSuccessChime} />
+            <CrosswordGame koreanUi={locale === "ko"} soundEnabled={returnSoundEnabled} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} />
           )}
 
           {activeActivity === "travel" && (

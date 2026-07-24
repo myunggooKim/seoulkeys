@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore, type CSSProperties } from "react";
 import { readManualLocalePreference, resolveVisitorLocale } from "../locale-detection";
+import { practiceCurriculum, practiceStageLabels, practiceStageOrder, type PracticeKind } from "../practice-curriculum";
 
 type MyLearningClientProps = {
   identity: { email: string };
@@ -30,6 +31,23 @@ const milestones = [
   { days: 14, rewardKo: "300 비트", rewardEn: "300 beats" },
   { days: 30, rewardKo: "1,000 비트", rewardEn: "1,000 beats" },
 ];
+
+const masteryGoals: Record<PracticeKind, { accuracy: number; cpm: number }> = {
+  home: { accuracy: 95, cpm: 45 },
+  syllable: { accuracy: 94, cpm: 50 },
+  batchim: { accuracy: 93, cpm: 50 },
+  double: { accuracy: 92, cpm: 48 },
+  word: { accuracy: 94, cpm: 60 },
+  sentence: { accuracy: 94, cpm: 75 },
+};
+
+function formatDuration(totalSeconds: number, koreanUi: boolean) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours) return koreanUi ? `${hours}시간 ${minutes}분` : `${hours}h ${minutes}m`;
+  return koreanUi ? `${minutes}분 ${seconds}초` : `${minutes}m ${seconds}s`;
+}
 
 function subscribeToLocale() {
   return () => undefined;
@@ -70,6 +88,28 @@ export default function MyLearningClient({ identity, signOutPath, user, progress
   const levelTitle = koreanUi
     ? level < 3 ? "한글 탐험가" : level < 6 ? "리듬 타자수" : "한국어 키 스타"
     : level < 3 ? "Hangul Explorer" : level < 6 ? "Rhythm Typist" : "Korean Key Star";
+  const completedSteps = Math.min(totalSteps, progress?.completedSentences ?? 0);
+  const stageRows = practiceStageOrder.map((kind) => {
+    const indices = practiceCurriculum
+      .map((item, index) => item.kind === kind ? index : -1)
+      .filter((index) => index >= 0);
+    const first = indices[0];
+    const completedInStage = Math.max(0, Math.min(indices.length, completedSteps - first));
+    const percent = Math.round(completedInStage / indices.length * 100);
+    const state = percent === 100 ? "done" : completedInStage > 0 || (completedSteps === first) ? "current" : "locked";
+    return { kind, count: indices.length, completed: completedInStage, percent, state };
+  });
+  const activeStage = stageRows.find((stage) => stage.state === "current") ?? stageRows.at(-1)!;
+  const accuracyBand = (progress?.accuracy ?? 100) >= 95
+    ? koreanUi ? "매우 안정적" : "Highly stable"
+    : (progress?.accuracy ?? 100) >= 90
+      ? koreanUi ? "좋음" : "On track"
+      : koreanUi ? "정확도 집중 필요" : "Accuracy focus";
+  const nextAction = activeStage.state === "done"
+    ? koreanUi ? "문장 유창성 무한 연습" : "Endless sentence fluency"
+    : koreanUi
+      ? `${practiceStageLabels[activeStage.kind].ko} ${activeStage.completed + 1}번째 과제`
+      : `${practiceStageLabels[activeStage.kind].en} task ${activeStage.completed + 1}`;
 
   return (
     <main className="profile-shell">
@@ -125,6 +165,42 @@ export default function MyLearningClient({ identity, signOutPath, user, progress
           <div className="level-orbit"><span>{level}</span></div>
           <div className="profile-progress-track"><span style={{ width: `${levelPercent}%` }} /></div>
           <small>{koreanUi ? `다음 레벨까지 ${levelXp} / 500 XP` : `${levelXp} / 500 XP to Level ${level + 1}`}</small>
+        </article>
+      </section>
+
+      <section className="profile-detail-grid">
+        <article className="profile-card mastery-map-card">
+          <div className="profile-card-heading">
+            <div><p className="section-label">MASTERY MAP</p><h2>{koreanUi ? "단계별 숙련 지도" : "Stage mastery map"}</h2></div>
+            <span className="benefit-pill">{koreanUi ? `현재 · ${practiceStageLabels[activeStage.kind].ko}` : `Now · ${practiceStageLabels[activeStage.kind].en}`}</span>
+          </div>
+          <div className="mastery-map-list">
+            {stageRows.map((stage, index) => (
+              <div className={stage.state} key={stage.kind}>
+                <span className="mastery-map-number">{stage.state === "done" ? "✓" : index + 1}</span>
+                <div>
+                  <b>{koreanUi ? practiceStageLabels[stage.kind].ko : practiceStageLabels[stage.kind].en}</b>
+                  <small>{stage.completed}/{stage.count} {koreanUi ? "과제" : "tasks"} · {koreanUi ? `목표 ${masteryGoals[stage.kind].accuracy}% / ${masteryGoals[stage.kind].cpm}타` : `target ${masteryGoals[stage.kind].accuracy}% / ${masteryGoals[stage.kind].cpm} CPM`}</small>
+                  <i><span style={{ width: `${stage.percent}%` }} /></i>
+                </div>
+                <em>{stage.percent}%</em>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="profile-card insight-card">
+          <p className="section-label">NEXT BEST ACTION</p>
+          <h2>{koreanUi ? "지금 가장 좋은 연습" : "Your best next step"}</h2>
+          <div className="accuracy-dial" style={{ "--accuracy": `${progress?.accuracy ?? 100}` } as CSSProperties}>
+            <span><b>{progress?.accuracy ?? 100}%</b><small>{koreanUi ? "최근 정확도" : "recent accuracy"}</small></span>
+          </div>
+          <div className="insight-status">
+            <span><small>{koreanUi ? "상태" : "STATUS"}</small><b>{accuracyBand}</b></span>
+            <span><small>{koreanUi ? "다음 과제" : "NEXT"}</small><b>{nextAction}</b></span>
+            <span><small>{koreanUi ? "누적 연습" : "PRACTICE"}</small><b>{formatDuration(progress?.typingSeconds ?? 0, koreanUi)}</b></span>
+          </div>
+          <Link className="button button-primary" href="/#practice">{koreanUi ? "키보드로 바로 이어가기" : "Resume at the keyboard"} <span aria-hidden="true">→</span></Link>
         </article>
       </section>
 
