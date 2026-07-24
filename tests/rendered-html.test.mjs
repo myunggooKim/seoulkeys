@@ -29,7 +29,8 @@ test("connects animated anatomical hands, pausable practice, Enter evaluation, s
   assert.match(page, /activePracticeKey\?\.code === key\.code/);
   assert.match(page, /lessonFinished \|\| lessonPaused/);
   assert.match(page, /aria-pressed=\{lessonPaused\}/);
-  assert.match(page, /setLessonPaused\(\(paused\) => !paused\)/);
+  assert.match(page, /changeLessonPause\(!lessonPaused\)/);
+  assert.match(page, /window\.scrollTo\(\{ \.\.\.stableScroll, behavior: "auto" \}\)/);
   assert.match(page, /연습 타이머 일시정지/);
   assert.match(page, /event\.key !== "Enter"/);
   assert.match(page, /evaluateLessonAttempt/);
@@ -45,6 +46,10 @@ test("connects animated anatomical hands, pausable practice, Enter evaluation, s
   assert.match(page, /}, 620\)/);
   assert.match(page, /showHeroIntroduction/);
   assert.match(page, /소개 영역 다시 펼치기/);
+  assert.match(page, /totalPracticeSecondsRef\.current \+ elapsedSeconds/);
+  assert.match(page, /Restore the learning position, never the previous page's running timer state/);
+  assert.doesNotMatch(page, /setElapsedSeconds\(serverProgress\.typingSeconds\)/);
+  assert.doesNotMatch(page, /setLessonStarted\(serverProgress\.completedSentences/);
   assert.match(page, /audio-control-cluster/);
   assert.match(page, /playTypewriterReturnSound/);
   assert.match(page, /staticSpeechAudioByText/);
@@ -55,6 +60,8 @@ test("connects animated anatomical hands, pausable practice, Enter evaluation, s
   assert.match(css, /@keyframes real-finger-demonstrate/);
   assert.match(css, /@keyframes real-finger-press/);
   assert.match(css, /\.practice-card\.is-paused \.hand-press-layer/);
+  assert.match(css, /\.practice-pause-banner \{\s*position: absolute;/);
+  assert.match(css, /@keyframes pause-badge-in/);
   assert.doesNotMatch(page, /fingertip-marker|finger-trace/);
   assert.doesNotMatch(css, /\.fingertip-marker|\.finger-trace/);
   assert.doesNotMatch(css, /\.typing-hand/);
@@ -66,10 +73,11 @@ test("connects animated anatomical hands, pausable practice, Enter evaluation, s
 });
 
 test("ships Enter-confirmed falling words, advancing missing letters, and a real checked crossword", async () => {
-  const [page, falling, puzzles, css] = await Promise.all([
+  const [page, falling, puzzles, crossword, css] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/FallingWordsGame.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/ProgressivePuzzles.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/CrosswordGame.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
   assert.match(page, /selectActivity/);
@@ -95,6 +103,12 @@ test("ships Enter-confirmed falling words, advancing missing letters, and a real
   assert.match(falling, /playGameEffect\("damage"/);
   assert.match(falling, /WAVE \{waveClear\.toString/);
   assert.match(falling, /Alt\+M/);
+  assert.match(falling, /recentWordsRef/);
+  assert.match(falling, /fresh\.length \? fresh : unlocked/);
+  assert.match(falling, /damage-\$\{misses\}/);
+  assert.match(falling, /CITY DESTROYED · MISSION FAILED/);
+  assert.match(falling, /createStereoPanner/);
+  assert.match(falling, /state\.danger > 0\.68/);
   assert.doesNotMatch(falling, /onChange=\{\(event\) => captureWord/);
   assert.match(puzzles, /setPuzzleIndex\(isLevelEnd \? 0 : puzzleIndex \+ 1\)/);
   assert.match(puzzles, /1450/);
@@ -104,24 +118,34 @@ test("ships Enter-confirmed falling words, advancing missing letters, and a real
   assert.match(puzzles, /answer: "한국어"/);
   assert.match(puzzles, /answer: "여행자"/);
   assert.match(puzzles, /function createCrossword/);
-  assert.match(puzzles, /function checkPuzzle/);
-  assert.match(puzzles, /setWrongCells\(mistakes\)/);
-  assert.match(puzzles, /event\.key === "ArrowLeft"/);
-  assert.match(puzzles, /event\.key === "Enter"/);
-  assert.match(puzzles, /1200 - seconds \* 2 - hints \* 75/);
-  assert.match(puzzles, /function nextPuzzle/);
-  assert.match(puzzles, /event\.key === "Tab"/);
-  assert.match(puzzles, /event\.key === " "/);
+  assert.match(puzzles, /function validateMissingPuzzle/);
+  assert.match(puzzles, /word: "떡볶이", missingIndex: 1/);
+  assert.match(puzzles, /word: "괜찮아요", missingIndex: 1/);
+  assert.match(puzzles, /word: "감사합니다", missingIndex: 2/);
+  assert.match(puzzles, /\.map\(\(level\) => level\.map\(validateMissingPuzzle\)\)/);
+  assert.match(crossword, /id="crossword-word-input"/);
+  assert.match(crossword, /function checkActiveWord/);
+  assert.match(crossword, /updateActiveDraft/);
+  assert.match(crossword, /typed !== expected/);
+  assert.match(crossword, /setEntryDrafts/);
+  assert.match(crossword, /event\.key === "Enter"/);
+  assert.match(crossword, /event\.key === "Tab"/);
+  assert.match(crossword, /nextEntry\(1, nextSolved\)/);
+  assert.doesNotMatch(crossword, /<input[\s\S]*?aria-label=\{`\$\{koreanUi \? "가로세로 칸"/);
   assert.match(css, /\.word-rain-board/);
   assert.match(css, /\.sea-water\.splash/);
   assert.match(css, /\.capture-burst/);
   assert.match(css, /\.mission-briefing/);
   assert.match(css, /\.neon-city/);
+  assert.match(css, /\.neon-city\.damage-5/);
+  assert.match(css, /\.city-damage-layer/);
+  assert.match(css, /\.threat-alert\.active/);
   assert.match(css, /@keyframes city-impact/);
   assert.match(css, /@keyframes blast-ring/);
   assert.match(css, /\.word-rain-console input\.input-error/);
   assert.match(css, /\.crossword-cell\.active-word/);
   assert.match(css, /\.crossword-cell\.wrong/);
+  assert.match(css, /\.crossword-word-entry/);
   assert.match(css, /@keyframes crossword-correct/);
 });
 

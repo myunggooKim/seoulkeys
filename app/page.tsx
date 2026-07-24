@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CrosswordGame } from "./CrosswordGame";
 import { FallingWordsGame } from "./FallingWordsGame";
 import { decomposeHangulCharacter } from "./hangul-keyboard";
 import { evaluateLessonAttempt, type LessonEvaluation } from "./lesson-evaluation";
@@ -17,7 +18,7 @@ import {
   sentencePracticeItems,
   type PracticeKind,
 } from "./practice-curriculum";
-import { CrosswordGame, MissingLetterGame } from "./ProgressivePuzzles";
+import { MissingLetterGame } from "./ProgressivePuzzles";
 
 type ActivityId = "home" | "tetris" | "missing" | "crossword" | "travel" | "kpop" | "screen";
 type TravelMode = "inKorea" | "welcome";
@@ -1231,6 +1232,8 @@ export default function Home() {
   const practiceInputRef = useRef<HTMLInputElement>(null);
   const attemptStartedAtRef = useRef<number | null>(null);
   const practiceFocusTimerRef = useRef<number | null>(null);
+  const practiceSessionStartedRef = useRef(false);
+  const totalPracticeSecondsRef = useRef(0);
 
   const t = copy[locale];
   const keyboardText = keyboardHelpCopy[locale] ?? englishKeyboardCopy;
@@ -1568,8 +1571,11 @@ export default function Home() {
         const today = new Date().toLocaleDateString("en-CA");
         if (dailyLesson.date === today && dailyLesson.totalSteps === practiceCurriculum.length) {
           setLessonIndex(Math.min(Math.max(0, dailyLesson.lessonIndex ?? 0), practiceCurriculum.length - 1));
-          setLessonStarted(Boolean(dailyLesson.lessonStarted));
-          setLessonFinished(Boolean(dailyLesson.lessonFinished));
+          // Restore the learning position, never the previous page's running timer state.
+          setLessonStarted(false);
+          setLessonFinished(false);
+          setLessonPaused(false);
+          setElapsedSeconds(0);
         }
       }
       } catch {
@@ -1696,11 +1702,14 @@ export default function Home() {
           typingSeconds: number;
           lessonFinished: boolean;
         };
+        totalPracticeSecondsRef.current = Math.max(0, serverProgress.typingSeconds);
+        if (practiceSessionStartedRef.current) return;
         if (serverProgress.totalSentences === practiceCurriculum.length && (serverProgress.completedSentences > completedSentences || serverProgress.lessonFinished)) {
           setLessonIndex(Math.min(serverProgress.currentLesson, practiceCurriculum.length - 1));
-          setLessonStarted(serverProgress.completedSentences > 0 || serverProgress.lessonFinished);
-          setLessonFinished(serverProgress.lessonFinished);
-          setElapsedSeconds(serverProgress.typingSeconds);
+          setLessonStarted(false);
+          setLessonFinished(false);
+          setLessonPaused(false);
+          setElapsedSeconds(0);
           setTyped("");
           setGuideStep(0);
         }
@@ -1719,7 +1728,7 @@ export default function Home() {
       currentLesson: lessonIndex,
       completedSentences,
       totalSentences: practiceCurriculum.length,
-      typingSeconds: elapsedSeconds,
+      typingSeconds: totalPracticeSecondsRef.current + elapsedSeconds,
       accuracy,
       lessonFinished,
     };
@@ -1777,6 +1786,7 @@ export default function Home() {
   }
 
   function startTodayLesson() {
+    practiceSessionStartedRef.current = true;
     beginPracticeFocusTransition();
     if (!lessonStarted || lessonFinished) {
       speechRequestRef.current += 1;
@@ -1788,7 +1798,7 @@ export default function Home() {
       pendingActionRef.current = null;
       speakingRef.current = false;
       setAdvanceQueued(false);
-      setLessonIndex(0);
+      if (lessonFinished) setLessonIndex(0);
       setLessonStarted(true);
       setLessonFinished(false);
       setLessonPaused(false);
@@ -1806,6 +1816,24 @@ export default function Home() {
       setSessionRounds(0);
       attemptStartedAtRef.current = null;
     }
+  }
+
+  function changeLessonPause(nextPaused: boolean) {
+    const stableScroll = { left: window.scrollX, top: window.scrollY };
+    if (nextPaused) {
+      if (practiceFocusTimerRef.current) window.clearTimeout(practiceFocusTimerRef.current);
+      practiceFocusTimerRef.current = null;
+      setPracticePreparing(false);
+      if (fingerReleaseTimerRef.current) window.clearTimeout(fingerReleaseTimerRef.current);
+      setPressedFinger(null);
+      setPressedCode(null);
+    }
+    setLessonPaused(nextPaused);
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ ...stableScroll, behavior: "auto" });
+      if (!nextPaused) focusPracticeInput();
+      window.requestAnimationFrame(() => window.scrollTo({ ...stableScroll, behavior: "auto" }));
+    });
   }
 
   function resetCurrentPractice() {
@@ -1932,12 +1960,10 @@ export default function Home() {
               if (!lessonStarted || lessonFinished || masteryPrompt) return;
               if (event.key === "Escape") {
                 event.preventDefault();
-                setLessonPaused((paused) => !paused);
-                window.setTimeout(focusPracticeInput, 0);
+                changeLessonPause(!lessonPaused);
               } else if (lessonPaused && event.key === "Enter") {
                 event.preventDefault();
-                setLessonPaused(false);
-                window.setTimeout(focusPracticeInput, 0);
+                changeLessonPause(false);
               }
             }}
           >
@@ -1988,13 +2014,11 @@ export default function Home() {
                 ref={practiceInputRef}
                 value={typed}
                 disabled={lessonFinished || lessonAccepted || lessonPaused || Boolean(masteryPrompt)}
-                onFocus={() => {
-                  setLessonStarted(true);
-                  beginPracticeFocusTransition();
-                }}
                 onChange={(event) => {
                   const nextValue = event.target.value;
+                  practiceSessionStartedRef.current = true;
                   setLessonStarted(true);
+                  if (nextValue.length > 0) beginPracticeFocusTransition();
                   if (!attemptStartedAtRef.current && nextValue.length > 0) {
                     attemptStartedAtRef.current = performance.now();
                   }
@@ -2262,13 +2286,7 @@ export default function Home() {
                   disabled={!lessonStarted || lessonFinished || Boolean(masteryPrompt)}
                   aria-pressed={lessonPaused}
                   aria-label={lessonPaused ? locale === "ko" ? "연습 타이머 다시 시작" : "Resume practice timer" : locale === "ko" ? "연습 타이머 일시정지" : "Pause practice timer"}
-                  onClick={() => {
-                    setLessonPaused((paused) => !paused);
-                    if (fingerReleaseTimerRef.current) window.clearTimeout(fingerReleaseTimerRef.current);
-                    setPressedFinger(null);
-                    setPressedCode(null);
-                    if (lessonPaused) window.setTimeout(focusPracticeInput, 0);
-                  }}
+                  onClick={() => changeLessonPause(!lessonPaused)}
                 >
                   <span aria-hidden="true">{lessonPaused ? "▶" : "Ⅱ"}</span>
                   {lessonPaused ? locale === "ko" ? "계속" : "Resume" : locale === "ko" ? "정지" : "Pause"}

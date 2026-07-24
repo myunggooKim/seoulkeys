@@ -10,6 +10,15 @@ type MissingPuzzle = {
   options: string[];
 };
 
+function validateMissingPuzzle(puzzle: MissingPuzzle) {
+  const expected = Array.from(puzzle.word)[puzzle.missingIndex];
+  const options = new Set(puzzle.options);
+  if (!expected || puzzle.options.length !== 3 || options.size !== 3 || !options.has(expected)) {
+    throw new Error(`Invalid missing-letter puzzle: ${puzzle.word}`);
+  }
+  return puzzle;
+}
+
 const missingPuzzleLevels: MissingPuzzle[][] = [
   [
     { word: "한글", missingIndex: 1, options: ["국", "글", "강"], meaningKo: "한국의 문자", meaningEn: "Korean writing system" },
@@ -29,15 +38,15 @@ const missingPuzzleLevels: MissingPuzzle[][] = [
   ],
   [
     { word: "지하철", missingIndex: 1, options: ["허", "하", "호"], meaningKo: "도시의 땅 아래를 달리는 열차", meaningEn: "a subway" },
-    { word: "떡볶이", missingIndex: 2, options: ["복", "볶", "벅"], meaningKo: "매콤한 한국 길거리 음식", meaningEn: "spicy Korean rice cakes" },
+    { word: "떡볶이", missingIndex: 1, options: ["복", "볶", "벅"], meaningKo: "매콤한 한국 길거리 음식", meaningEn: "spicy Korean rice cakes" },
     { word: "안녕하세요", missingIndex: 3, options: ["세", "새", "서"], meaningKo: "공손하게 건네는 인사", meaningEn: "a polite hello" },
-    { word: "괜찮아요", missingIndex: 2, options: ["찬", "찮", "창"], meaningKo: "문제가 없다고 말할 때", meaningEn: "it is okay" },
-    { word: "감사합니다", missingIndex: 3, options: ["합", "압", "함"], meaningKo: "공손하게 감사를 전하는 말", meaningEn: "a formal thank-you" },
+    { word: "괜찮아요", missingIndex: 1, options: ["찬", "찮", "창"], meaningKo: "문제가 없다고 말할 때", meaningEn: "it is okay" },
+    { word: "감사합니다", missingIndex: 2, options: ["합", "압", "함"], meaningKo: "공손하게 감사를 전하는 말", meaningEn: "a formal thank-you" },
     { word: "보고싶어요", missingIndex: 2, options: ["싶", "십", "심"], meaningKo: "그리운 마음을 전하는 말", meaningEn: "I miss you" },
   ],
-];
+].map((level) => level.map(validateMissingPuzzle));
 
-type Direction = "across" | "down";
+export type Direction = "across" | "down";
 
 type WordSeed = {
   answer: string;
@@ -45,14 +54,14 @@ type WordSeed = {
   clueEn: string;
 };
 
-type CrosswordEntry = WordSeed & {
+export type CrosswordEntry = WordSeed & {
   id: string;
   direction: Direction;
   row: number;
   col: number;
 };
 
-type CrosswordPuzzle = {
+export type CrosswordPuzzle = {
   id: string;
   size: number;
   titleKo: string;
@@ -60,7 +69,7 @@ type CrosswordPuzzle = {
   entries: CrosswordEntry[];
 };
 
-type BuiltCell = {
+export type BuiltCell = {
   solution: string;
   entryIds: string[];
   directions: Direction[];
@@ -131,11 +140,11 @@ const crosswordThemes: Array<{ id: string; titleKo: string; titleEn: string; wor
   },
 ];
 
-function cellKey(row: number, col: number) {
+export function cellKey(row: number, col: number) {
   return `${row}-${col}`;
 }
 
-function entryCells(entry: CrosswordEntry) {
+export function entryCells(entry: CrosswordEntry) {
   return Array.from(entry.answer).map((solution, index) => ({
     row: entry.row + (entry.direction === "down" ? index : 0),
     col: entry.col + (entry.direction === "across" ? index : 0),
@@ -229,9 +238,9 @@ function createCrossword(theme: typeof crosswordThemes[number], size = 15): Cros
   return { id: theme.id, size: normalizedSize, titleKo: theme.titleKo, titleEn: theme.titleEn, entries: normalizedEntries };
 }
 
-const crosswordPuzzles = crosswordThemes.map((theme) => createCrossword(theme));
+export const crosswordPuzzles = crosswordThemes.map((theme) => createCrossword(theme));
 
-function buildCrossword(puzzle: CrosswordPuzzle) {
+export function buildCrossword(puzzle: CrosswordPuzzle) {
   const cells = new Map<string, BuiltCell>();
   for (const entry of puzzle.entries) {
     for (const position of entryCells(entry)) {

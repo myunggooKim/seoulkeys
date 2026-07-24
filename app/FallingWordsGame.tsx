@@ -29,15 +29,35 @@ type CaptureBurst = {
 };
 
 const wordBank = [
-  { korean: "사랑", meaning: "love" }, { korean: "음악", meaning: "music" },
-  { korean: "친구", meaning: "friend" }, { korean: "한국", meaning: "Korea" },
-  { korean: "여행", meaning: "travel" }, { korean: "바다", meaning: "sea" },
-  { korean: "하늘", meaning: "sky" }, { korean: "노래", meaning: "song" },
-  { korean: "마음", meaning: "heart" }, { korean: "오늘", meaning: "today" },
-  { korean: "안녕", meaning: "hello" }, { korean: "별빛", meaning: "starlight" },
-  { korean: "드라마", meaning: "drama" }, { korean: "한글", meaning: "Hangul" },
-  { korean: "설렘", meaning: "flutter" }, { korean: "꿈꾸다", meaning: "to dream" },
-  { korean: "반가워", meaning: "nice to meet you" }, { korean: "고마워", meaning: "thank you" },
+  { korean: "사랑", meaning: "love", difficulty: 1 }, { korean: "음악", meaning: "music", difficulty: 1 },
+  { korean: "친구", meaning: "friend", difficulty: 1 }, { korean: "한국", meaning: "Korea", difficulty: 1 },
+  { korean: "여행", meaning: "travel", difficulty: 1 }, { korean: "바다", meaning: "sea", difficulty: 1 },
+  { korean: "하늘", meaning: "sky", difficulty: 1 }, { korean: "노래", meaning: "song", difficulty: 1 },
+  { korean: "마음", meaning: "heart", difficulty: 1 }, { korean: "오늘", meaning: "today", difficulty: 1 },
+  { korean: "안녕", meaning: "hello", difficulty: 1 }, { korean: "별빛", meaning: "starlight", difficulty: 1 },
+  { korean: "한글", meaning: "Hangul", difficulty: 1 }, { korean: "기차", meaning: "train", difficulty: 1 },
+  { korean: "공항", meaning: "airport", difficulty: 1 }, { korean: "사진", meaning: "photo", difficulty: 1 },
+  { korean: "음식", meaning: "food", difficulty: 1 }, { korean: "영화", meaning: "movie", difficulty: 1 },
+  { korean: "커피", meaning: "coffee", difficulty: 1 }, { korean: "학교", meaning: "school", difficulty: 1 },
+  { korean: "가족", meaning: "family", difficulty: 1 }, { korean: "봄날", meaning: "spring day", difficulty: 1 },
+  { korean: "겨울", meaning: "winter", difficulty: 1 }, { korean: "여름", meaning: "summer", difficulty: 1 },
+  { korean: "가을", meaning: "autumn", difficulty: 1 }, { korean: "행복", meaning: "happiness", difficulty: 1 },
+  { korean: "약속", meaning: "promise", difficulty: 1 }, { korean: "시간", meaning: "time", difficulty: 1 },
+  { korean: "거리", meaning: "street", difficulty: 1 }, { korean: "도시", meaning: "city", difficulty: 1 },
+  { korean: "미소", meaning: "smile", difficulty: 1 }, { korean: "소원", meaning: "wish", difficulty: 1 },
+  { korean: "드라마", meaning: "drama", difficulty: 2 }, { korean: "설렘", meaning: "flutter", difficulty: 2 },
+  { korean: "꿈꾸다", meaning: "to dream", difficulty: 2 }, { korean: "반가워", meaning: "nice to meet you", difficulty: 2 },
+  { korean: "고마워", meaning: "thank you", difficulty: 2 }, { korean: "서울역", meaning: "Seoul Station", difficulty: 2 },
+  { korean: "지하철", meaning: "subway", difficulty: 2 }, { korean: "비행기", meaning: "airplane", difficulty: 2 },
+  { korean: "떡볶이", meaning: "tteokbokki", difficulty: 2 }, { korean: "김치찌개", meaning: "kimchi stew", difficulty: 2 },
+  { korean: "불고기", meaning: "bulgogi", difficulty: 2 }, { korean: "박물관", meaning: "museum", difficulty: 2 },
+  { korean: "편의점", meaning: "convenience store", difficulty: 2 }, { korean: "화장실", meaning: "restroom", difficulty: 2 },
+  { korean: "여권", meaning: "passport", difficulty: 2 }, { korean: "숙소", meaning: "lodging", difficulty: 2 },
+  { korean: "표지판", meaning: "signboard", difficulty: 2 }, { korean: "한강공원", meaning: "Han River park", difficulty: 2 },
+  { korean: "괜찮아요", meaning: "it is okay", difficulty: 3 }, { korean: "안녕하세요", meaning: "hello", difficulty: 3 },
+  { korean: "감사합니다", meaning: "thank you", difficulty: 3 }, { korean: "보고싶어요", meaning: "I miss you", difficulty: 3 },
+  { korean: "도와주세요", meaning: "please help me", difficulty: 3 }, { korean: "얼마예요", meaning: "how much is it", difficulty: 3 },
+  { korean: "맛있어요", meaning: "it is delicious", difficulty: 3 }, { korean: "처음뵙겠습니다", meaning: "pleased to meet you", difficulty: 3 },
 ];
 
 const lanePositions = [11, 27, 43, 59, 75, 88];
@@ -107,8 +127,9 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
   const shockTimerRef = useRef<number | null>(null);
   const waveTimerRef = useRef<number | null>(null);
   const audioEngineRef = useRef<RetroAudioEngine | null>(null);
-  const audioStateRef = useRef({ paused: false, gameOver: false, briefing: true, waveClear: false });
+  const audioStateRef = useRef({ paused: false, gameOver: false, briefing: true, waveClear: false, danger: 0 });
   const localAudioEnabledRef = useRef(true);
+  const recentWordsRef = useRef(["사랑", "음악", "여행"]);
   const [words, setWords] = useState<FallingWord[]>([
     { id: 1, korean: "사랑", meaning: "love", x: lanePositions[1], y: 5, speed: 0.23, lane: 1 },
     { id: 2, korean: "음악", meaning: "music", x: lanePositions[3], y: -8, speed: 0.25, lane: 3 },
@@ -136,6 +157,8 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
   const desiredWords = Math.min(6, 2 + Math.ceil(level / 2));
   const shield = Math.max(0, Math.round((MAX_LIVES - misses) / MAX_LIVES * 100));
   const rank = combo >= 15 ? "S" : combo >= 10 ? "A" : combo >= 5 ? "B" : "C";
+  const danger = Math.max(0, ...words.map((word) => word.y)) / 84;
+  const criticalThreats = words.filter((word) => word.y > 67).length;
 
   const focusInput = useCallback(() => {
     window.requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
@@ -182,6 +205,10 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
       if (engine.step % 4 === 2) {
         noiseHit(context, music, now, 0.045, 0.009);
       }
+      if (state.danger > 0.68 && engine.step % 8 === 6) {
+        synthTone(context, music, state.danger > 0.86 ? 880 : 660, now, 0.07, 0.028, "square");
+        synthTone(context, music, state.danger > 0.86 ? 1046.5 : 784, now + 0.085, 0.07, 0.022, "square");
+      }
       engine.step = (engine.step + 1) % 64;
     }, RETRO_STEP_MS);
     audioEngineRef.current = engine;
@@ -189,19 +216,25 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
     return engine;
   }, [soundEnabled]);
 
-  const playGameEffect = useCallback((effect: "start" | "blast" | "damage" | "error" | "wave", intensity = 0) => {
+  const playGameEffect = useCallback((effect: "start" | "blast" | "damage" | "error" | "wave", intensity = 0, pan = 0) => {
     const engine = ensureRetroAudio();
     if (!engine) return;
     const { context, effects } = engine;
     const now = context.currentTime + 0.01;
+    const spatialOutput = typeof context.createStereoPanner === "function" ? context.createStereoPanner() : null;
+    if (spatialOutput) {
+      spatialOutput.pan.setValueAtTime(Math.max(-1, Math.min(1, pan)), now);
+      spatialOutput.connect(effects);
+    }
+    const output: AudioNode = spatialOutput ?? effects;
     if (effect === "start") {
       [220, 329.63, 440, 659.25].forEach((frequency, index) => {
-        synthTone(context, effects, frequency, now + index * 0.07, 0.14, 0.05, index % 2 ? "square" : "triangle");
+        synthTone(context, output, frequency, now + index * 0.07, 0.14, 0.05, index % 2 ? "square" : "triangle");
       });
       return;
     }
     if (effect === "blast") {
-      noiseHit(context, effects, now, 0.16, 0.12);
+      noiseHit(context, output, now, 0.16, 0.12);
       const oscillator = context.createOscillator();
       const gain = context.createGain();
       oscillator.type = "sawtooth";
@@ -209,24 +242,24 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
       oscillator.frequency.exponentialRampToValueAtTime(92, now + 0.2);
       gain.gain.setValueAtTime(0.11, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
-      oscillator.connect(gain).connect(effects);
+      oscillator.connect(gain).connect(output);
       oscillator.start(now);
       oscillator.stop(now + 0.23);
-      synthTone(context, effects, 880 + intensity * 12, now + 0.05, 0.12, 0.045, "square");
+      synthTone(context, output, 880 + intensity * 12, now + 0.05, 0.12, 0.045, "square");
       return;
     }
     if (effect === "damage") {
-      noiseHit(context, effects, now, 0.34, 0.15);
-      [98, 73.42].forEach((frequency, index) => synthTone(context, effects, frequency, now + index * 0.12, 0.25, 0.08, "sawtooth"));
+      noiseHit(context, output, now, 0.42, 0.19);
+      [98, 73.42, 49].forEach((frequency, index) => synthTone(context, output, frequency, now + index * 0.1, 0.3, 0.09, "sawtooth"));
       return;
     }
     if (effect === "error") {
-      synthTone(context, effects, 126, now, 0.08, 0.055, "square");
-      synthTone(context, effects, 112, now + 0.085, 0.08, 0.045, "square");
+      synthTone(context, output, 126, now, 0.08, 0.055, "square");
+      synthTone(context, output, 112, now + 0.085, 0.08, 0.045, "square");
       return;
     }
     [523.25, 659.25, 783.99, 1046.5].forEach((frequency, index) => {
-      synthTone(context, effects, frequency, now + index * 0.09, 0.2, 0.065, index % 2 ? "square" : "triangle");
+      synthTone(context, output, frequency, now + index * 0.09, 0.2, 0.065, index % 2 ? "square" : "triangle");
     });
   }, [ensureRetroAudio]);
 
@@ -243,7 +276,12 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
   }, [ensureRetroAudio, stopRetroAudio]);
 
   const spawnWord = useCallback((slot = 0, atLevel = 1): FallingWord => {
-    const item = wordBank[Math.floor(Math.random() * wordBank.length)];
+    const unlockedDifficulty = atLevel >= 7 ? 3 : atLevel >= 3 ? 2 : 1;
+    const unlocked = wordBank.filter((item) => item.difficulty <= unlockedDifficulty);
+    const fresh = unlocked.filter((item) => !recentWordsRef.current.includes(item.korean));
+    const pool = fresh.length ? fresh : unlocked;
+    const item = pool[Math.floor(Math.random() * pool.length)];
+    recentWordsRef.current = [...recentWordsRef.current, item.korean].slice(-Math.min(18, Math.max(10, unlocked.length - 4)));
     const lane = (slot + Math.floor(Math.random() * lanePositions.length)) % lanePositions.length;
     return {
       id: nextId.current++,
@@ -259,6 +297,7 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
   const resetGame = useCallback(() => {
     nextId.current = 1;
     missesRef.current = 0;
+    recentWordsRef.current = [];
     setWords([spawnWord(0, 1), spawnWord(2, 1), spawnWord(4, 1)]);
     setInput("");
     setInputEpoch((current) => current + 1);
@@ -283,12 +322,12 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
   }, [briefing, focusInput]);
 
   useEffect(() => {
-    audioStateRef.current = { paused, gameOver, briefing, waveClear: Boolean(waveClear) };
+    audioStateRef.current = { paused, gameOver, briefing, waveClear: Boolean(waveClear), danger };
     const engine = audioEngineRef.current;
     if (!engine) return;
     const audible = !paused && !gameOver && !briefing && !waveClear;
     engine.music.gain.setTargetAtTime(audible ? 0.72 : 0.015, engine.context.currentTime, 0.045);
-  }, [briefing, gameOver, paused, waveClear]);
+  }, [briefing, danger, gameOver, paused, waveClear]);
 
   useEffect(() => {
     if (!soundEnabled) stopRetroAudio();
@@ -299,11 +338,13 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
     const timer = window.setInterval(() => {
       setWords((current) => {
         let missedNow = 0;
+        let missedPanTotal = 0;
         const next = current
           .map((word) => ({ ...word, y: word.y + word.speed }))
           .filter((word) => {
             if (word.y < 84) return true;
             missedNow += 1;
+            missedPanTotal += (word.x / 50) - 1;
             return false;
           });
 
@@ -316,7 +357,7 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
             setCombo(0);
             setSplash(true);
             setShock(true);
-            playGameEffect("damage");
+            playGameEffect("damage", missedNow, missedPanTotal / missedNow);
             window.setTimeout(() => setSplash(false), 520);
             if (shockTimerRef.current) window.clearTimeout(shockTimerRef.current);
             shockTimerRef.current = window.setTimeout(() => setShock(false), 650);
@@ -393,7 +434,7 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
     setCaptureBurst({ id: matched.id, x: matched.x, y: Math.max(8, matched.y), text: `+${gained}`, combo: nextCombo });
     if (burstTimerRef.current) window.clearTimeout(burstTimerRef.current);
     burstTimerRef.current = window.setTimeout(() => setCaptureBurst(null), 880);
-    playGameEffect("blast", nextCombo);
+    playGameEffect("blast", nextCombo, (matched.x / 50) - 1);
     if (clearedWave) {
       setWaveClear(level);
       setMessage(koreanUi ? `웨이브 ${level} 방어 성공! 한글시티 전력이 상승합니다.` : `Wave ${level} secured! Hangul City power is rising.`);
@@ -444,7 +485,7 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
     <div
       ref={rootRef}
       tabIndex={-1}
-      className={`word-rain-game ${briefing ? "is-briefing" : ""} ${paused ? "is-paused" : ""} ${gameOver ? "is-game-over" : ""} ${waveClear ? "is-wave-clear" : ""} ${shock ? "has-shock" : ""} ${combo >= 5 ? "combo-hot" : ""}`}
+      className={`word-rain-game damage-${misses} ${briefing ? "is-briefing" : ""} ${paused ? "is-paused" : ""} ${gameOver ? "is-game-over" : ""} ${waveClear ? "is-wave-clear" : ""} ${shock ? "has-shock" : ""} ${criticalThreats ? "is-critical" : ""} ${combo >= 5 ? "combo-hot" : ""}`}
       onKeyDownCapture={handleGameKeys}
     >
       <div className="word-rain-board" aria-label={koreanUi ? "네온 한글시티를 방어하는 낙하 단어 게임" : "Falling word defense game for Neon Hangul City"}>
@@ -462,6 +503,10 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
           <small>SHIELD</small>
           <b>{shield}%</b>
           <span className="shield-meter"><i style={{ width: `${shield}%` }} /></span>
+        </div>
+        <div className={`threat-alert ${criticalThreats ? "active" : ""}`} role="status" aria-live="polite">
+          <i aria-hidden="true" />
+          <span>{criticalThreats ? koreanUi ? `충돌 경보 ${criticalThreats}` : `IMPACT ALERT ${criticalThreats}` : koreanUi ? "영공 안정" : "AIRSPACE CLEAR"}</span>
         </div>
         {words.map((word) => (
           <span
@@ -484,9 +529,10 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
           </span>
         )}
         <div className="defense-grid" aria-hidden="true" />
-        <div className="neon-city" aria-hidden="true">
+        <div className={`neon-city damage-${misses}`} aria-hidden="true">
           <span /><span /><span /><span /><span /><span /><span />
           <b className="city-core"><i /></b>
+          <div className="city-damage-layer"><i /><i /><i /><i /><i /></div>
         </div>
         <div className={`sea-water ${splash ? "splash" : ""}`}><i /><i /><i /><b>{koreanUi ? "한글시티 방어선" : "HANGUL CITY BARRIER"}</b></div>
         {briefing && (
@@ -510,9 +556,10 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
         )}
         {(paused || gameOver) && (
           <div className="game-curtain" role="status">
-            <small>{gameOver ? "CITY SIGNAL LOST" : "MISSION PAUSED"}</small>
+            <small>{gameOver ? "CITY DESTROYED · MISSION FAILED" : "MISSION PAUSED"}</small>
             <b>{gameOver ? score.toLocaleString() : koreanUi ? "시간 정지" : "TIME FREEZE"}</b>
-            <span><kbd>Enter</kbd>{gameOver ? koreanUi ? "재출격" : "redeploy" : koreanUi ? "임무 계속" : "resume mission"}</span>
+            {gameOver && <p>{koreanUi ? "내구도 0% · 단어 5개가 충돌해 도시가 붕괴했습니다." : "Integrity 0% · Five impacts collapsed the city."}</p>}
+            <span><kbd>Enter</kbd>{gameOver ? koreanUi ? "도시 복구 후 재출격" : "rebuild & redeploy" : koreanUi ? "임무 계속" : "resume mission"}</span>
           </div>
         )}
       </div>
