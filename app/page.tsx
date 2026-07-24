@@ -1127,10 +1127,10 @@ const activities: Array<{
   {
     id: "tetris",
     kicker: "GAME · 2 MIN",
-    title: "Word Rain",
-    korean: "단어 비 내리기",
-    description: "Catch falling Korean words before they splash into the sea.",
-    time: "Live · Score attack",
+    title: "Word Rain: City Defense",
+    korean: "한글시티 단어방어",
+    description: "Decode falling Hangul and defend the neon city before impact.",
+    time: "Retro BGM · Wave attack",
     accent: "purple",
   },
   {
@@ -1193,6 +1193,8 @@ export default function Home() {
   const [lessonStarted, setLessonStarted] = useState(false);
   const [lessonFinished, setLessonFinished] = useState(false);
   const [lessonPaused, setLessonPaused] = useState(false);
+  const [practicePreparing, setPracticePreparing] = useState(false);
+  const [practiceFocusMode, setPracticeFocusMode] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [progressLoaded, setProgressLoaded] = useState(false);
   const [privacyNoticeVisible, setPrivacyNoticeVisible] = useState(false);
@@ -1228,6 +1230,7 @@ export default function Home() {
   const manualLocaleRef = useRef(false);
   const practiceInputRef = useRef<HTMLInputElement>(null);
   const attemptStartedAtRef = useRef<number | null>(null);
+  const practiceFocusTimerRef = useRef<number | null>(null);
 
   const t = copy[locale];
   const keyboardText = keyboardHelpCopy[locale] ?? englishKeyboardCopy;
@@ -1589,6 +1592,7 @@ export default function Home() {
 
   useEffect(() => () => {
     if (fingerReleaseTimerRef.current) window.clearTimeout(fingerReleaseTimerRef.current);
+    if (practiceFocusTimerRef.current) window.clearTimeout(practiceFocusTimerRef.current);
   }, []);
 
   useEffect(() => {
@@ -1745,11 +1749,35 @@ export default function Home() {
   }, [lessonFinished, lessonPaused, lessonStarted, masteryPrompt]);
 
   useEffect(() => {
-    if (!lessonStarted || lessonFinished || lessonPaused || masteryPrompt || lessonAccepted) return;
+    if (!practiceFocusMode || !lessonStarted || lessonFinished || lessonPaused || masteryPrompt || lessonAccepted) return;
     focusPracticeInput();
-  }, [focusPracticeInput, lessonAccepted, lessonFinished, lessonIndex, lessonPaused, lessonStarted, masteryPrompt]);
+  }, [focusPracticeInput, lessonAccepted, lessonFinished, lessonIndex, lessonPaused, lessonStarted, masteryPrompt, practiceFocusMode]);
+
+  function beginPracticeFocusTransition() {
+    if (practiceFocusMode || practicePreparing) return;
+    if (practiceFocusTimerRef.current) window.clearTimeout(practiceFocusTimerRef.current);
+    setPracticePreparing(true);
+    practiceFocusTimerRef.current = window.setTimeout(() => {
+      setPracticePreparing(false);
+      setPracticeFocusMode(true);
+      practiceFocusTimerRef.current = null;
+      window.requestAnimationFrame(() => {
+        document.getElementById("practice")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        focusPracticeInput();
+      });
+    }, 620);
+  }
+
+  function showHeroIntroduction() {
+    if (practiceFocusTimerRef.current) window.clearTimeout(practiceFocusTimerRef.current);
+    practiceFocusTimerRef.current = null;
+    setPracticePreparing(false);
+    setPracticeFocusMode(false);
+    window.requestAnimationFrame(() => document.getElementById("top")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
 
   function startTodayLesson() {
+    beginPracticeFocusTransition();
     if (!lessonStarted || lessonFinished) {
       speechRequestRef.current += 1;
       if ("speechSynthesis" in window) window.speechSynthesis.cancel();
@@ -1778,10 +1806,6 @@ export default function Home() {
       setSessionRounds(0);
       attemptStartedAtRef.current = null;
     }
-    window.setTimeout(() => {
-      document.getElementById("practice")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      focusPracticeInput();
-    }, 0);
   }
 
   function resetCurrentPractice() {
@@ -1869,7 +1893,10 @@ export default function Home() {
         </div>
       </header>
 
-      <section className={`hero stage-${currentPracticeItem.kind} ${lessonStarted && !lessonFinished ? "practice-focus-mode" : ""}`} id="top">
+      <section
+        className={`hero stage-${currentPracticeItem.kind} ${practicePreparing ? "practice-preparing" : ""} ${practiceFocusMode ? "practice-focus-mode" : ""}`}
+        id="top"
+      >
         <div className="hero-copy">
           <p className="eyebrow"><span aria-hidden="true" /> {t.eyebrow}</p>
           <h1>
@@ -1878,8 +1905,14 @@ export default function Home() {
           </h1>
           <p className="hero-description">{t.description}</p>
           <div className="hero-actions">
-            <button className="button button-primary" type="button" onClick={startTodayLesson}>
-              {t.start} <span aria-hidden="true">→</span>
+            <button
+              className="button button-primary hero-focus-toggle"
+              type="button"
+              onClick={practiceFocusMode || practicePreparing ? showHeroIntroduction : startTodayLesson}
+              aria-label={practiceFocusMode || practicePreparing ? (locale === "ko" ? "소개 영역 다시 펼치기" : "Expand the introduction") : t.start}
+            >
+              <span className="hero-focus-label">{practiceFocusMode ? (locale === "ko" ? "소개 보기" : "Show intro") : practicePreparing ? (locale === "ko" ? "준비 중" : "Preparing") : t.start}</span>
+              <span className="hero-focus-arrow" aria-hidden="true">{practiceFocusMode || practicePreparing ? "←" : "→"}</span>
             </button>
             <a className="button button-secondary" href="#games">{t.explore}</a>
           </div>
@@ -1955,7 +1988,10 @@ export default function Home() {
                 ref={practiceInputRef}
                 value={typed}
                 disabled={lessonFinished || lessonAccepted || lessonPaused || Boolean(masteryPrompt)}
-                onFocus={() => setLessonStarted(true)}
+                onFocus={() => {
+                  setLessonStarted(true);
+                  beginPracticeFocusTransition();
+                }}
                 onChange={(event) => {
                   const nextValue = event.target.value;
                   setLessonStarted(true);
