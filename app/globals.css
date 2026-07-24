@@ -5127,7 +5127,7 @@ footer > div {
 
 .mission-briefing > small { color: #73f7ff; font-size: 12px; font-weight: 950; letter-spacing: .15em; }
 .mission-briefing h3 { margin: 0; font-size: clamp(25px, 4vw, 42px); letter-spacing: -.045em; text-shadow: 3px 3px 0 #6427c9; }
-.mission-briefing > p { max-width: 640px; margin: 0; color: white; font-size: clamp(18px, 1.65vw, 21px); font-weight: 800; line-height: 1.6; text-shadow: 0 1px 8px rgb(0 0 0 / .55); }
+.game-demo .mission-briefing > p { max-width: 640px; margin: 0; color: white; font-size: clamp(18px, 1.65vw, 21px); font-weight: 800; line-height: 1.6; text-shadow: 0 1px 8px rgb(0 0 0 / .55); }
 
 .mission-rules {
   display: flex;
@@ -5665,7 +5665,7 @@ footer > div {
   .mission-briefing { gap: 10px; padding: 20px 16px; }
   .mission-emblem { width: 56px; height: 56px; }
   .mission-emblem span { font-size: 26px; }
-  .mission-briefing > p { font-size: 14px; line-height: 1.5; }
+  .game-demo .mission-briefing > p { font-size: 14px; line-height: 1.5; }
   .mission-rules { flex-wrap: wrap; justify-content: center; }
   .mission-rules span { padding: 8px 9px; font-size: 10px; }
   .mission-start { font-size: 10px; }
