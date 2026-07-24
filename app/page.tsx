@@ -25,6 +25,7 @@ type TravelMode = "inKorea" | "welcome";
 type KeyboardLayout = "qwerty" | "azerty" | "qwertz";
 type KeyboardRow = "top" | "home" | "bottom";
 type VoiceGender = "female" | "male";
+type PracticeTrack = "guided" | "words" | "sentences";
 
 type StagePerformance = {
   attempts: number;
@@ -1107,76 +1108,119 @@ const learningLevels = [
   "K-Drama & movie lines",
 ];
 
+const koreanLearningLevels = [
+  "한글 원리",
+  "기본자리 자음·모음",
+  "기본 음절",
+  "아랫줄·윗줄",
+  "받침",
+  "쌍자음",
+  "복합 모음",
+  "쉬운 낱말",
+  "생활 낱말",
+  "짧은 구절",
+  "문장",
+  "받아쓰기",
+  "여행·현지 회화",
+  "장문 타자",
+  "K-POP 챌린지",
+  "K-드라마·영화 대사",
+];
+
 const activities: Array<{
   id: ActivityId;
   kicker: string;
+  kickerKo: string;
   title: string;
   korean: string;
   description: string;
+  descriptionKo: string;
   time: string;
+  timeKo: string;
   accent: string;
 }> = [
   {
     id: "home",
     kicker: "LEARN · 5 MIN",
+    kickerKo: "학습 · 5분",
     title: "Home-row practice",
     korean: "기본자리 연습",
     description: "Place your fingers and master ㅁ, ㄴ, ㅇ, ㄹ.",
+    descriptionKo: "원하는 단계와 진행 방식을 고르고 손가락 자리를 익혀보세요.",
     time: "Endless · Mastery gates",
+    timeKo: "무제한 · 단계 선택",
     accent: "lime",
   },
   {
     id: "tetris",
     kicker: "GAME · 2 MIN",
+    kickerKo: "게임 · 2분",
     title: "Word Rain: City Defense",
     korean: "한글시티 단어방어",
     description: "Decode falling Hangul and defend the neon city before impact.",
+    descriptionKo: "떨어지는 한글 미사일을 해독해 네온시티를 지키세요.",
     time: "Retro BGM · Wave attack",
+    timeKo: "레트로 BGM · 웨이브 공격",
     accent: "purple",
   },
   {
     id: "missing",
     kicker: "PUZZLE · 2 MIN",
+    kickerKo: "퍼즐 · 2분",
     title: "Missing Letter",
     korean: "빠진 글자",
     description: "Complete familiar words one syllable at a time.",
-    time: "18 words · 3 levels",
+    descriptionKo: "숫자키로 빠진 한 글자를 골라 낱말을 완성하세요.",
+    time: "30 words · 5 levels",
+    timeKo: "30문제 · 5단계",
     accent: "pink",
   },
   {
     id: "crossword",
     kicker: "QUIZ · 4 MIN",
+    kickerKo: "퀴즈 · 4분",
     title: "Korean Crossword",
     korean: "가로세로 퀴즈",
     description: "Connect clues, sounds, and meanings.",
+    descriptionKo: "힌트를 보고 낱말 전체를 입력해 가로세로판을 완성하세요.",
     time: "6+ clues · 3 boards",
+    timeKo: "판마다 6개 이상 · 3개 문제판",
     accent: "cyan",
   },
   {
     id: "travel",
     kicker: "REAL-LIFE KOREAN · 3 MIN",
+    kickerKo: "실전 한국어 · 3분",
     title: "Travel & Say Hello",
     korean: "여행 회화·한국인에게 말 걸기",
     description: "Travel in Korea or welcome Korean visitors in your country.",
+    descriptionKo: "한국 여행과 한국인 방문객에게 필요한 표현을 연습하세요.",
     time: "2 paths · 6 scenes",
+    timeKo: "2개 과정 · 6개 상황",
     accent: "orange",
   },
   {
     id: "kpop",
     kicker: "REWARD CHALLENGE",
+    kickerKo: "보상 챌린지",
     title: "Licensed K-POP Lyrics",
     korean: "K-POP 가사 타자",
     description: "Unlock official lyric typing after long-form Level 5.",
+    descriptionKo: "장문 5단계를 달성하고 등록된 K-POP 가사 타자를 시작하세요.",
     time: "Locked · Level 4/5",
+    timeKo: "잠김 · 4/5단계",
     accent: "stripe",
   },
   {
     id: "screen",
     kicker: "SCENE CHALLENGE",
+    kickerKo: "장면 챌린지",
     title: "K-Drama & Movie Lines",
     korean: "K-드라마·영화 명대사",
     description: "Type memorable licensed dialogue, one dramatic scene at a time.",
+    descriptionKo: "등록된 드라마와 영화 대사를 장면별로 타이핑하세요.",
     time: "Preview · 3 scenes",
+    timeKo: "미리보기 · 3개 장면",
     accent: "sunset",
   },
 ];
@@ -1191,6 +1235,7 @@ export default function Home() {
   const [advanceQueued, setAdvanceQueued] = useState(false);
   const [keyboardLayout, setKeyboardLayout] = useState<KeyboardLayout>("qwerty");
   const [lessonIndex, setLessonIndex] = useState(0);
+  const [practiceTrack, setPracticeTrack] = useState<PracticeTrack>("guided");
   const [lessonStarted, setLessonStarted] = useState(false);
   const [lessonFinished, setLessonFinished] = useState(false);
   const [lessonPaused, setLessonPaused] = useState(false);
@@ -1487,6 +1532,16 @@ export default function Home() {
     const stageCpm = average(recentCpm);
     const enoughPasses = nextPerformance.passes >= Math.min(3, indices.length);
     const mastered = enoughPasses && stageAccuracy >= target.accuracy && stageCpm >= target.cpm;
+    const focusedLoop = (practiceTrack === "words" && kind === "word")
+      || (practiceTrack === "sentences" && kind === "sentence");
+
+    if (focusedLoop) {
+      setSessionRounds((rounds) => rounds + 1);
+      preparePracticeItem(indices[0], locale === "ko"
+        ? `${kind === "word" ? "단어" : "문장"} 집중 다음 라운드가 바로 이어집니다.`
+        : `Your next ${kind === "word" ? "word" : "sentence"} focus round is ready.`);
+      return;
+    }
 
     if (mastered) {
       const nextKind = practiceStageOrder[currentStageIndex + 1] ?? null;
@@ -1505,7 +1560,7 @@ export default function Home() {
       : `Another round continues · gain ${accuracyGap ? `${accuracyGap}% accuracy` : `${speedGap} CPM`} to unlock the stage choice.`;
     setSessionRounds((rounds) => rounds + 1);
     preparePracticeItem(indices[0], coaching);
-  }, [currentPracticeItem.kind, currentStageIndex, lessonIndex, locale, preparePracticeItem, stagePerformance]);
+  }, [currentPracticeItem.kind, currentStageIndex, lessonIndex, locale, practiceTrack, preparePracticeItem, stagePerformance]);
 
   const resetCurrentPractice = useCallback(() => {
     setTyped("");
@@ -1947,6 +2002,21 @@ export default function Home() {
     }
   }
 
+  function choosePracticeStage(kind: PracticeKind, track: PracticeTrack = kind === "word" ? "words" : kind === "sentence" ? "sentences" : "guided") {
+    const firstItem = practiceCurriculum.findIndex((item) => item.kind === kind);
+    if (firstItem < 0 || advanceQueued) return;
+    practiceSessionStartedRef.current = true;
+    setPracticeTrack(track);
+    setLessonStarted(true);
+    setLessonFinished(false);
+    setLessonPaused(false);
+    setSessionRounds(0);
+    preparePracticeItem(firstItem, locale === "ko"
+      ? `${practiceStageLabels[kind].ko} 연습을 선택했습니다. 키보드에서 바로 시작하세요.`
+      : `${practiceStageLabels[kind].en} practice selected. Start typing now.`);
+    beginPracticeFocusTransition();
+  }
+
   function selectActivity(activity: ActivityId) {
     setActiveActivity(activity);
     window.setTimeout(() => {
@@ -1960,14 +2030,14 @@ export default function Home() {
 
   return (
     <main className="site-shell" dir={rtlLocales.has(locale) ? "rtl" : "ltr"}>
-      <a className="skip-link" href="#practice">Skip to practice</a>
+      <a className="skip-link" href="#practice">{locale === "ko" ? "연습으로 바로 가기" : "Skip to practice"}</a>
 
-      <header className="topbar" aria-label="Primary navigation">
-        <a className="brand" href="#top" aria-label="Hangeul Pop home">
+      <header className="topbar" aria-label={locale === "ko" ? "주요 메뉴" : "Primary navigation"}>
+        <a className="brand" href="#top" aria-label={locale === "ko" ? "Hangeul Pop 홈" : "Hangeul Pop home"}>
           <span className="brand-mark" aria-hidden="true">ㅎ</span>
           <span>Hangeul Pop</span>
         </a>
-        <nav className="nav-links" aria-label="Main menu">
+        <nav className="nav-links" aria-label={locale === "ko" ? "메인 메뉴" : "Main menu"}>
           <a href="#learn">{t.navLearn}</a>
           <a href="#games">{t.navGames}</a>
           <a href="/my">{t.navProgress}</a>
@@ -1979,10 +2049,10 @@ export default function Home() {
               <span className="speech-toggle-track" aria-hidden="true"><i /></span>
               <span className="speech-toggle-copy"><b>{locale === "ko" ? "자동 발음" : "Auto voice"}</b><small>{speechSupported ? autoSpeak ? speechText.on : speechText.off : "—"}</small></span>
             </label>
-            <label className="voice-picker" title="Korean pronunciation voice">
+            <label className="voice-picker" title={locale === "ko" ? "한국어 발음 목소리" : "Korean pronunciation voice"}>
               <span aria-hidden="true">{voiceGender === "female" ? "♀" : "♂"}</span>
-              <span className="sr-only">Korean voice</span>
-              <select value={voiceGender} onChange={(event) => setVoiceGender(event.target.value as VoiceGender)}>
+              <span className="sr-only">{locale === "ko" ? "한국어 목소리" : "Korean voice"}</span>
+              <select aria-label={locale === "ko" ? "한국어 발음 목소리 선택" : "Korean voice MP3"} value={voiceGender} onChange={(event) => setVoiceGender(event.target.value as VoiceGender)}>
                 <option value="female">{locale === "ko" ? "여성 목소리" : "Female voice"}</option>
                 <option value="male">{locale === "ko" ? "남성 목소리" : "Male voice"}</option>
               </select>
@@ -1996,8 +2066,8 @@ export default function Home() {
             <button className="sound-preview-button" type="button" onClick={playTypewriterReturnSound} aria-label={locale === "ko" ? "타자기 줄바꿈 소리 시험" : "Preview typewriter return sound"}>▶</button>
           </div>
           <label className="language-picker">
-            <span className="sr-only">Interface language</span>
-            <select value={locale} onChange={(event) => chooseInterfaceLocale(event.target.value as Locale)}>
+            <span className="sr-only">{locale === "ko" ? "화면 언어" : "Interface language"}</span>
+            <select aria-label={locale === "ko" ? "화면 언어 선택" : "Interface language"} value={locale} onChange={(event) => chooseInterfaceLocale(event.target.value as Locale)}>
               {localeGroups.map((group) => (
                 <optgroup label={group.label} key={group.label}>
                   {group.options.map((option) => (
@@ -2033,10 +2103,10 @@ export default function Home() {
             </button>
             <a className="button button-secondary" href="#games">{t.explore}</a>
           </div>
-          <div className="trust-row" aria-label="Service highlights">
-            <span><b>{learningLevels.length}</b> learning levels</span>
-            <span><b>{Object.keys(copy).length}</b> interface languages</span>
-            <span><b>1</b> secure sign-in</span>
+          <div className="trust-row" aria-label={locale === "ko" ? "서비스 특징" : "Service highlights"}>
+            <span><b>{learningLevels.length}</b> {locale === "ko" ? "개 학습 단계" : "learning levels"}</span>
+            <span><b>{Object.keys(copy).length}</b> {locale === "ko" ? "개 지원 언어" : "interface languages"}</span>
+            <span><b>1</b> {locale === "ko" ? "안전한 로그인" : "secure sign-in"}</span>
           </div>
         </div>
 
@@ -2061,17 +2131,57 @@ export default function Home() {
                 <p className="card-kicker">{locale === "ko" ? `현재 단계 · ${currentPracticeItem.stageKo}` : `CURRENT STAGE · ${currentPracticeItem.stageEn}`}</p>
                 <h2>{locale === "ko" ? currentPracticeItem.instructionKo : currentPracticeItem.instructionEn}</h2>
               </div>
-              <a className="streak" href="/my">{accountSummary ? `${accountSummary.streakDays} day streak · ${accountSummary.coins} beats` : "My learning page"}</a>
+              <a className="streak" href="/my">
+                {accountSummary
+                  ? locale === "ko"
+                    ? `${accountSummary.streakDays}일 연속 · ${accountSummary.coins}비트`
+                    : `${accountSummary.streakDays} day streak · ${accountSummary.coins} beats`
+                  : locale === "ko" ? "내 학습 페이지" : "My learning page"}
+              </a>
             </div>
 
-            <ol className="curriculum-progress" aria-label={locale === "ko" ? "한글 타자 학습 단계" : "Korean typing learning stages"}>
+            <div className="practice-track-picker" role="group" aria-label={locale === "ko" ? "연습 진행 방식 선택" : "Choose a practice track"}>
+              <span>{locale === "ko" ? "진행 방식" : "Practice track"}</span>
+              <button
+                type="button"
+                className={practiceTrack === "guided" ? "active" : ""}
+                disabled={advanceQueued}
+                onClick={() => setPracticeTrack("guided")}
+              >
+                {locale === "ko" ? "단계별" : "Guided"}
+              </button>
+              <button
+                type="button"
+                className={practiceTrack === "words" ? "active" : ""}
+                disabled={advanceQueued}
+                onClick={() => choosePracticeStage("word", "words")}
+              >
+                {locale === "ko" ? "단어만" : "Words only"}
+              </button>
+              <button
+                type="button"
+                className={practiceTrack === "sentences" ? "active" : ""}
+                disabled={advanceQueued}
+                onClick={() => choosePracticeStage("sentence", "sentences")}
+              >
+                {locale === "ko" ? "문장만" : "Sentences only"}
+              </button>
+            </div>
+
+            <ol className="curriculum-progress" aria-label={locale === "ko" ? "선택 가능한 한글 타자 학습 단계" : "Selectable Korean typing stages"}>
               {practiceStageOrder.map((kind, index) => {
-                const firstItem = practiceCurriculum.findIndex((item) => item.kind === kind);
                 const nextFirstItem = practiceStageOrder[index + 1]
                   ? practiceCurriculum.findIndex((item) => item.kind === practiceStageOrder[index + 1])
                   : practiceCurriculum.length;
-                const state = lessonIndex >= nextFirstItem ? "done" : currentStageIndex === index ? "current" : lessonIndex < firstItem ? "locked" : "done";
-                return <li className={state} key={kind}><span>{state === "done" ? "✓" : index + 1}</span><b>{locale === "ko" ? practiceStageLabels[kind].ko : practiceStageLabels[kind].en}</b></li>;
+                const state = lessonIndex >= nextFirstItem ? "done" : currentStageIndex === index ? "current" : "selectable";
+                return (
+                  <li className={state} key={kind}>
+                    <button type="button" disabled={advanceQueued} onClick={() => choosePracticeStage(kind)}>
+                      <span>{state === "done" ? "✓" : index + 1}</span>
+                      <b>{locale === "ko" ? practiceStageLabels[kind].ko : practiceStageLabels[kind].en}</b>
+                    </button>
+                  </li>
+                );
               })}
             </ol>
 
@@ -2167,7 +2277,7 @@ export default function Home() {
               />
               <p className={`typing-feedback ${sentenceComplete ? "complete" : ""}`} id="typing-feedback" aria-live="polite">
                 {lessonFinished
-                  ? "Today’s lesson is complete. Great work!"
+                  ? locale === "ko" ? "오늘의 학습을 완료했습니다. 정말 잘했어요!" : "Today’s lesson is complete. Great work!"
                   : masteryPrompt
                     ? locale === "ko"
                       ? "단계 기준을 통과했습니다 · Enter로 다음 단계, R로 현재 단계 반복"
@@ -2181,8 +2291,8 @@ export default function Home() {
                         ? "✓ 문장 입력 완료 · Enter ↵를 눌러 정확도를 검사하세요."
                         : "✓ 자리 입력 완료 · 검사 후 다음 과제가 자동으로 이어집니다."
                       : typedChars.length
-                        ? `${accuracy}% accurate · keep going`
-                        : "Follow the highlighted key position below."}
+                        ? locale === "ko" ? `정확도 ${accuracy}% · 계속 입력하세요` : `${accuracy}% accurate · keep going`
+                        : locale === "ko" ? "아래 강조된 키와 손가락 위치를 따라 입력하세요." : "Follow the highlighted key position below."}
               </p>
 
               {practiceCoachMessage && !masteryPrompt && (
@@ -2192,7 +2302,7 @@ export default function Home() {
               {lessonEvaluation && (
                 <div className={`lesson-evaluation ${lessonEvaluation.accepted ? "accepted" : "rejected"}`} aria-live="assertive">
                   <div>
-                    <small>{lessonEvaluation.accepted ? "TYPING CHECK PASSED" : "CHECK NEEDED"}</small>
+                    <small>{locale === "ko" ? lessonEvaluation.accepted ? "입력 검사 통과" : "다시 확인 필요" : lessonEvaluation.accepted ? "TYPING CHECK PASSED" : "CHECK NEEDED"}</small>
                     <b>{lessonEvaluation.label}</b>
                     <p>{lessonEvaluation.message}</p>
                   </div>
@@ -2251,11 +2361,11 @@ export default function Home() {
                 <div className="lesson-finish-card">
                   <span className="finish-mark" aria-hidden="true">✓</span>
                   <div>
-                    <small>DAILY LESSON COMPLETE</small>
-                    <h3>{practiceCurriculum.length} learning steps finished</h3>
-                    <p>{formatPracticeTime(elapsedSeconds)} practice · progress saved on this device</p>
+                    <small>{locale === "ko" ? "오늘의 학습 완료" : "DAILY LESSON COMPLETE"}</small>
+                    <h3>{locale === "ko" ? `${practiceCurriculum.length}개 학습 과정을 마쳤어요` : `${practiceCurriculum.length} learning steps finished`}</h3>
+                    <p>{locale === "ko" ? `${formatPracticeTime(elapsedSeconds)} 연습 · 이 기기에 진도가 저장됐습니다` : `${formatPracticeTime(elapsedSeconds)} practice · progress saved on this device`}</p>
                   </div>
-                  <button className="button button-primary" type="button" onClick={startTodayLesson}>Practice again</button>
+                  <button className="button button-primary" type="button" onClick={startTodayLesson}>{locale === "ko" ? "다시 연습" : "Practice again"}</button>
                 </div>
               ) : (
                 <>
@@ -2293,7 +2403,7 @@ export default function Home() {
                     </div>
                   )}
 
-                  <div className="key-guide" aria-label="Upcoming Korean keys">
+                  <div className="key-guide" aria-label={locale === "ko" ? "다음 한글 키" : "Upcoming Korean keys"}>
                     {upcomingPracticeKeys.map((key, index) => (
                       <kbd className={index === 0 ? "active" : ""} key={`${key.jamo}-${guideStep + index}`}>
                         <span lang="ko">{key.jamo}</span>
@@ -2354,7 +2464,7 @@ export default function Home() {
 
             <div className="daily-meter" id="progress">
               <div className="daily-time">
-                <div><b>{formatPracticeTime(elapsedSeconds)}</b><span>/10 min</span></div>
+                <div><b>{formatPracticeTime(elapsedSeconds)}</b><span>{locale === "ko" ? "/10분" : "/10 min"}</span></div>
                 <button
                   className={`timer-pause-button ${lessonPaused ? "paused" : ""}`}
                   type="button"
@@ -2368,14 +2478,18 @@ export default function Home() {
                 </button>
               </div>
               <div className="meter-copy">
-                <div><span>Today’s practice</span><b>{dailyProgress}%</b></div>
-                <div className="meter-track" role="progressbar" aria-label="Today’s practice" aria-valuemin={0} aria-valuemax={100} aria-valuenow={dailyProgress}>
+                <div><span>{locale === "ko" ? "오늘의 연습" : "Today’s practice"}</span><b>{dailyProgress}%</b></div>
+                <div className="meter-track" role="progressbar" aria-label={locale === "ko" ? "오늘의 연습" : "Today’s practice"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={dailyProgress}>
                   <span style={{ width: `${dailyProgress}%` }} />
                 </div>
-                <small>{lessonFinished ? "Daily typing goal reached" : `${completedSentences} of ${practiceCurriculum.length} learning steps complete`}</small>
+                <small>
+                  {locale === "ko"
+                    ? lessonFinished ? "오늘의 타자 목표 달성" : `${practiceCurriculum.length}개 중 ${completedSentences}개 학습 완료`
+                    : lessonFinished ? "Daily typing goal reached" : `${completedSentences} of ${practiceCurriculum.length} learning steps complete`}
+                </small>
                 <div className="mastery-target-line">
                   <span>{locale === "ko" ? currentMasteryTarget.labelKo : currentMasteryTarget.labelEn}</span>
-                  <b>{currentStageAccuracy || accuracy}% / {currentStageCpm || lastAttemptCpm || 0} CPM</b>
+                  <b>{currentStageAccuracy || accuracy}% / {currentStageCpm || lastAttemptCpm || 0} {locale === "ko" ? "타/분" : "CPM"}</b>
                   <em>{locale === "ko" ? `목표 ${currentMasteryTarget.accuracy}% · ${currentMasteryTarget.cpm}타/분 · ${sessionRounds + 1}회차` : `Target ${currentMasteryTarget.accuracy}% · ${currentMasteryTarget.cpm} CPM · round ${sessionRounds + 1}`}</em>
                 </div>
               </div>
@@ -2387,7 +2501,7 @@ export default function Home() {
       <section className="activity-section" id="games" aria-labelledby="activities-heading">
         <div className="section-heading">
           <div>
-            <p className="section-label">TODAY’S 10-MINUTE PLAN</p>
+            <p className="section-label">{locale === "ko" ? "오늘의 10분 학습" : "TODAY’S 10-MINUTE PLAN"}</p>
             <h2 id="activities-heading">{t.nextBeat}</h2>
           </div>
           <p>{t.nextBeatHint}</p>
@@ -2403,10 +2517,13 @@ export default function Home() {
               aria-pressed={activeActivity === activity.id}
             >
               <span className="activity-number">0{index + 1}</span>
-              <span className="activity-kicker">{activity.kicker}</span>
-              <strong>{activity.title}<span lang="ko">{activity.korean}</span></strong>
-              <span className="activity-description">{activity.description}</span>
-              <span className="activity-time">{activity.time}<b aria-hidden="true">↗</b></span>
+              <span className="activity-kicker">{locale === "ko" ? activity.kickerKo : activity.kicker}</span>
+              <strong>
+                {locale === "ko" ? activity.korean : activity.title}
+                {locale !== "ko" && <span lang="ko">{activity.korean}</span>}
+              </strong>
+              <span className="activity-description">{locale === "ko" ? activity.descriptionKo : activity.description}</span>
+              <span className="activity-time">{locale === "ko" ? activity.timeKo : activity.time}<b aria-hidden="true">↗</b></span>
             </button>
           ))}
         </div>
@@ -2414,10 +2531,10 @@ export default function Home() {
         <div className="game-demo" id="game-stage" aria-live="polite" tabIndex={-1}>
           {activeActivity === "home" && (
             <div className="demo-copy">
-              <p className="demo-label">FOUNDATION · LESSON 02</p>
-              <h3>Build reliable finger memory.</h3>
-              <p>Practice small key groups, then combine them into syllables and everyday words. The lesson adapts to the keys you miss most.</p>
-              <button className="button button-primary" type="button" onClick={startTodayLesson}>Continue basic position</button>
+              <p className="demo-label">{locale === "ko" ? "기초 훈련 · 직접 선택" : "FOUNDATION · CHOOSE YOUR PATH"}</p>
+              <h3>{locale === "ko" ? "원하는 단계부터 바로 연습하세요." : "Build reliable finger memory."}</h3>
+              <p>{locale === "ko" ? "기본자리부터 문장까지 어느 단계든 고를 수 있고, 단어만 또는 문장만 집중하는 과정도 선택할 수 있습니다." : "Choose any stage from home-row keys to sentences, or focus only on words or sentence typing."}</p>
+              <button className="button button-primary" type="button" onClick={startTodayLesson}>{locale === "ko" ? "연습 선택 화면으로 이동" : "Open practice choices"}</button>
             </div>
           )}
 
@@ -2436,7 +2553,7 @@ export default function Home() {
           {activeActivity === "travel" && (
             <div className="travel-demo">
               <div className="travel-scene">
-                <div className="travel-mode-tabs" role="group" aria-label="Travel conversation mode">
+                <div className="travel-mode-tabs" role="group" aria-label={locale === "ko" ? "여행 회화 과정" : "Travel conversation mode"}>
                   <button
                     type="button"
                     className={travelMode === "inKorea" ? "active" : ""}
@@ -2446,7 +2563,7 @@ export default function Home() {
                       setTravelInput("");
                     }}
                   >
-                    ✈ Travel in Korea
+                    {locale === "ko" ? "✈ 한국에서 여행하기" : "✈ Travel in Korea"}
                   </button>
                   <button
                     type="button"
@@ -2457,18 +2574,18 @@ export default function Home() {
                       setTravelInput("");
                     }}
                   >
-                    👋 Welcome Koreans
+                    {locale === "ko" ? "👋 한국인 방문객 맞이하기" : "👋 Welcome Koreans"}
                   </button>
                 </div>
                 <span className="travel-situation">{currentTravelPhrase.situation}</span>
                 <blockquote lang="ko">{currentTravelPhrase.korean}</blockquote>
                 <p>{currentTravelPhrase.meaning}</p>
-                <div className="phrase-dots" aria-label={`Phrase ${travelIndex + 1} of ${travelPhrases[travelMode].length}`}>
+                <div className="phrase-dots" aria-label={locale === "ko" ? `${travelPhrases[travelMode].length}개 중 ${travelIndex + 1}번째 표현` : `Phrase ${travelIndex + 1} of ${travelPhrases[travelMode].length}`}>
                   {travelPhrases[travelMode].map((phrase, index) => (
                     <button
                       type="button"
                       className={index === travelIndex ? "active" : ""}
-                      aria-label={`Open phrase ${index + 1}`}
+                      aria-label={locale === "ko" ? `${index + 1}번째 표현 열기` : `Open phrase ${index + 1}`}
                       onClick={() => {
                         setTravelIndex(index);
                         setTravelInput("");
@@ -2479,10 +2596,10 @@ export default function Home() {
                 </div>
               </div>
               <div className="travel-form">
-                <p className="demo-label">REAL-LIFE DIALOGUE · PHRASE {travelIndex + 1}/3</p>
-                <h3>Type it, then say it.</h3>
-                <p>Copy the Korean phrase to build typing memory. A later speaking lesson can add native audio and pronunciation feedback.</p>
-                <label htmlFor="travel-phrase-input">Korean phrase</label>
+                <p className="demo-label">{locale === "ko" ? `실전 회화 · 표현 ${travelIndex + 1}/3` : `REAL-LIFE DIALOGUE · PHRASE ${travelIndex + 1}/3`}</p>
+                <h3>{locale === "ko" ? "입력하고, 소리 내어 말해보세요." : "Type it, then say it."}</h3>
+                <p>{locale === "ko" ? "한국어 표현을 그대로 입력해 타자 기억을 만들고 자동 발음으로 자연스러운 소리를 확인하세요." : "Copy the Korean phrase to build typing memory and hear the natural pronunciation."}</p>
+                <label htmlFor="travel-phrase-input">{locale === "ko" ? "한국어 표현" : "Korean phrase"}</label>
                 <input
                   id="travel-phrase-input"
                   lang="ko"
@@ -2499,7 +2616,11 @@ export default function Home() {
                   spellCheck={false}
                 />
                 <p className={`form-message ${travelComplete ? "success" : ""}`} aria-live="polite">
-                  {!travelInput ? "Type the phrase exactly as shown." : travelComplete ? "Perfect — you’re ready to use it!" : "Keep going. Check the spacing and punctuation."}
+                  {!travelInput
+                    ? locale === "ko" ? "위 표현을 띄어쓰기까지 정확히 입력하세요." : "Type the phrase exactly as shown."
+                    : travelComplete
+                      ? locale === "ko" ? "완벽해요. Enter를 누르면 다음 표현으로 이어집니다!" : "Perfect — press Enter for the next phrase!"
+                      : locale === "ko" ? "계속 입력하세요. 띄어쓰기와 문장부호를 확인하세요." : "Keep going. Check the spacing and punctuation."}
                 </p>
                 <button
                   className="button button-primary"
@@ -2507,7 +2628,7 @@ export default function Home() {
                   disabled={!travelComplete}
                   onClick={() => confirmAndAdvance(advanceTravelPhrase, currentTravelPhrase.korean)}
                 >
-                  Next phrase <span aria-hidden="true">→</span>
+                  {locale === "ko" ? "다음 표현" : "Next phrase"} <span aria-hidden="true">→</span>
                 </button>
               </div>
             </div>
@@ -2519,14 +2640,14 @@ export default function Home() {
               {currentKpopItem ? (
                 <>
                   <div className="kpop-passage">
-                    <p className="demo-label">PUBLISHED CONTENT · {kpopIndex + 1}/{publishedKpopItems.length}</p>
+                    <p className="demo-label">{locale === "ko" ? "등록 콘텐츠" : "PUBLISHED CONTENT"} · {kpopIndex + 1}/{publishedKpopItems.length}</p>
                     <h3>{currentKpopItem.title}</h3>
                     <p className="kpop-source">{currentKpopItem.sourceTitle || "Original K-POP practice"}{currentKpopItem.creator ? ` · ${currentKpopItem.creator}` : ""}</p>
                     <blockquote lang="ko">{currentKpopItem.koreanText}</blockquote>
                     {currentKpopItem.translation && <p>{currentKpopItem.translation}</p>}
                   </div>
                   <div className="kpop-live-card">
-                    <label htmlFor="kpop-line-input">Type the Korean line</label>
+                    <label htmlFor="kpop-line-input">{locale === "ko" ? "한국어 가사 입력" : "Type the Korean line"}</label>
                     <textarea
                       id="kpop-line-input"
                       lang="ko"
@@ -2540,21 +2661,25 @@ export default function Home() {
                       }}
                       spellCheck={false}
                     />
-                    <p className={`form-message ${kpopComplete ? "success" : ""}`} aria-live="polite">{kpopComplete ? "Line complete — press Enter for the next track." : "Copy the spacing and punctuation exactly."}</p>
-                    <button className="button button-primary" type="button" disabled={!kpopComplete} onClick={() => confirmAndAdvance(advanceKpopLine, currentKpopItem.koreanText)}>Next line <span aria-hidden="true">→</span></button>
+                    <p className={`form-message ${kpopComplete ? "success" : ""}`} aria-live="polite">
+                      {locale === "ko"
+                        ? kpopComplete ? "한 줄 완성 · Enter를 누르면 다음 곡으로 이어집니다." : "띄어쓰기와 문장부호까지 정확히 입력하세요."
+                        : kpopComplete ? "Line complete — press Enter for the next track." : "Copy the spacing and punctuation exactly."}
+                    </p>
+                    <button className="button button-primary" type="button" disabled={!kpopComplete} onClick={() => confirmAndAdvance(advanceKpopLine, currentKpopItem.koreanText)}>{locale === "ko" ? "다음 가사" : "Next line"} <span aria-hidden="true">→</span></button>
                   </div>
                 </>
               ) : (
                 <>
                   <div>
-                    <p className="demo-label">LICENSED CONTENT · READY FOR YOUR LIBRARY</p>
-                    <h3>Add the first music challenge.</h3>
-                    <p>The owner can add original or licensed lyrics in the private content studio. Once published, they appear here as a complete typing challenge.</p>
+                    <p className="demo-label">{locale === "ko" ? "콘텐츠 라이브러리 준비됨" : "LICENSED CONTENT · READY FOR YOUR LIBRARY"}</p>
+                    <h3>{locale === "ko" ? "첫 음악 챌린지를 등록하세요." : "Add the first music challenge."}</h3>
+                    <p>{locale === "ko" ? "관리자가 직접 제작했거나 사용 권한을 확보한 가사를 등록하면 완성된 타자 챌린지로 표시됩니다." : "The owner can add original or licensed lyrics in the private content studio. Once published, they appear here as a complete typing challenge."}</p>
                   </div>
                   <div className="unlock-meter">
-                    <div><span>Content library</span><b>0 tracks</b></div>
+                    <div><span>{locale === "ko" ? "콘텐츠 보관함" : "Content library"}</span><b>{locale === "ko" ? "0곡" : "0 tracks"}</b></div>
                     <div className="meter-track" role="progressbar" aria-label="K-POP content library" aria-valuemin={0} aria-valuemax={1} aria-valuenow={0}><span style={{ width: "0%" }} /></div>
-                    <small>Administrator: add content and both voice files at /admin</small>
+                    <small>{locale === "ko" ? "관리자 페이지에서 콘텐츠와 남녀 음성 파일을 등록하세요." : "Administrator: add content and both voice files at /admin"}</small>
                   </div>
                 </>
               )}
@@ -2574,10 +2699,18 @@ export default function Home() {
                 <p>{currentScreenLine.translation}</p>
               </div>
               <div className="scene-form">
-                <p className="demo-label">{managedScreenLines.length ? "PUBLISHED CONTENT · RIGHTS CHECKED" : "ORIGINAL PRACTICE DIALOGUE · LICENSE-SAFE PREVIEW"}</p>
-                <h3>Type the scene. Feel the emotion.</h3>
-                <p>{managedScreenLines.length ? "This line was published from the private content studio." : "Practice with original dialogue now. Quotes from real dramas and movies are added only after official permission."}</p>
-                <label htmlFor="screen-line-input">Korean dialogue</label>
+                <p className="demo-label">
+                  {locale === "ko"
+                    ? managedScreenLines.length ? "등록 콘텐츠 · 사용 확인 완료" : "창작 연습 대사 · 안전한 미리보기"
+                    : managedScreenLines.length ? "PUBLISHED CONTENT · RIGHTS CHECKED" : "ORIGINAL PRACTICE DIALOGUE · LICENSE-SAFE PREVIEW"}
+                </p>
+                <h3>{locale === "ko" ? "장면을 입력하고 감정을 느껴보세요." : "Type the scene. Feel the emotion."}</h3>
+                <p>
+                  {locale === "ko"
+                    ? managedScreenLines.length ? "관리자 콘텐츠 스튜디오에서 등록한 대사입니다." : "지금은 창작 대사로 연습합니다. 실제 작품 대사는 사용 가능한 콘텐츠만 등록됩니다."
+                    : managedScreenLines.length ? "This line was published from the private content studio." : "Practice with original dialogue now. Quotes from real dramas and movies are added only after official permission."}
+                </p>
+                <label htmlFor="screen-line-input">{locale === "ko" ? "한국어 대사" : "Korean dialogue"}</label>
                 <textarea
                   id="screen-line-input"
                   lang="ko"
@@ -2594,7 +2727,9 @@ export default function Home() {
                 />
                 <div className="scene-result" aria-live="polite">
                   <span>{screenChars.length} / {screenTargetChars.length}</span>
-                  <b className={screenComplete ? "complete" : ""}>{screenComplete ? "Scene complete!" : `${screenAccuracy}% accurate`}</b>
+                  <b className={screenComplete ? "complete" : ""}>
+                    {locale === "ko" ? screenComplete ? "장면 완성!" : `정확도 ${screenAccuracy}%` : screenComplete ? "Scene complete!" : `${screenAccuracy}% accurate`}
+                  </b>
                 </div>
                 <button
                   className="button button-primary"
@@ -2602,7 +2737,7 @@ export default function Home() {
                   disabled={!screenComplete}
                   onClick={() => confirmAndAdvance(advanceScreenLine, currentScreenLine.korean)}
                 >
-                  Next scene <span aria-hidden="true">→</span>
+                  {locale === "ko" ? "다음 장면" : "Next scene"} <span aria-hidden="true">→</span>
                 </button>
               </div>
             </div>
@@ -2612,17 +2747,17 @@ export default function Home() {
 
       <section className="learning-path" id="learn" aria-labelledby="path-heading">
         <div className="path-copy">
-          <p className="section-label">A COURSE THAT GROWS WITH YOU</p>
+          <p className="section-label">{locale === "ko" ? "실력과 함께 성장하는 과정" : "A COURSE THAT GROWS WITH YOU"}</p>
           <h2 id="path-heading">{t.pathTitle}</h2>
           <p>{t.pathBody}</p>
           <div className="path-badges">
-            <span>No Korean keyboard required</span>
-            <span>Works on mobile and desktop</span>
-            <span>Free core course</span>
+            <span>{locale === "ko" ? "한글 인쇄 키보드가 없어도 가능" : "No Korean keyboard required"}</span>
+            <span>{locale === "ko" ? "모바일·데스크톱 지원" : "Works on mobile and desktop"}</span>
+            <span>{locale === "ko" ? "핵심 과정 무료" : "Free core course"}</span>
           </div>
         </div>
         <ol className="level-track">
-          {learningLevels.map((level, index) => (
+          {(locale === "ko" ? koreanLearningLevels : learningLevels).map((level, index) => (
             <li className={index < 4 ? "done" : index === 4 ? "current" : index >= learningLevels.length - 2 ? "reward" : ""} key={level}>
               <span>{index + 1}</span>
               <p>{level}</p>
@@ -2631,28 +2766,34 @@ export default function Home() {
         </ol>
       </section>
 
-      <section className="free-note" aria-label="Free learning promise">
+      <section className="free-note" aria-label={locale === "ko" ? "무료 학습 약속" : "Free learning promise"}>
         <div>
-          <p className="section-label">LEARN FIRST</p>
-          <h2>Free practice, without interruptions.</h2>
+          <p className="section-label">{locale === "ko" ? "학습이 먼저" : "LEARN FIRST"}</p>
+          <h2>{locale === "ko" ? "흐름을 끊지 않는 무료 연습." : "Free practice, without interruptions."}</h2>
         </div>
-        <p>Core lessons and games stay free. If ads are introduced, they appear only between activities—not beside the typing field or during a game.</p>
+        <p>{locale === "ko" ? "핵심 학습과 게임은 무료로 유지합니다. 광고가 도입되더라도 타자 입력창 옆이나 게임 도중이 아닌 활동 사이에만 표시합니다." : "Core lessons and games stay free. If ads are introduced, they appear only between activities—not beside the typing field or during a game."}</p>
       </section>
 
       <footer>
         <a className="brand" href="#top"><span className="brand-mark" aria-hidden="true">ㅎ</span><span>Hangeul Pop</span></a>
-        <p>Type Korean. Play your way.</p>
-        <div><a href="#learn">Curriculum</a><a href="#games">Games</a><a href="/my">My page</a><a href="/legal#privacy">Privacy</a><a href="/legal#terms">Terms</a></div>
+        <p>{locale === "ko" ? "한글을 치고, 게임처럼 배워요." : "Type Korean. Play your way."}</p>
+        <div>
+          <a href="#learn">{locale === "ko" ? "학습 과정" : "Curriculum"}</a>
+          <a href="#games">{locale === "ko" ? "게임" : "Games"}</a>
+          <a href="/my">{locale === "ko" ? "내 페이지" : "My page"}</a>
+          <a href="/legal#privacy">{locale === "ko" ? "개인정보 처리방침" : "Privacy"}</a>
+          <a href="/legal#terms">{locale === "ko" ? "이용약관" : "Terms"}</a>
+        </div>
       </footer>
 
       {privacyNoticeVisible && (
-        <aside className="privacy-notice" aria-label="Privacy notice">
+        <aside className="privacy-notice" aria-label={locale === "ko" ? "개인정보 안내" : "Privacy notice"}>
           <span aria-hidden="true">◉</span>
           <div>
-            <b>Your learning, kept minimal.</b>
-            <p>We store essential settings and lesson progress. No advertising or analytics cookies are active in this private preview.</p>
+            <b>{locale === "ko" ? "학습에 꼭 필요한 정보만 저장합니다." : "Your learning, kept minimal."}</b>
+            <p>{locale === "ko" ? "필수 설정과 학습 진도만 저장하며 현재 광고·분석 쿠키는 사용하지 않습니다." : "We store essential settings and lesson progress. No advertising or analytics cookies are active in this private preview."}</p>
           </div>
-          <a href="/legal#privacy">Details</a>
+          <a href="/legal#privacy">{locale === "ko" ? "자세히" : "Details"}</a>
           <button
             type="button"
             onClick={() => {
@@ -2660,7 +2801,7 @@ export default function Home() {
               setPrivacyNoticeVisible(false);
             }}
           >
-            Got it
+            {locale === "ko" ? "확인" : "Got it"}
           </button>
         </aside>
       )}

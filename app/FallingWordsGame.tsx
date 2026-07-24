@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
+import { type CSSProperties, FormEvent, KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 
 type FallingWord = {
   id: number;
@@ -26,6 +26,7 @@ type CaptureBurst = {
   y: number;
   text: string;
   combo: number;
+  word: string;
 };
 
 const wordBank = [
@@ -252,7 +253,8 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
       return;
     }
     if (effect === "blast") {
-      noiseHit(context, output, now, 0.16, 0.12);
+      noiseHit(context, output, now, 0.18, 0.15);
+      noiseHit(context, output, now + 0.035, 0.1, 0.075);
       const oscillator = context.createOscillator();
       const gain = context.createGain();
       oscillator.type = "sawtooth";
@@ -264,6 +266,7 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
       oscillator.start(now);
       oscillator.stop(now + 0.23);
       synthTone(context, output, 880 + intensity * 12, now + 0.05, 0.12, 0.045, "square");
+      synthTone(context, output, 72, now + 0.015, 0.24, 0.1, "sine");
       return;
     }
     if (effect === "damage") {
@@ -457,9 +460,9 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
     setInputError(false);
     setInputEpoch((current) => current + 1);
     setMessage(koreanUi ? `오염 단어 격파! +${gained} 에너지 · 다음 표적을 조준하세요.` : `Corrupted word destroyed! +${gained} energy · Lock the next target.`);
-    setCaptureBurst({ id: matched.id, x: matched.x, y: Math.max(8, matched.y), text: `+${gained}`, combo: nextCombo });
+    setCaptureBurst({ id: matched.id, x: matched.x, y: Math.max(8, matched.y), text: `+${gained}`, combo: nextCombo, word: matched.korean });
     if (burstTimerRef.current) window.clearTimeout(burstTimerRef.current);
-    burstTimerRef.current = window.setTimeout(() => setCaptureBurst(null), 880);
+    burstTimerRef.current = window.setTimeout(() => setCaptureBurst(null), 1050);
     playGameEffect("blast", nextCombo, (matched.x / 50) - 1);
     if (clearedWave) {
       setWaveClear(level);
@@ -551,6 +554,11 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
         {captureBurst && (
           <span className="capture-burst" key={captureBurst.id} style={{ left: `${captureBurst.x}%`, top: `${captureBurst.y}%` }} aria-hidden="true">
             <i /><i /><i /><i /><i /><i />
+            <span className="blast-core" />
+            <span className="blast-smoke"><i /><i /><i /><i /></span>
+            <span className="missile-shards">
+              {Array.from(captureBurst.word).map((character, index) => <i style={{ "--shard-index": index } as CSSProperties} key={`${character}-${index}`}>{character}</i>)}
+            </span>
             <strong>BREAK!</strong>
             <b>{captureBurst.text}</b>
             {captureBurst.combo >= 3 && <em>{captureBurst.combo} COMBO</em>}

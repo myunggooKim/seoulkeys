@@ -44,7 +44,29 @@ const missingPuzzleLevels: MissingPuzzle[][] = [
     { word: "감사합니다", missingIndex: 2, options: ["합", "압", "함"], meaningKo: "공손하게 감사를 전하는 말", meaningEn: "a formal thank-you" },
     { word: "보고싶어요", missingIndex: 2, options: ["싶", "십", "심"], meaningKo: "그리운 마음을 전하는 말", meaningEn: "I miss you" },
   ],
-].map((level) => level.map(validateMissingPuzzle));
+  [
+    { word: "편의점", missingIndex: 1, options: ["에", "의", "이"], meaningKo: "간단한 물건을 언제든 살 수 있는 가게", meaningEn: "a convenience store" },
+    { word: "한국여행", missingIndex: 2, options: ["요", "유", "여"], meaningKo: "한국의 여러 지역을 둘러보는 일", meaningEn: "travel in Korea" },
+    { word: "사진촬영", missingIndex: 2, options: ["철", "찰", "촬"], meaningKo: "카메라로 모습을 기록하는 일", meaningEn: "taking a photograph" },
+    { word: "길을잃었어요", missingIndex: 2, options: ["일", "잃", "읽"], meaningKo: "어디로 가야 할지 모를 때 하는 말", meaningEn: "I am lost" },
+    { word: "예약했어요", missingIndex: 1, options: ["역", "약", "억"], meaningKo: "미리 자리나 시간을 정했을 때 하는 말", meaningEn: "I made a reservation" },
+    { word: "얼마예요", missingIndex: 2, options: ["애", "에", "예"], meaningKo: "가격을 물을 때 하는 말", meaningEn: "How much is it?" },
+  ],
+  [
+    { word: "처음뵙겠습니다", missingIndex: 2, options: ["봅", "뵙", "법"], meaningKo: "처음 만난 사람에게 정중히 하는 인사", meaningEn: "Pleased to meet you" },
+    { word: "한국어공부", missingIndex: 3, options: ["궁", "공", "곰"], meaningKo: "한국의 언어를 배우는 일", meaningEn: "studying Korean" },
+    { word: "대중교통카드", missingIndex: 2, options: ["규", "교", "겨"], meaningKo: "버스와 지하철에서 사용하는 카드", meaningEn: "a public transit card" },
+    { word: "추천해주세요", missingIndex: 2, options: ["헤", "해", "혀"], meaningKo: "좋은 것을 골라 달라고 부탁하는 말", meaningEn: "Please recommend something" },
+    { word: "사진찍어주세요", missingIndex: 2, options: ["직", "찍", "짚"], meaningKo: "사진 촬영을 부탁할 때 하는 말", meaningEn: "Please take a photo" },
+    { word: "다시말씀해주세요", missingIndex: 2, options: ["멀", "말", "몰"], meaningKo: "한 번 더 말해 달라고 부탁하는 표현", meaningEn: "Please say that again" },
+  ],
+].map((level, levelIndex) => level.map((puzzle, puzzleIndex) => {
+  const expected = Array.from(puzzle.word)[puzzle.missingIndex];
+  const desiredAnswerPosition = (levelIndex * level.length + puzzleIndex) % 3;
+  const options = puzzle.options.filter((option) => option !== expected);
+  options.splice(desiredAnswerPosition, 0, expected);
+  return validateMissingPuzzle({ ...puzzle, options });
+}));
 
 export type Direction = "across" | "down";
 
@@ -275,6 +297,7 @@ export function MissingLetterGame({ koreanUi, soundEnabled, onSuccessSound, onKe
   const [attempts, setAttempts] = useState(0);
   const [locked, setLocked] = useState(false);
   const [levelUp, setLevelUp] = useState(false);
+  const [masterRound, setMasterRound] = useState(1);
   const [message, setMessage] = useState(koreanUi ? "빠진 한 글자를 입력하고 Enter를 누르세요." : "Type the missing syllable and press Enter.");
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<number | null>(null);
@@ -320,6 +343,7 @@ export function MissingLetterGame({ koreanUi, soundEnabled, onSuccessSound, onKe
     const speedBonus = Math.max(0, Math.round(120 - seconds * 8));
     const gained = 100 + levelIndex * 50 + streak * 10 + speedBonus;
     const isLevelEnd = puzzleIndex === level.length - 1;
+    const isFinalLevel = levelIndex === missingPuzzleLevels.length - 1;
     setLocked(true);
     setCorrect((current) => current + 1);
     setStreak((current) => current + 1);
@@ -329,14 +353,18 @@ export function MissingLetterGame({ koreanUi, soundEnabled, onSuccessSound, onKe
     if (isLevelEnd) setLevelUp(true);
 
     timerRef.current = window.setTimeout(() => {
-      const nextLevel = isLevelEnd ? (levelIndex + 1) % missingPuzzleLevels.length : levelIndex;
+      const nextLevel = isLevelEnd ? Math.min(levelIndex + 1, missingPuzzleLevels.length - 1) : levelIndex;
+      const nextMasterRound = isLevelEnd && isFinalLevel ? masterRound + 1 : masterRound;
+      if (isLevelEnd && isFinalLevel) setMasterRound(nextMasterRound);
       setLevelIndex(nextLevel);
       setPuzzleIndex(isLevelEnd ? 0 : puzzleIndex + 1);
       setAnswer("");
       setLocked(false);
       setLevelUp(false);
       setMessage(isLevelEnd
-        ? koreanUi ? `${nextLevel + 1}단계 시작! 더 긴 낱말에 도전합니다.` : `Level ${nextLevel + 1}! Longer words are ready.`
+        ? isFinalLevel
+          ? koreanUi ? `마스터 ${nextMasterRound}회차 시작! 고급 표현을 더 빠르게 완성하세요.` : `Master round ${nextMasterRound}! Complete the advanced phrases faster.`
+          : koreanUi ? `${nextLevel + 1}단계 시작! 더 긴 낱말에 도전합니다.` : `Level ${nextLevel + 1}! Longer words are ready.`
         : koreanUi ? "다음 낱말이 준비됐어요. 바로 입력하세요." : "The next word is ready. Type now.");
       window.setTimeout(focusInput, 0);
     }, isLevelEnd ? 1450 : 650);
@@ -350,12 +378,12 @@ export function MissingLetterGame({ koreanUi, soundEnabled, onSuccessSound, onKe
       }
     }}>
       <div className="puzzle-head">
-        <p className="demo-label">MISSING BEAT · LEVEL {levelIndex + 1}</p>
-        <div><span>{koreanUi ? "정확도" : "ACC"} <b>{accuracy}%</b></span><span>{koreanUi ? "연속" : "STREAK"} <b>×{streak}</b></span><span><b>{score}</b> PTS</span></div>
+        <p className="demo-label">{koreanUi ? `빠진 글자 · ${levelIndex + 1}단계` : `MISSING BEAT · LEVEL ${levelIndex + 1}`}</p>
+        <div><span>{koreanUi ? "정확도" : "ACC"} <b>{accuracy}%</b></span><span>{koreanUi ? "연속" : "STREAK"} <b>×{streak}</b></span><span><b>{score}</b> {koreanUi ? "점" : "PTS"}</span></div>
       </div>
       <div className="missing-level-track">
         {missingPuzzleLevels.map((_, index) => <span className={index < levelIndex ? "done" : index === levelIndex ? "current" : ""} key={index}>{index < levelIndex ? "✓" : index + 1}</span>)}
-        <i style={{ width: `${((puzzleIndex + (locked ? 1 : 0)) / level.length) * 100}%` }} />
+        <i style={{ width: `${((levelIndex + (puzzleIndex + (locked ? 1 : 0)) / level.length) / missingPuzzleLevels.length) * 84}%` }} />
       </div>
       <div className="missing-prompt">
         <small>{koreanUi ? `문제 ${puzzleIndex + 1}/${level.length}` : `WORD ${puzzleIndex + 1}/${level.length}`}</small>
@@ -387,6 +415,15 @@ export function MissingLetterGame({ koreanUi, soundEnabled, onSuccessSound, onKe
         autoComplete="off"
         spellCheck={false}
       />
+      <div className="number-finger-guide" role="note" aria-label={koreanUi ? "숫자 1, 2, 3 손가락 안내" : "Finger guide for number keys 1, 2, and 3"}>
+        <p>{koreanUi ? "왼손을 숫자열에 준비하세요" : "Keep your left hand ready on the number row"}</p>
+        <div>
+          <span><i className="finger-tip pinky" /><kbd>1</kbd><b>{koreanUi ? "새끼" : "Pinky"}</b></span>
+          <span><i className="finger-tip ring" /><kbd>2</kbd><b>{koreanUi ? "약지" : "Ring"}</b></span>
+          <span><i className="finger-tip middle" /><kbd>3</kbd><b>{koreanUi ? "가운데" : "Middle"}</b></span>
+        </div>
+        <small>{koreanUi ? "마우스 없이 1·2·3으로 고르고 Enter로 확인" : "Choose with 1·2·3 and press Enter—no mouse needed"}</small>
+      </div>
       <div className="answer-options" aria-label={koreanUi ? "빠진 글자 후보" : "Missing syllable choices"}>
         {puzzle.options.map((option, index) => (
           <button type="button" disabled={locked} className={answer === option ? "chosen" : ""} onClick={() => choose(option)} key={option}><kbd>{index + 1}</kbd>{option}</button>
@@ -394,7 +431,7 @@ export function MissingLetterGame({ koreanUi, soundEnabled, onSuccessSound, onKe
       </div>
       <p className={`form-message ${locked ? "success" : ""}`} aria-live="polite">{message}</p>
       <div className="game-key-help"><span><kbd>1–3</kbd>{koreanUi ? "후보 선택" : "choose"}</span><span><kbd>Enter</kbd>{koreanUi ? "정답 확인" : "check"}</span><span><kbd>⌫</kbd>{koreanUi ? "고치기" : "correct"}</span></div>
-      {levelUp && <div className="missing-level-up" role="status"><span>LEVEL</span><b>{levelIndex + 1} CLEAR!</b><small>{koreanUi ? "다음 단계가 열립니다" : "Next level unlocked"}</small></div>}
+      {levelUp && <div className="missing-level-up" role="status"><span>{koreanUi ? "단계" : "LEVEL"}</span><b>{koreanUi ? `${levelIndex + 1}단계 완료!` : `${levelIndex + 1} CLEAR!`}</b><small>{koreanUi ? "다음 단계가 열립니다" : "Next level unlocked"}</small></div>}
     </div>
   );
 }

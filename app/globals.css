@@ -404,22 +404,46 @@ footer {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 5px;
-  margin: 11px 0 0;
+  margin: 7px 0 0;
   padding: 0;
   list-style: none;
 }
 
 .curriculum-progress li {
-  display: flex;
   min-width: 0;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 7px;
   border: 1px solid #d4d2c8;
   border-radius: 10px;
   background: #f1f0e9;
   color: var(--muted);
 }
+
+.curriculum-progress li button {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 7px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.curriculum-progress li button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--yellow) 45%, transparent);
+  transform: translateY(-1px);
+}
+
+.curriculum-progress li button:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 2px;
+}
+
+.curriculum-progress li button:disabled { cursor: wait; opacity: .56; }
 
 .curriculum-progress li span {
   display: grid;
@@ -451,6 +475,49 @@ footer {
   background: color-mix(in srgb, var(--lime) 46%, var(--paper));
   color: #315e19;
 }
+
+.curriculum-progress li.selectable {
+  border-style: dashed;
+  background: white;
+  color: #5e5b67;
+}
+
+.practice-track-picker {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-block-start: 11px;
+}
+
+.practice-track-picker > span {
+  margin-inline-end: 2px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 950;
+}
+
+.practice-track-picker button {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: white;
+  color: var(--muted);
+  font: inherit;
+  font-size: 9px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.practice-track-picker button.active {
+  border-color: var(--ink);
+  background: var(--purple);
+  color: white;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.practice-track-picker button:disabled { cursor: wait; opacity: .52; }
 
 .practice-workspace {
   position: relative;
@@ -5013,6 +5080,7 @@ footer > div {
 .word-rain-board .sea-water b { top: 18px; color: #dcfdff; font-size: 10px; text-shadow: 0 0 7px #69f5ff; }
 
 .capture-burst {
+  z-index: 24;
   width: 8px;
   height: 8px;
   color: white;
@@ -5034,6 +5102,60 @@ footer > div {
 }
 
 .capture-burst::after { width: 40px; height: 40px; border-color: #67f7ff; animation-delay: .08s; }
+
+.blast-core {
+  position: absolute;
+  z-index: 3;
+  inset: 50% auto auto 50%;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, white 0 13%, #f6ff77 14% 27%, #ff9d31 28% 48%, #ff376e 49% 66%, transparent 68%);
+  box-shadow: 0 0 28px #ff6b38, 0 0 55px rgb(255 67 142 / .76);
+  transform: translate(-50%, -50%);
+  animation: aerial-detonation .82s ease-out both;
+}
+
+.blast-smoke {
+  position: absolute;
+  z-index: 1;
+  inset: 50% auto auto 50%;
+  width: 1px;
+  height: 1px;
+}
+
+.blast-smoke i {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, #d5d6df, #5e5d72 58%, transparent 70%);
+  filter: blur(.4px);
+  animation: aerial-smoke .9s ease-out both;
+}
+
+.blast-smoke i:nth-child(1) { --smoke-x: -52px; --smoke-y: -31px; }
+.blast-smoke i:nth-child(2) { --smoke-x: 28px; --smoke-y: -44px; animation-delay: .04s; }
+.blast-smoke i:nth-child(3) { --smoke-x: -37px; --smoke-y: 21px; animation-delay: .08s; }
+.blast-smoke i:nth-child(4) { --smoke-x: 35px; --smoke-y: 18px; animation-delay: .12s; }
+
+.missile-shards {
+  position: absolute;
+  z-index: 4;
+  inset: 50% auto auto 50%;
+  width: 1px;
+  height: 1px;
+}
+
+.missile-shards i {
+  --shard-angle: calc(var(--shard-index) * 77deg - 45deg);
+  position: absolute;
+  color: white;
+  font: normal 950 17px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+  text-shadow: 0 0 8px #75f7ff, 2px 2px 0 #161226;
+  animation: missile-shard-fly .76s cubic-bezier(.12, .62, .2, 1) both;
+}
 
 .capture-burst > i {
   position: absolute;
@@ -5336,6 +5458,34 @@ footer > div {
   to { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
 }
 
+@keyframes aerial-detonation {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.08); filter: brightness(2.4); }
+  12% { opacity: 1; transform: translate(-50%, -50%) scale(1.45); filter: brightness(1.55); }
+  68% { opacity: .9; transform: translate(-50%, -50%) scale(.9); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.24); filter: blur(3px); }
+}
+
+@keyframes aerial-smoke {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.2); }
+  24% { opacity: .85; }
+  100% { opacity: 0; transform: translate(var(--smoke-x), var(--smoke-y)) scale(1.45); filter: blur(4px); }
+}
+
+@keyframes missile-shard-fly {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(0) scale(.4); }
+  18% { opacity: 1; }
+  100% {
+    opacity: 0;
+    transform:
+      translate(
+        calc(cos(var(--shard-angle)) * 74px),
+        calc(sin(var(--shard-angle)) * 74px)
+      )
+      rotate(320deg)
+      scale(.75);
+  }
+}
+
 @keyframes blast-ray {
   from { opacity: 1; }
   to { opacity: 0; height: 66px; }
@@ -5444,7 +5594,7 @@ footer > div {
 .missing-level-track {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 8px;
   width: min(430px, 100%);
   margin: 24px auto 30px;
@@ -5532,6 +5682,69 @@ footer > div {
   font: inherit;
   font-size: 7px;
 }
+
+.number-finger-guide {
+  width: min(430px, 100%);
+  margin: 0 auto 14px;
+  padding: 11px 14px;
+  border: 1.5px solid color-mix(in srgb, var(--purple) 58%, var(--line));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--purple) 7%, white);
+}
+
+.number-finger-guide > p {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.number-finger-guide > div {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+
+.number-finger-guide > div > span {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+  text-align: start;
+}
+
+.number-finger-guide kbd {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  background: var(--yellow);
+  box-shadow: 2px 2px 0 var(--ink);
+  font: 950 12px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.number-finger-guide b { font-size: 9px; }
+.number-finger-guide small { display: block; margin-block-start: 8px; color: var(--muted); font-size: 9px; font-weight: 800; }
+
+.finger-tip {
+  display: block;
+  width: 11px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-radius: 999px 999px 8px 8px;
+  background: color-mix(in srgb, currentColor 22%, white);
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 9%, transparent);
+}
+
+.finger-tip.pinky { color: #e4437f; }
+.finger-tip.ring { color: #7053d7; height: 19px; }
+.finger-tip.middle { color: #1584a0; height: 22px; }
 
 .missing-level-up {
   position: absolute;
@@ -5648,6 +5861,8 @@ footer > div {
 }
 
 @media (max-width: 540px) {
+  .practice-track-picker { flex-wrap: wrap; }
+  .practice-track-picker > span { width: 100%; }
   .mastery-choice-card { grid-template-columns: 1fr; text-align: center; }
   .mastery-burst { margin-inline: auto; }
   .mastery-actions { grid-template-columns: 1fr; }
@@ -5792,5 +6007,33 @@ footer > div {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .capture-burst::before,
+  .capture-burst::after {
+    animation: none !important;
+    opacity: .72;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+
+  .capture-burst .blast-core {
+    animation: none !important;
+    opacity: .94;
+    filter: none;
+    transform: translate(-50%, -50%) scale(.94);
+  }
+
+  .capture-burst .blast-smoke i {
+    animation: none !important;
+    opacity: .38;
+    transform: translate(var(--smoke-x), var(--smoke-y)) scale(.78);
+  }
+
+  .capture-burst .missile-shards i,
+  .capture-burst strong,
+  .capture-burst > b,
+  .capture-burst > em {
+    animation: none !important;
+    opacity: 1;
   }
 }

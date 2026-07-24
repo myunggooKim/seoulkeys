@@ -35,6 +35,7 @@ export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySou
   const [seconds, setSeconds] = useState(0);
   const [hints, setHints] = useState(0);
   const answerInputRef = useRef<HTMLInputElement>(null);
+  const gameRootRef = useRef<HTMLDivElement>(null);
   const advanceTimerRef = useRef<number | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -118,6 +119,11 @@ export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySou
   useEffect(() => {
     if (seconds > 0 && seconds % 6 === 0 && status === "playing") playCircuitCue("pulse");
   }, [playCircuitCue, seconds, status]);
+
+  useEffect(() => {
+    if (status !== "solved") return;
+    window.requestAnimationFrame(() => gameRootRef.current?.focus({ preventScroll: true }));
+  }, [status]);
 
   useEffect(() => () => {
     if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
@@ -258,7 +264,17 @@ export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySou
           : koreanUi ? "정답 단어 전체를 입력하면 칸이 자동으로 채워집니다. Enter로 판정하세요." : "Type the whole answer to fill the grid automatically. Press Enter to check.";
 
   return (
-    <div className={`crossword-game-wrap ${status}`}>
+    <div
+      className={`crossword-game-wrap ${status}`}
+      ref={gameRootRef}
+      tabIndex={-1}
+      onKeyDownCapture={(event) => {
+        if (status !== "solved" || event.key !== "Enter" || event.nativeEvent.isComposing) return;
+        event.preventDefault();
+        event.stopPropagation();
+        nextPuzzle();
+      }}
+    >
       <div className="crossword-board-column">
         <div className="crossword-board-heading">
           <span>{koreanUi ? `퍼즐 ${puzzleIndex + 1}/${crosswordPuzzles.length}` : `BOARD ${puzzleIndex + 1}/${crosswordPuzzles.length}`}</span>
@@ -308,7 +324,7 @@ export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySou
       </div>
 
       <div className="demo-copy crossword-copy">
-        <div className="puzzle-head"><p className="demo-label">CROSSWORD CIRCUIT · WHOLE-WORD MODE</p><b>{score} PTS</b></div>
+        <div className="puzzle-head"><p className="demo-label">{koreanUi ? "가로세로 퀴즈 · 낱말 입력 방식" : "CROSSWORD CIRCUIT · WHOLE-WORD MODE"}</p><b>{score} {koreanUi ? "점" : "PTS"}</b></div>
         <h3>{koreanUi ? puzzle.titleKo : puzzle.titleEn}</h3>
         <p className={`crossword-status ${status}`} aria-live="polite">{statusMessage}</p>
 
