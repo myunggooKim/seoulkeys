@@ -1,3 +1,5 @@
+import { sameJamoSequence } from "./hangul-keyboard";
+
 export type LessonEvaluation = {
   accepted: boolean;
   completeness: number;
@@ -23,9 +25,13 @@ export function evaluateLessonAttempt(
     ? 100
     : clampPercentage(((keystrokes - mistakes) / keystrokes) * 100);
 
-  if (typed !== target) {
+  // Compare jamo, not raw characters. A Korean IME composes as the learner
+  // types, so "ㅁㅓㄴㅏ" comes back as "머나"; comparing strings failed every
+  // jamo drill however perfectly it was typed. Spacing is not scored either —
+  // pressing the space bar in a jamo drill must not decide pass or fail.
+  if (!sameJamoSequence(typed, target)) {
     const targetWithoutPeriod = target.endsWith(".") ? target.slice(0, -1) : target;
-    const missingPeriod = target.endsWith(".") && typed === targetWithoutPeriod;
+    const missingPeriod = target.endsWith(".") && sameJamoSequence(typed, targetWithoutPeriod);
     return {
       accepted: false,
       completeness: missingPeriod ? 99 : completeness,

@@ -1,9 +1,23 @@
 @import "tailwindcss";
 
+/* --------------------------------------------------------------------------
+   Token roles
+   --ink        text
+   --edge       the drawn border of a card/chip
+   --shadow-ink the hard offset drop shadow behind it
+   --on-accent  text placed on a brand-accent fill
+
+   These used to be one token. Inverting it for dark mode turned every border
+   and every offset shadow bright white, which is what made dark mode read as a
+   crude inversion rather than a design.
+   -------------------------------------------------------------------------- */
 :root {
   --ivory: #f7f6ef;
   --paper: #fffefa;
   --ink: #151515;
+  --edge: #151515;
+  --shadow-ink: #151515;
+  --on-accent: #151515;
   --muted: #66675f;
   --line: #d8d7ce;
   --lime: #c7ff42;
@@ -11,7 +25,489 @@
   --purple: #6d4aff;
   --cyan: #8bf1ed;
   --yellow: #ffd84d;
-  --shadow: 7px 7px 0 var(--ink);
+  --shadow: 7px 7px 0 var(--shadow-ink);
+  --surface-2: #f2f1e8;
+  --glow: transparent;
+
+  /* Height of everything stacked above the hero: the header plus the notice bar.
+     Five separate `calc(100svh - Npx)` rules each hardcoded their own guess at
+     this — 88px, 100px and 110px — and none of them matched the real 133px,
+     because the notice bar (12px margin + 33px) was never counted. The hero then
+     reserved more height than was actually left below the bar, and `align-items:
+     center` split the unused surplus into empty bands above and below the row.
+     That band was the visible gap under the notice bar.
+
+     Measured for real at runtime (see the --chrome-h effect in page.tsx) because
+     the bar wraps to a second line in the wordier languages and to several lines
+     on phones. This value is the desktop single-line case, used until the
+     measurement lands and if scripting is unavailable. */
+  --chrome-h: 133px;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  background: #f8fafc;
+  color: #0f172a;
+  --ivory: #f8fafc;
+  --paper: #ffffff;
+  --ink: #0f172a;
+  --edge: #0f172a;
+  --shadow-ink: #0f172a;
+  --on-accent: #0f172a;
+  --muted: #475569;
+  --line: #cbd5e1;
+  --surface-2: #eef2f8;
+
+  /* Destructive-action text. The brand pink #ff4d8d sits at 3.1:1 on white, so
+     the "delete class" control was the least readable thing on the page — the
+     opposite of what a destructive action needs. Light mode darkens it; the
+     borders and fills keep the brand pink. */
+  --danger-ink: #c2185b;
+
+  /* Informational blue for text. #58a6ff is the brand blue and reads well on the
+     dark surfaces, but on white it lands at a 2.4:1 contrast ratio — below the
+     4.5:1 WCAG AA floor. The teacher dashboard sets the invite code, the "CLASS"
+     label and the sample-list heading in it on a white card, so light mode gets a
+     darkened version of the same hue. Background usages keep the bright brand blue. */
+  --info: #1462c4;
+}
+
+/* ==========================================================================
+   DARK THEME — "deep space"
+   Every surface used to carry a navy-to-indigo tint (#111a2e paper, #3a4d78
+   rims, a violet bloom). Stacked against the lime/pink/cyan brand accents that
+   read as muddy, and it is the tell-tale look of a palette picked by hue rather
+   than by material.
+   The surfaces are neutral black now — the depth comes from the steps between
+   them, not from a colour cast — and the accents are untouched, so they are the
+   only chroma on the page and carry the identity on their own.
+   Text is lifted at the same time: #f5f6f9 on #0e0f13 is ~18:1 where the old
+   #e9eeff on #111a2e was ~13:1.
+   ========================================================================== */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  background: #050507;
+  color: #f5f6f9;
+
+  /* Surfaces, layered so cards read as raised rather than as one flat slab. */
+  --ivory: #050507;
+  --paper: #0e0f13;
+  --surface-2: #16181e;
+  --surface-3: #1e2028;
+
+  --ink: #f5f6f9;
+  --muted: #a9aeb9;
+  --line: #262931;
+
+  /* Structure. The rim is a neutral step up from the surface, and the shadow is
+     true black so cards sink into the page rather than glowing blue. */
+  --edge: #343842;
+  --shadow-ink: #000000;
+  --on-accent: #08101f;
+  --glow: rgb(255 255 255 / 0.10);
+  --info: #58a6ff;
+  --danger-ink: #ff5f9a;
+
+  /* Accents keep their light-mode hue and stay luminous. */
+  --lime: #a6f75a;
+  --pink: #ff5f9a;
+  --purple: #8b7bff;
+  --cyan: #56e4de;
+  --yellow: #ffd257;
+
+  --shadow: 0 18px 38px -14px var(--shadow-ink), 0 0 0 1px rgb(255 255 255 / 0.05);
+}
+
+html[data-theme="dark"] body {
+  background: var(--ivory);
+  color: var(--ink);
+}
+
+/* Ambient night sky behind the page instead of the light theme's pastel bloom. */
+html[data-theme="dark"] .site-shell {
+  background:
+    radial-gradient(circle at 3% 8%, rgb(109 122 255 / 0.22), transparent 26rem),
+    radial-gradient(circle at 97% 6%, rgb(86 228 222 / 0.16), transparent 28rem),
+    radial-gradient(circle at 50% 100%, rgb(255 95 154 / 0.10), transparent 30rem),
+    var(--ivory);
+}
+
+/* ---- Depth ---------------------------------------------------------------
+   The hard offset shadow is the light theme's signature. On a dark page a
+   large opaque block reads as a hole, so cards get a soft bloom plus a hairline
+   highlight along the top edge — the same "raised" message, dark-native. */
+html[data-theme="dark"] .practice-card,
+html[data-theme="dark"] .profile-card,
+html[data-theme="dark"] .activity-card,
+html[data-theme="dark"] .mastery-choice-card,
+html[data-theme="dark"] .lesson-finish-card,
+html[data-theme="dark"] .admin-editor,
+html[data-theme="dark"] .admin-library,
+html[data-theme="dark"] .signed-out-card,
+html[data-theme="dark"] .crossword-board-column,
+html[data-theme="dark"] .free-note {
+  box-shadow:
+    0 22px 46px -20px #01030a,
+    0 2px 0 0 rgb(255 255 255 / 0.06) inset,
+    0 0 0 1px rgb(255 255 255 / 0.04);
+}
+
+html[data-theme="dark"] .practice-card {
+  background: linear-gradient(158deg, #16223a 0%, #101929 62%);
+}
+
+html[data-theme="dark"] .typing-panel {
+  background: rgb(6 10 20 / 0.66);
+  border-color: var(--line);
+}
+
+/* The target line is the thing the learner stares at, so it gets the strongest
+   contrast on the page rather than the same grey as body copy. */
+html[data-theme="dark"] .target-sentence {
+  color: #ffffff;
+  text-shadow: 0 0 24px rgb(139 123 255 / 0.4);
+}
+
+html[data-theme="dark"] .typing-input {
+  background: rgb(2 5 12 / 0.8);
+  color: #ffffff;
+}
+
+/* ---- Accent fills --------------------------------------------------------
+   Accents stay bright, so text sitting on them must stay dark. */
+html[data-theme="dark"] .skip-link,
+html[data-theme="dark"] .brand-mark,
+html[data-theme="dark"] .sound-preview-button,
+html[data-theme="dark"] .voice-picker i,
+html[data-theme="dark"] .curriculum-progress li.current,
+html[data-theme="dark"] .curriculum-progress li.done,
+html[data-theme="dark"] .practice-track-picker button.active,
+html[data-theme="dark"] .streak,
+html[data-theme="dark"] .next-key-card,
+html[data-theme="dark"] .next-key-card.complete,
+html[data-theme="dark"] .key-guide kbd.active,
+html[data-theme="dark"] .keyboard-row kbd.active,
+html[data-theme="dark"] .keyboard-row kbd.active span,
+html[data-theme="dark"] .keyboard-row kbd.active small,
+html[data-theme="dark"] .key-guide kbd.active span,
+html[data-theme="dark"] .key-guide kbd.active small,
+html[data-theme="dark"] .timer-pause-button.paused,
+/* Only the variants that actually fill the number with an accent. .stripe and
+   .sunset leave it transparent on a dark card, so dark text is invisible there. */
+html[data-theme="dark"] .activity-card.lime .activity-number,
+html[data-theme="dark"] .activity-card.purple .activity-number,
+html[data-theme="dark"] .activity-card.pink .activity-number,
+html[data-theme="dark"] .activity-card.cyan .activity-number,
+/* `.orange` fills the badge too and was missing here, so its number stayed the
+   near-white body colour on #ff9a62 — 1.93:1, the worst contrast on the page. */
+html[data-theme="dark"] .activity-card.orange .activity-number,
+html[data-theme="dark"] .rain-word,
+html[data-theme="dark"] .answer-options button.correct,
+html[data-theme="dark"] .crossword-cell.selected,
+html[data-theme="dark"] .crossword-cell.correct,
+html[data-theme="dark"] .crossword-word-entry,
+html[data-theme="dark"] .record-disc span,
+html[data-theme="dark"] .scene-genre,
+html[data-theme="dark"] .travel-situation,
+html[data-theme="dark"] .phrase-dots button.active,
+html[data-theme="dark"] .level-track li.done > span,
+html[data-theme="dark"] .level-track li.current > span,
+html[data-theme="dark"] .lesson-finish-card .finish-mark,
+html[data-theme="dark"] .privacy-notice button,
+html[data-theme="dark"] .profile-avatar,
+html[data-theme="dark"] .level-orbit,
+html[data-theme="dark"] .week-rhythm span.active i,
+html[data-theme="dark"] .admin-item-main em.published,
+html[data-theme="dark"] .mastery-burst,
+html[data-theme="dark"] .missing-level-track > span.current,
+html[data-theme="dark"] .missing-level-track > span.done,
+html[data-theme="dark"] .missing-word span.correct,
+html[data-theme="dark"] .number-finger-guide kbd,
+html[data-theme="dark"] .mastery-map-list .done .mastery-map-number,
+html[data-theme="dark"] .modal-badge,
+html[data-theme="dark"] .button-primary,
+/* Whole sections painted with an accent, including everything inside them. */
+html[data-theme="dark"] .free-note,
+html[data-theme="dark"] .free-note *,
+html[data-theme="dark"] .lesson-finish-card,
+html[data-theme="dark"] .lesson-finish-card * {
+  color: var(--on-accent);
+  text-shadow: none;
+}
+
+/* ---- Chrome -------------------------------------------------------------- */
+html[data-theme="dark"] .topbar {
+  background: rgb(9 14 26 / 0.82);
+  backdrop-filter: blur(14px);
+  border-block-end: 1px solid var(--line);
+}
+
+html[data-theme="dark"] .eyebrow {
+  background: rgb(23 35 61 / 0.9);
+  border-color: var(--purple);
+  color: #c3bcff;
+  box-shadow: 0 0 18px rgb(139 123 255 / 0.22);
+}
+
+html[data-theme="dark"] .hero-description,
+html[data-theme="dark"] .activity-description {
+  color: #b9c6e3;
+}
+
+/* A solid fluorescent bar behind white text glares on a dark page. Same idea,
+   calmer material: a low-opacity wash carries the shape, and a full-strength
+   rule along the baseline gives the highlight the crisp edge it needs to read
+   against. The base rule marks every one of these !important, so matching it is
+   the only way to override. */
+html[data-theme="dark"] .headline-accent {
+  color: #ffffff;
+  background-image:
+    linear-gradient(90deg, var(--cyan) 0 76%, var(--pink) 76% 100%),
+    linear-gradient(90deg, rgb(86 228 222 / 0.22) 0 76%, rgb(255 95 154 / 0.22) 76% 100%) !important;
+  background-position: 0 96%, 0 84% !important;
+  background-size: 100% 3px, 100% 40% !important;
+  background-repeat: no-repeat, no-repeat !important;
+}
+
+/* ---- Keyboard ------------------------------------------------------------
+   Resting keys are unlit slabs; the key to press is the only lit thing on the
+   board, which is what makes the guidance readable at a glance in the dark. */
+html[data-theme="dark"] .keyboard-map {
+  background: linear-gradient(180deg, #0c1424, #080e1a);
+  border-color: var(--line);
+}
+
+html[data-theme="dark"] .keyboard-row kbd,
+html[data-theme="dark"] .key-guide kbd {
+  background: linear-gradient(180deg, #1b2841, #141e33);
+  border-color: #2c3c5e;
+  box-shadow: 0 2px 0 #070c17;
+  color: var(--ink);
+}
+
+html[data-theme="dark"] .keyboard-row kbd small {
+  color: var(--cyan);
+  font-weight: 800;
+}
+
+html[data-theme="dark"] .key-guide kbd small {
+  color: var(--muted);
+}
+
+html[data-theme="dark"] .keyboard-row kbd.active,
+html[data-theme="dark"] .key-guide kbd.active {
+  background: linear-gradient(160deg, #ffe27a, var(--yellow));
+  border-color: #fff3bd;
+  box-shadow: 0 0 22px rgb(255 210 87 / 0.55), 0 2px 0 #6b4c05;
+}
+
+html[data-theme="dark"] .keyboard-row kbd.muted-key {
+  opacity: 0.5;
+}
+
+html[data-theme="dark"] .finger-callout {
+  background: rgb(23 35 61 / 0.95);
+  border-color: var(--cyan);
+  box-shadow: 0 0 22px rgb(86 228 222 / 0.22);
+}
+
+html[data-theme="dark"] .finger-callout small {
+  color: var(--cyan);
+  font-weight: 800;
+}
+
+html[data-theme="dark"] .finger-callout b {
+  color: #ffffff;
+}
+
+html[data-theme="dark"] .finger-callout kbd {
+  background: #070d1a;
+  border-color: var(--cyan);
+  color: #ffffff;
+}
+
+html[data-theme="dark"] .practice-guidance-column {
+  background: rgb(20 28 50 / 0.72);
+}
+
+/* ---- Form controls ------------------------------------------------------- */
+html[data-theme="dark"] input[type="text"],
+html[data-theme="dark"] input[type="url"],
+html[data-theme="dark"] input[type="email"],
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select {
+  background: #070d1a;
+  color: var(--ink);
+  border-color: #2c3c5e;
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: #6f7f9f;
+}
+
+html[data-theme="dark"] input[type="text"]:focus,
+html[data-theme="dark"] input[type="url"]:focus,
+html[data-theme="dark"] input[type="email"]:focus,
+html[data-theme="dark"] textarea:focus,
+html[data-theme="dark"] select:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgb(86 228 222 / 0.22);
+}
+
+/* Native dropdown lists are painted by the OS, so they need literal colours —
+   a `var()` that resolves to a translucent or inherited value renders as black
+   on black in the popup. */
+html[data-theme="dark"] option {
+  background: #16181e;
+  color: #f5f6f9;
+}
+
+html[data-theme="dark"] optgroup {
+  background: #0e0f13;
+  color: #a9aeb9;
+}
+
+html[data-theme="light"] option {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+html[data-theme="light"] optgroup {
+  background: #eef2f8;
+  color: #475569;
+}
+
+/* ---- Surfaces that light mode paints with off-whites --------------------- */
+html[data-theme="dark"] .profile-card,
+html[data-theme="dark"] .activity-card,
+html[data-theme="dark"] .mastery-choice-card,
+html[data-theme="dark"] .signed-out-card,
+html[data-theme="dark"] .admin-editor,
+html[data-theme="dark"] .admin-library,
+html[data-theme="dark"] .exit-confirm-card,
+html[data-theme="dark"] .modal-content {
+  background: var(--paper);
+}
+
+html[data-theme="dark"] .level-card {
+  background: linear-gradient(150deg, #221b45, #2d1c37);
+}
+
+html[data-theme="dark"] .streak-stat {
+  background: linear-gradient(150deg, #33280d, #221a09);
+}
+
+html[data-theme="dark"] .profile-stat,
+html[data-theme="dark"] .empty-reward,
+html[data-theme="dark"] .badge-list > div {
+  background: var(--surface-2);
+}
+
+html[data-theme="dark"] .profile-progress-track,
+html[data-theme="dark"] .meter-track {
+  background: #0a1120;
+}
+
+html[data-theme="dark"] .theme-chip,
+html[data-theme="dark"] .practice-track-picker button,
+html[data-theme="dark"] .curriculum-progress li.selectable {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+/* Re-assert the selected states: the rules above are more specific than the
+   light-theme .active rules they sit on top of, so without these the selected
+   chip would lose its fill and keep dark-on-dark text. */
+html[data-theme="dark"] .theme-chip.active,
+html[data-theme="dark"] .practice-track-picker button.active {
+  background: var(--purple);
+  color: var(--on-accent);
+}
+
+/* The daily strip is a deliberately inverted bar in light mode (ink fill, paper
+   text). Inverting the tokens turned it into a white slab with pale text, so it
+   gets its own dark treatment instead. */
+html[data-theme="dark"] .daily-meter {
+  background: linear-gradient(120deg, #1c2743, #131c31);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+html[data-theme="dark"] .meter-copy small,
+html[data-theme="dark"] .daily-time span,
+html[data-theme="dark"] .mastery-target-line span,
+html[data-theme="dark"] .mastery-target-line em {
+  color: var(--muted);
+}
+
+html[data-theme="dark"] .mastery-target-line b {
+  color: color-mix(in srgb, var(--purple) 62%, white);
+}
+
+html[data-theme="dark"] .button-secondary {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+html[data-theme="dark"] .theme-toggle-btn {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+/* The teacher banner and legal/policy tables read as body copy, not headings. */
+html[data-theme="dark"] .teacher-b2b-banner h3 {
+  color: #ffffff;
+}
+
+html[data-theme="dark"] .teacher-b2b-banner p,
+html[data-theme="dark"] .policy-table td,
+html[data-theme="dark"] .legal-note {
+  color: #b9c6e3;
+}
+
+html[data-theme="dark"] .policy-table th {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+html[data-theme="dark"] :focus-visible {
+  outline-color: var(--cyan);
+}
+
+.level-step-clickable {
+  cursor: pointer !important;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, filter 0.2s ease !important;
+}
+
+.level-step-clickable:hover {
+  transform: translateY(-4px) scale(1.02) !important;
+  filter: brightness(1.1) !important;
+  box-shadow: 0 8px 20px rgba(109, 74, 255, 0.25) !important;
+}
+
+.level-step-clickable:active {
+  transform: translateY(-1px) scale(0.99) !important;
+}
+
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 2px solid var(--edge);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+
+.theme-toggle-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
 }
 
 * {
@@ -27,7 +523,13 @@ body {
   margin: 0;
   background: var(--ivory);
   color: var(--ink);
-  font-family: Inter, Pretendard, "Noto Sans KR", "Malgun Gothic", "Segoe UI", Arial, sans-serif;
+  /* "Noto Sans KR" is the one entry here that is actually loaded (see the font
+     link in layout.tsx). It carries both Latin and Hangul, including the
+     standalone compatibility jamo the home-row drills are made of. */
+  font-family: "Noto Sans KR", Inter, Pretendard, "Malgun Gothic", "Segoe UI", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 button,
@@ -87,7 +589,7 @@ button {
   z-index: 100;
   transform: translateY(-160%);
   padding: 10px 16px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 999px;
   background: var(--yellow);
   font-weight: 800;
@@ -133,10 +635,10 @@ footer {
   width: 38px;
   height: 38px;
   place-items: center;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--edge);
   border-radius: 50%;
   background: var(--pink);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
   font-size: 16px;
   font-weight: 900;
 }
@@ -156,7 +658,7 @@ footer {
 }
 
 .nav-links a:hover {
-  border-color: var(--ink);
+  border-color: var(--edge);
 }
 
 .header-tools {
@@ -171,10 +673,10 @@ footer {
   display: flex;
   align-items: stretch;
   overflow: hidden;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 14px;
   background: var(--paper);
-  box-shadow: 0 3px 0 var(--ink);
+  box-shadow: 0 3px 0 var(--shadow-ink);
 }
 
 .audio-control-cluster > * {
@@ -236,10 +738,10 @@ footer {
   width: 46px;
   height: 27px;
   flex: none;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 999px;
   background: #d5d4cc;
-  box-shadow: 0 2px 0 var(--ink);
+  box-shadow: 0 2px 0 var(--shadow-ink);
   transition: background 150ms ease;
 }
 
@@ -260,7 +762,7 @@ footer {
   inset-inline-start: 3px;
   width: 17px;
   height: 17px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 50%;
   background: var(--paper);
   transition: transform 150ms ease;
@@ -282,6 +784,29 @@ footer {
   outline: 3px solid var(--purple);
   outline-offset: 3px;
 }
+
+/* The sound dropdown reuses the switch markup but its wrapper is `.sound-row`,
+   so the checked/focus styling has to answer to that class too — without this
+   the switch never moved and the toggle read as dead even though the state
+   was changing. */
+.sound-row input:checked + .speech-toggle-track {
+  background: var(--lime, #a6f75a);
+  border-color: var(--edge);
+}
+
+.sound-row input:checked + .speech-toggle-track i {
+  transform: translateX(13px);
+}
+
+[dir="rtl"] .sound-row input:checked + .speech-toggle-track i {
+  transform: translateX(-13px);
+}
+
+.sound-row input:focus-visible + .speech-toggle-track {
+  outline: 2px solid var(--purple, #8b7bff);
+  outline-offset: 2px;
+}
+
 
 .speech-toggle-copy {
   display: grid;
@@ -311,10 +836,10 @@ footer {
   align-items: center;
   gap: 5px;
   padding: 5px 7px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 999px;
   background: var(--paper);
-  box-shadow: 0 2px 0 var(--ink);
+  box-shadow: 0 2px 0 var(--shadow-ink);
 }
 
 .audio-control-cluster .voice-picker {
@@ -457,18 +982,26 @@ footer {
   font-weight: 950;
 }
 
+/* Two lines rather than a single ellipsised one. At 8px a nowrap chip truncated
+   almost every non-English stage name — "Endkonsonanten", "Основной ряд",
+   "Konsonan ganda" all lost their meaning after four characters. */
 .curriculum-progress li b {
+  display: -webkit-box;
   overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   font-size: 8px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.25;
+  /* `anywhere` split these labels mid-word. Two clamped lines plus the shrink
+     tiers below are enough; a break is only allowed at a space. */
+  overflow-wrap: normal;
 }
 
 .curriculum-progress li.current {
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   background: var(--yellow);
   color: var(--ink);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--shadow-ink);
 }
 
 .curriculum-progress li.done {
@@ -480,6 +1013,80 @@ footer {
   border-style: dashed;
   background: white;
   color: #5e5b67;
+}
+
+.theme-picker {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin-block-start: 6px;
+}
+
+.theme-picker-label {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.theme-picker-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.theme-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  background: var(--paper);
+  border: 2px solid var(--edge);
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--shadow-ink);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.theme-chip:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
+}
+
+.theme-chip.active {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 2px 2px 0 var(--shadow-ink);
+}
+
+.theme-chip .theme-chip-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.theme-chip b {
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Keep the concept visible (and switchable) during focus practice, but tight so
+   it never pushes the typing body off-screen. */
+.practice-focus-mode .theme-picker {
+  margin-block: 0 4px;
+  gap: 4px 8px;
+}
+
+.practice-focus-mode .theme-chip {
+  padding: 3px 9px;
+}
+
+.practice-focus-mode .theme-chip b {
+  font-size: 11px;
 }
 
 .practice-track-picker {
@@ -511,21 +1118,42 @@ footer {
 }
 
 .practice-track-picker button.active {
-  border-color: var(--ink);
+  border-color: var(--edge);
   background: var(--purple);
   color: white;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--shadow-ink);
 }
 
 .practice-track-picker button:disabled { cursor: wait; opacity: .52; }
 
+/* The card is the size authority for its own contents, so the workspace decides
+   one-vs-two columns from the card width rather than the viewport width. */
+.practice-card {
+  container-type: inline-size;
+  container-name: practicecard;
+}
+
 .practice-workspace {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(265px, 0.82fr) minmax(360px, 1.18fr);
+  /* Hard minimums here (265px + 360px + gap) used to exceed the card's own width
+     on ordinary laptops, so the guidance column, keyboard map, and hand overlay
+     spilled outside the page and were sheared off by .site-shell's overflow
+     clip. Tracks must be allowed to shrink; the container query below stacks
+     them before they get too cramped to read. */
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
   align-items: stretch;
   gap: 12px;
   margin-block-start: 12px;
+}
+
+/* Stack only when two columns genuinely cannot be read side by side. The old
+   600px threshold fired on ordinary laptops, which doubled the card's height
+   and pushed its bottom off short screens. */
+@container practicecard (max-width: 470px) {
+  .practice-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .practice-input-column,
@@ -542,17 +1170,17 @@ footer {
   display: flex;
   flex-direction: column;
   padding: 9px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 17px;
   background: #f6f3ff;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
 }
 
 .retry-practice {
   grid-column: 1 / -1;
   justify-self: start;
   padding: 7px 11px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 999px;
   background: var(--paper);
   font: inherit;
@@ -563,16 +1191,34 @@ footer {
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(350px, 0.7fr) minmax(680px, 1.3fr);
+  /* The practice card is the working surface, so it gets the larger share. The
+     intro copy simply wraps onto more lines in the space that is left. */
+  grid-template-columns: minmax(0, 0.68fr) minmax(0, 1.32fr);
   align-items: center;
-  gap: clamp(28px, 3.5vw, 58px);
-  min-height: calc(100svh - 88px);
+  /* Pack the row at the top of the section instead of stretching it to the full
+     min-height. Without this the single grid row grew to fill the viewport and
+     `align-items: center` then split the unused height into equal bands above
+     and below the content — on a 1050px-tall window that put a 98px void between
+     the notice bar and the practice pane, and it grew with the window.
+     `align-items: center` is kept, so the intro copy still centres against the
+     taller practice card; only the empty surplus moves below the fold. */
+  align-content: start;
+  gap: clamp(18px, 2.2vw, 36px);
+  /* min-height, never height: the row must be free to grow past the viewport so
+     a tall card is scrolled to rather than cut off. */
+  min-height: calc(100svh - var(--chrome-h));
   padding-block: 14px 22px;
+  /* Deliberately not `overflow: hidden`. That silently sheared the bottom of the
+     practice card off on short viewports instead of letting the page scroll. */
+  overflow: visible;
 }
 
 .hero-copy {
   position: relative;
   z-index: 2;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .eyebrow,
@@ -580,9 +1226,9 @@ footer {
 .card-kicker,
 .activity-kicker,
 .demo-label {
-  font-size: 11px;
-  font-weight: 950;
-  letter-spacing: 0.16em;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -591,11 +1237,14 @@ footer {
   align-items: center;
   gap: 10px;
   margin: 0 0 24px;
-  padding: 9px 14px;
-  border: 2px solid var(--ink);
+  padding: 8px 16px;
+  border: 2px solid var(--edge);
   border-radius: 999px;
   background: var(--yellow);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
+  white-space: nowrap !important;
+  max-width: 100%;
+  line-height: 1.2;
 }
 
 .eyebrow span {
@@ -613,30 +1262,31 @@ footer {
   font-size: clamp(58px, 6.2vw, 96px);
   font-weight: 950;
   letter-spacing: -0.075em;
-  line-height: 0.9;
+  line-height: 1.08;
+  padding-bottom: 4px;
 }
 
 .hero h1 span {
-  display: block;
+  display: inline-block;
+  word-break: keep-all;
 }
 
 .headline-accent {
   position: relative;
+  display: inline-block !important;
   width: fit-content;
-  margin-block-start: 10px;
-  z-index: 0;
-}
-
-.headline-accent::after {
-  position: absolute;
-  inset-inline: 0 -8px;
-  inset-block-end: 3px;
-  z-index: -1;
-  height: 18px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, var(--lime) 0 78%, var(--pink) 78%);
-  content: "";
-  transform: rotate(-1deg);
+  max-width: 100%;
+  z-index: 1;
+  word-break: keep-all !important;
+  white-space: normal !important;
+  background-image: linear-gradient(90deg, var(--lime) 0 76%, var(--pink) 76% 100%) !important;
+  background-position: 0 84% !important;
+  background-size: 100% 40% !important;
+  background-repeat: no-repeat !important;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0 18px 4px 4px !important;
+  border-radius: 4px;
 }
 
 .hero-description {
@@ -662,7 +1312,7 @@ footer {
   justify-content: center;
   gap: 12px;
   padding: 12px 22px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 999px;
   font-size: 14px;
   font-weight: 900;
@@ -717,17 +1367,25 @@ footer {
 
 .stage-orbit {
   position: absolute;
-  border: 2px solid var(--ink);
+  /* Decoration only. Without an explicit z-index these floated above the concept
+     chips and the streak badge, so the ring was drawn across a live button. */
+  z-index: 0;
+  border: 2px solid var(--edge);
   border-radius: 50%;
   pointer-events: none;
   animation: orbit-float 4.4s ease-in-out infinite;
 }
 
+/* This ring used to sit at the top-right of the stage. The learning-concept chip
+   bar now occupies that whole strip (measured: chips 176-215px, ring 158-225px),
+   so the ring was drawn straight across the "Reading & literacy" button — a 25x31px
+   overlap. Decoration never shares space with a control, so it moves down to the
+   card's lower-right, mirroring `.orbit-two` on the left where nothing is clickable. */
 .orbit-one {
   width: 105px;
   height: 38px;
-  inset-block-start: -4px;
-  inset-inline-end: 30px;
+  inset-block-end: -14px;
+  inset-inline-end: 26px;
   border-color: var(--purple);
   transform: rotate(17deg);
 }
@@ -745,21 +1403,33 @@ footer {
   position: relative;
   overflow: visible;
   padding: 18px;
-  border: 3px solid var(--ink);
-  border-radius: 38px 18px 38px 18px;
+  border: 3px solid var(--edge);
+  /* The top-right radius is a variable because the corner blob has to match it
+     exactly. It was hard-coded in two places at three different values across
+     breakpoints and focus mode, so the blob kept poking out through the card's
+     rounded edge. One source of truth now. */
+  --card-corner-tr: 18px;
+  border-radius: 38px var(--card-corner-tr) 38px 18px;
   background: var(--paper);
-  box-shadow: 8px 4px 0 var(--ink);
+  box-shadow: 8px 4px 0 var(--shadow-ink);
 }
 
 .practice-card::before {
   position: absolute;
+  /* Same reason: the cyan corner blob is background art and must stay behind the
+     card's own content. */
+  z-index: 0;
+  pointer-events: none;
   inset-block-start: 0;
   inset-inline-end: 0;
   width: 120px;
   height: 90px;
-  border-inline-start: 3px solid var(--ink);
-  border-block-end: 3px solid var(--ink);
+  border-inline-start: 3px solid var(--edge);
+  border-block-end: 3px solid var(--edge);
   border-end-start-radius: 90px;
+  /* The card's inner corner: its radius minus the 3px border. Derived, so it
+     tracks every breakpoint and state automatically. */
+  border-start-end-radius: calc(var(--card-corner-tr) - 3px);
   background: var(--cyan);
   content: "";
 }
@@ -790,7 +1460,7 @@ footer {
   z-index: 2;
   flex: none;
   padding: 8px 13px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 999px;
   background: var(--lime);
   font-size: 11px;
@@ -820,11 +1490,90 @@ footer {
   font-size: clamp(23px, 2vw, 31px);
   font-weight: 900;
   letter-spacing: -0.05em;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  /* Never mid-word: the learner is reading a sentence they have to reproduce. */
+  overflow-wrap: normal;
+  /* And when it does take two lines, split them evenly instead of leaving one
+     stranded 어절 on its own — "처음 뵙겠습니다. 잘 / 부탁드립니다." became
+     "처음 뵙겠습니다. / 잘 부탁드립니다." */
+  text-wrap: balance;
   animation: lesson-slide-in 320ms ease-out both;
+}
+
+.target-preview-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.target-preview-row .target-sentence {
+  min-width: 0;
+}
+
+.word-pronunciation-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 6px 9px;
+  border: 2px solid var(--edge);
+  border-radius: 11px;
+  background: var(--cyan);
+  color: var(--ink);
+  box-shadow: 0 3px 0 var(--shadow-ink);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.word-pronunciation-button:hover,
+.word-pronunciation-button:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 0 var(--shadow-ink);
+}
+
+.word-pronunciation-button:disabled {
+  opacity: .5;
+  cursor: wait;
+  transform: none;
+}
+
+.word-pronunciation-button > span {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--paper);
+}
+
+.word-pronunciation-button kbd {
+  padding: 2px 5px;
+  border: 1px solid var(--edge);
+  border-radius: 5px;
+  background: var(--paper);
+  font-family: inherit;
+  font-size: 8px;
+  box-shadow: 0 1px 0 var(--shadow-ink);
 }
 
 .target-sentence span {
   transition: color 120ms ease, background 120ms ease;
+}
+
+/* One run that the line breaker may not split. `keep-all` above already keeps
+   breaks on spaces; this additionally holds a 의존명사 to the 관형어 in front of
+   it, so "회의는 몇 시에 시작해요?" can no longer wrap as "회의는 몇 / 시에
+   시작해요?". Groups are at most a few syllables, so a run can never be wider
+   than the card. */
+.target-sentence .sentence-chunk {
+  white-space: nowrap;
 }
 
 .target-sentence .pending {
@@ -845,11 +1594,48 @@ footer {
   color: var(--ink);
 }
 
+/* Six practice lines are two sentences, and the period in the middle is where a
+   typist's hand reaches for Return. Enter there no longer submits a half-typed
+   line; these two cues say so before the learner tries it. The still-untyped
+   remainder is lifted out of the grey it shares with "not started" so the line
+   plainly has more to come, and the caret keeps a steady pulse. */
+.target-sentence.mid-sentence .pending {
+  color: color-mix(in srgb, var(--ink) 52%, var(--paper));
+}
+
+.target-sentence.mid-sentence .current {
+  animation: keep-typing 1.1s ease-in-out infinite;
+}
+
+@keyframes keep-typing {
+  0%, 100% { border-block-end-color: var(--yellow); }
+  50% { border-block-end-color: color-mix(in srgb, var(--yellow) 35%, var(--paper)); }
+}
+
+/* The nudge shown when Enter was pressed too early. */
+.typing-feedback.keep-going {
+  color: var(--info);
+  font-weight: 800;
+  animation: keep-going-in 320ms cubic-bezier(.2, .9, .3, 1) both;
+}
+
+@keyframes keep-going-in {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .target-sentence.mid-sentence .current,
+  .typing-feedback.keep-going {
+    animation: none;
+  }
+}
+
 .typing-input {
   width: 100%;
   min-height: 43px;
   padding: 8px 12px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 12px;
   background: var(--paper);
   font-size: 18px;
@@ -877,9 +1663,9 @@ footer {
   gap: 16px;
   margin-block-start: 12px;
   padding: 14px 16px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 14px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
 }
 
 .lesson-evaluation.accepted {
@@ -924,7 +1710,7 @@ footer {
 .lesson-evaluation dl div {
   min-width: 72px;
   padding: 7px 9px;
-  border: 1px solid color-mix(in srgb, var(--ink) 38%, transparent);
+  border: 1px solid color-mix(in srgb, var(--edge) 38%, transparent);
   border-radius: 9px;
   background: rgba(255, 255, 255, 0.68);
   text-align: center;
@@ -969,7 +1755,7 @@ footer {
 }
 
 .inline-sound-control.on {
-  border-color: var(--ink);
+  border-color: var(--edge);
   color: var(--ink);
 }
 
@@ -1007,7 +1793,7 @@ footer {
 .keyboard-layout-picker select {
   min-height: 30px;
   padding: 4px 26px 4px 8px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 9px;
   background: var(--paper);
   color: var(--ink);
@@ -1020,10 +1806,10 @@ footer {
   gap: 9px;
   margin-block-start: 9px;
   padding: 8px 10px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 14px;
   background: var(--yellow);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
 }
 
 .next-key-card.complete {
@@ -1036,7 +1822,7 @@ footer {
   height: 41px;
   flex: none;
   place-items: center;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 11px;
   background: var(--paper);
   font-size: 24px;
@@ -1068,10 +1854,10 @@ footer {
   height: 29px;
   padding-inline: 8px;
   place-items: center;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 8px;
   background: var(--paper);
-  box-shadow: 0 3px 0 var(--ink);
+  box-shadow: 0 3px 0 var(--shadow-ink);
   font-family: inherit;
   font-size: 13px;
 }
@@ -1101,14 +1887,15 @@ footer {
 
 .key-guide kbd small {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 11px !important;
+  font-weight: 800 !important;
   line-height: 1;
 }
 
 .key-guide kbd.active {
-  border-color: var(--ink);
+  border-color: var(--edge);
   background: var(--yellow);
-  box-shadow: 0 3px 0 var(--ink);
+  box-shadow: 0 3px 0 var(--shadow-ink);
   transform: translateY(-2px);
 }
 
@@ -1118,6 +1905,7 @@ footer {
 
 .keyboard-map {
   position: relative;
+  isolation: isolate;
   overflow: visible;
   flex: 1;
   min-height: 274px;
@@ -1132,7 +1920,8 @@ footer {
 .keyboard-map-legend {
   display: flex;
   align-items: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 4px 10px;
   margin-block-end: 5px;
   color: var(--muted);
   font-size: 9px;
@@ -1187,7 +1976,9 @@ footer {
   position: relative;
   overflow: visible;
   display: grid;
-  width: clamp(27px, 7.5%, 38px);
+  /* A 22px floor lets a full row still fit inside a narrow guidance column
+     instead of forcing the map wider than the card. */
+  width: clamp(22px, 7.5%, 38px);
   aspect-ratio: 1 / 1.08;
   flex: none;
   place-items: center;
@@ -1212,10 +2003,41 @@ footer {
   font-weight: 950;
 }
 
+.keyboard-row kbd.key-space {
+  width: clamp(62px, 16.5vw, 98px) !important;
+  aspect-ratio: auto !important;
+  padding: 4px 6px !important;
+  overflow: hidden !important;
+}
+
+.keyboard-row kbd.key-space small {
+  font-size: clamp(9px, 1.2vw, 11px) !important;
+  letter-spacing: -0.02em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+}
+
+.key-guide kbd.key-space {
+  width: 100% !important;
+  aspect-ratio: auto !important;
+  padding: 2px 2px !important;
+  overflow: hidden !important;
+}
+
+.key-guide kbd.key-space small {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
 .keyboard-row kbd.active {
-  border-color: var(--ink);
+  border-color: var(--edge);
   background: var(--yellow);
-  box-shadow: 0 3px 0 var(--ink);
+  box-shadow: 0 3px 0 var(--shadow-ink);
   transform: translateY(-3px) scale(1.07);
 }
 
@@ -1228,41 +2050,44 @@ footer {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 8px;
-  min-height: 47px;
-  padding: 6px 8px;
-  border: 1.5px solid var(--ink);
-  border-radius: 12px;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 12px;
+  border: 2px solid var(--edge);
+  border-radius: 14px;
   background: var(--yellow);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
 }
 
 .finger-callout > span {
   display: grid;
-  width: 31px;
-  height: 31px;
+  width: 36px;
+  height: 36px;
   place-items: center;
   border-radius: 50%;
   background: var(--pink);
-  font-size: 18px;
+  font-size: 20px;
   animation: finger-nudge 900ms ease-in-out infinite;
 }
 
 .finger-callout div {
   display: grid;
-  gap: 1px;
-  line-height: 1.05;
+  gap: 2px;
+  line-height: 1.15;
 }
 
 .finger-callout small {
-  font-size: 7px;
-  font-weight: 950;
-  letter-spacing: .09em;
+  color: var(--ink);
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
 }
 
 .finger-callout b {
-  font-size: 14px;
-  font-weight: 950;
+  color: var(--ink);
+  font-size: 18px !important;
+  font-weight: 900 !important;
 }
 
 .finger-callout kbd {
@@ -1271,10 +2096,10 @@ footer {
   height: 33px;
   padding-inline: 6px;
   place-items: center;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 8px;
   background: var(--paper);
-  box-shadow: 0 3px 0 var(--ink);
+  box-shadow: 0 3px 0 var(--shadow-ink);
   font-family: inherit;
   font-size: 14px;
   font-weight: 950;
@@ -1408,10 +2233,10 @@ footer {
   min-width: min(300px, calc(100% - 24px));
   margin: 0;
   padding: 9px 11px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 11px;
   background: rgb(233 228 255 / .96);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--shadow-ink);
   pointer-events: none;
   transform: translate(-50%, -50%);
   animation: pause-badge-in 180ms ease-out both;
@@ -1595,17 +2420,24 @@ footer {
   flex-direction: column;
   align-items: stretch;
   padding: 20px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 20px;
   background: var(--paper);
   text-align: start;
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
-.activity-card:hover,
+/* Selected is a stable click state — safe to lift with a transform. */
 .activity-card.selected {
   transform: translate(-3px, -3px);
-  box-shadow: 6px 6px 0 var(--ink);
+  box-shadow: 6px 6px 0 var(--shadow-ink);
+}
+
+/* Hover must NOT move the card: translating it out from under the cursor at the
+   border makes hover flicker on/off, so the card jitters. Feedback via shadow
+   only keeps the hit area stable. */
+.activity-card:hover:not(.selected) {
+  box-shadow: 6px 6px 0 var(--shadow-ink);
 }
 
 .activity-card.lime .activity-number { background: var(--lime); }
@@ -1625,9 +2457,9 @@ footer {
   width: 44px;
   height: 44px;
   place-items: center;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 12px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
   font-size: 12px;
   font-weight: 950;
 }
@@ -1683,11 +2515,283 @@ footer {
   min-height: 330px;
   margin-block-start: 22px;
   padding: clamp(28px, 4vw, 54px);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--edge);
   border-radius: 28px;
   background: var(--paper);
   box-shadow: var(--shadow);
   scroll-margin-block-start: 18px;
+}
+
+.game-stage-bar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-block-end: 6px;
+}
+
+.game-bar-theme {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.signed-out-shell {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--paper);
+}
+
+.signed-out-card {
+  width: min(520px, 100%);
+  padding: clamp(28px, 5vw, 44px);
+  text-align: center;
+  background: var(--paper);
+  border: 3px solid var(--edge);
+  border-radius: 24px;
+  box-shadow: 8px 8px 0 var(--shadow-ink);
+}
+
+.signed-out-card .brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 12px;
+  font-size: 28px;
+  font-weight: 900;
+  background: var(--lime, #cdff50);
+  border: 2.5px solid var(--edge);
+  border-radius: 14px;
+}
+
+.signed-out-card h1 {
+  margin: 6px 0 14px;
+  font-size: clamp(1.3rem, 3vw, 1.7rem);
+}
+
+.signed-out-card p {
+  margin: 0 0 12px;
+  line-height: 1.55;
+}
+
+.signed-out-card .signed-out-sub {
+  font-size: 0.85rem;
+  opacity: 0.62;
+}
+
+.signed-out-card .button {
+  margin-top: 10px;
+}
+
+.google-signin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 22px 0 18px;
+}
+
+.google-signin-label {
+  margin: 0 !important;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.google-signin-button {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.google-signin-status {
+  margin: 0 !important;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.google-signin-status.error {
+  color: #c8102e;
+  opacity: 1;
+}
+
+/* Owner-only analytics row: its own line, right-aligned, so it never crowds the
+   learner-facing nav. */
+.owner-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-block: 14px 0;
+}
+
+.owner-tools-label {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Two dashboards joined into one segmented control: a single outlined shell
+   with two separate click zones. */
+.analytics-segment {
+  display: inline-flex;
+  align-items: stretch;
+  overflow: hidden;
+  border: 2px solid var(--edge);
+  border-radius: 999px;
+  box-shadow: 3px 3px 0 var(--shadow-ink);
+}
+
+.analytics-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 15px;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: filter 0.12s ease;
+}
+
+.analytics-seg + .analytics-seg {
+  border-inline-start: 2px solid var(--edge);
+}
+
+.analytics-seg:hover {
+  filter: brightness(0.94);
+}
+
+.analytics-seg span {
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* Cloudflare = orange, Clarity = blue — each product's own colour. */
+.analytics-cloudflare {
+  color: #5c3200;
+  background: #ffc98a;
+}
+
+.analytics-clarity {
+  color: #10305c;
+  background: #a9d4ff;
+}
+
+/* Inside the admin nav the segment sits inline with the other links. */
+.admin-header nav {
+  align-items: center;
+}
+
+.profile-header nav {
+  align-items: center;
+}
+
+.signout-link {
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.game-exit-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  font: inherit;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  background: var(--paper);
+  border: 2.5px solid var(--edge);
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--shadow-ink);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.game-exit-button:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--shadow-ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.game-exit-button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--shadow-ink);
+}
+
+.game-exit-button span {
+  font-size: 1.15em;
+  line-height: 1;
+}
+
+#game-stage {
+  position: relative;
+}
+
+.exit-confirm-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  border-radius: 28px;
+  background: rgba(12, 10, 24, 0.6);
+  background: color-mix(in srgb, var(--ink) 62%, transparent);
+  backdrop-filter: blur(3px);
+}
+
+.exit-confirm-card {
+  width: min(440px, 100%);
+  padding: clamp(24px, 4vw, 40px);
+  text-align: center;
+  background: var(--paper);
+  border: 3px solid var(--edge);
+  border-radius: 22px;
+  box-shadow: 8px 8px 0 var(--shadow-ink);
+}
+
+.exit-confirm-card h3 {
+  margin: 6px 0 10px;
+  font-size: clamp(1.3rem, 3vw, 1.7rem);
+}
+
+.exit-confirm-card > p:not(.demo-label) {
+  margin: 0;
+  opacity: 0.8;
+}
+
+.exit-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-block-start: 22px;
+}
+
+.exit-confirm-actions .button kbd {
+  margin-inline-start: 6px;
 }
 
 .demo-copy {
@@ -1741,7 +2845,7 @@ footer {
   position: relative;
   overflow: hidden;
   min-height: 430px;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--edge);
   border-radius: 22px;
   background:
     radial-gradient(circle at 20% 20%, rgba(255,255,255,.95) 0 3px, transparent 4px),
@@ -1765,10 +2869,10 @@ footer {
   display: grid;
   min-width: 74px;
   padding: 8px 12px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 999px;
   background: var(--yellow);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
   font-size: 20px;
   font-weight: 950;
   text-align: center;
@@ -1795,7 +2899,7 @@ footer {
   z-index: 4;
   inset: auto 0 0;
   height: 17%;
-  border-block-start: 3px solid var(--ink);
+  border-block-start: 3px solid var(--edge);
   background: linear-gradient(180deg, #5cd5e9, #286bce);
   color: white;
   text-align: center;
@@ -1824,7 +2928,7 @@ footer {
   color: var(--pink);
   font-size: 52px;
   font-weight: 950;
-  text-shadow: 2px 2px 0 var(--ink);
+  text-shadow: 2px 2px 0 var(--shadow-ink);
   transform: translate(-50%, -50%);
   pointer-events: none;
   animation: capture-pop 700ms cubic-bezier(.18,.84,.34,1) both;
@@ -1854,7 +2958,7 @@ footer {
   display: grid;
   gap: 2px;
   padding: 9px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 10px;
   background: #f1efff;
   font-size: 8px;
@@ -1924,7 +3028,7 @@ footer {
   min-width: 0;
   flex: 1;
   padding: 12px 14px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 12px;
   background: var(--ivory);
   font-size: 20px;
@@ -2002,7 +3106,7 @@ footer {
 .answer-options button {
   width: 58px;
   height: 58px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 12px;
   background: var(--paper);
   font-size: 22px;
@@ -2012,7 +3116,7 @@ footer {
 .answer-options button:hover,
 .answer-options button.chosen {
   background: var(--yellow);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
   transform: translate(-2px, -2px);
 }
 
@@ -2050,7 +3154,7 @@ footer {
 
 .crossword-board-heading b {
   padding: 5px 9px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 999px;
   background: var(--lime);
   letter-spacing: 0;
@@ -2066,7 +3170,7 @@ footer {
   aspect-ratio: 1;
   gap: 3px;
   padding: 8px;
-  border: 4px solid var(--ink);
+  border: 4px solid var(--edge);
   border-radius: 18px;
   background: var(--ink);
   box-shadow: 7px 7px 0 color-mix(in srgb, var(--purple) 34%, transparent);
@@ -2156,7 +3260,7 @@ footer {
 
 .crossword-game-wrap.solved .crossword-grid {
   transform: rotate(-.35deg) translateY(-3px);
-  box-shadow: 9px 9px 0 color-mix(in srgb, var(--lime) 70%, var(--ink));
+  box-shadow: 9px 9px 0 color-mix(in srgb, var(--lime) 70%, var(--shadow-ink));
 }
 
 .crossword-direction-legend {
@@ -2179,7 +3283,7 @@ footer {
   width: 24px;
   height: 24px;
   place-items: center;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 7px;
   background: var(--paper);
   color: var(--purple);
@@ -2196,7 +3300,7 @@ footer {
   min-height: 46px;
   margin: 0 0 14px;
   padding: 10px 12px;
-  border: 2px solid color-mix(in srgb, var(--ink) 22%, transparent);
+  border: 2px solid color-mix(in srgb, var(--edge) 22%, transparent);
   border-radius: 12px;
   background: rgb(255 255 255 / .58);
   color: var(--muted);
@@ -2234,7 +3338,7 @@ footer {
   gap: 8px;
   margin-block: 13px 16px;
   padding: 12px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 16px;
   background: color-mix(in srgb, var(--yellow) 34%, white);
   box-shadow: 4px 4px 0 color-mix(in srgb, var(--purple) 72%, transparent);
@@ -2259,7 +3363,7 @@ footer {
   min-width: 0;
   height: 48px;
   padding: 8px 13px;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--edge);
   border-radius: 12px;
   outline: 0;
   background: white;
@@ -2339,7 +3443,7 @@ footer {
   gap: 7px;
   width: 100%;
   padding: 9px;
-  border: 2px solid color-mix(in srgb, var(--ink) 24%, transparent);
+  border: 2px solid color-mix(in srgb, var(--edge) 24%, transparent);
   border-radius: 11px;
   background: rgb(255 255 255 / .68);
   color: var(--ink);
@@ -2353,7 +3457,7 @@ footer {
 }
 
 .crossword-clues button.active {
-  border-color: var(--ink);
+  border-color: var(--edge);
   background: #e9e1ff;
   box-shadow: 3px 3px 0 var(--purple);
   transform: translate(-2px, -2px);
@@ -2393,7 +3497,7 @@ footer {
 
 .crossword-clear {
   padding: 10px 14px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 999px;
   background: var(--paper);
   color: var(--ink);
@@ -2443,7 +3547,7 @@ footer {
 
 .kpop-live-card {
   padding: 20px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 18px;
   background: var(--ivory);
 }
@@ -2459,7 +3563,7 @@ footer {
   width: 100%;
   min-height: 110px;
   padding: 12px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 11px;
   background: white;
   font: inherit;
@@ -2474,7 +3578,7 @@ footer {
   width: 130px;
   height: 130px;
   place-items: center;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--edge);
   border-radius: 50%;
   background: repeating-radial-gradient(circle, var(--ink) 0 5px, #30302e 6px 10px);
   box-shadow: 7px 7px 0 var(--pink);
@@ -2492,7 +3596,7 @@ footer {
 
 .unlock-meter {
   padding: 20px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 18px;
   background: var(--ivory);
 }
@@ -2522,7 +3626,7 @@ footer {
   flex-direction: column;
   justify-content: flex-end;
   padding: 24px;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--edge);
   border-radius: 22px;
   background: #17172b;
   box-shadow: 7px 7px 0 var(--pink);
@@ -2598,6 +3702,26 @@ footer {
   font-size: 12px !important;
 }
 
+.scene-attribution {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin-top: 10px !important;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  font-size: 12px !important;
+}
+
+.scene-attribution .scene-work {
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.scene-attribution .scene-speaker {
+  color: rgba(255, 255, 255, 0.66) !important;
+}
+
 .scene-form,
 .travel-form {
   display: flex;
@@ -2616,7 +3740,7 @@ footer {
 .travel-form input {
   width: 100%;
   padding: 13px 14px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 12px;
   background: var(--ivory);
   font-family: inherit;
@@ -2646,7 +3770,7 @@ footer {
 .travel-scene {
   min-height: 310px;
   padding: 22px;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--edge);
   border-radius: 22px;
   background:
     radial-gradient(circle at 82% 18%, rgba(133, 255, 75, 0.82) 0 54px, transparent 55px),
@@ -2663,7 +3787,7 @@ footer {
 
 .travel-mode-tabs button {
   padding: 8px 10px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 999px;
   background: var(--paper);
   font-size: 10px;
@@ -2695,7 +3819,7 @@ footer {
   width: 25px;
   height: 8px;
   padding: 0;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--edge);
   border-radius: 999px;
   background: var(--paper);
 }
@@ -2731,7 +3855,7 @@ footer {
 .path-badges span {
   width: fit-content;
   padding: 8px 13px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 999px;
   background: var(--paper);
   font-size: 11px;
@@ -2764,7 +3888,7 @@ footer {
   height: 34px;
   flex: none;
   place-items: center;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 10px;
   background: var(--paper);
   font-size: 11px;
@@ -2778,7 +3902,7 @@ footer {
 }
 
 .level-track li.done {
-  border-color: var(--ink);
+  border-color: var(--edge);
   background: #edffd1;
 }
 
@@ -2787,9 +3911,9 @@ footer {
 }
 
 .level-track li.current {
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   background: #f0edff;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--shadow-ink);
 }
 
 .level-track li.current > span {
@@ -2798,7 +3922,7 @@ footer {
 }
 
 .level-track li.reward {
-  border-color: var(--ink);
+  border-color: var(--edge);
   background: repeating-linear-gradient(130deg, #ffe7f0 0 12px, #fff5b9 12px 24px);
 }
 
@@ -2809,7 +3933,7 @@ footer {
   gap: 50px;
   margin-block-end: 80px;
   padding: clamp(28px, 4vw, 50px);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--edge);
   border-radius: 28px;
   background: var(--lime);
   box-shadow: var(--shadow);
@@ -2882,10 +4006,10 @@ footer > div {
   gap: 16px;
   margin-block-start: 16px;
   padding: 18px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 16px;
   background: linear-gradient(135deg, var(--lime), #faffaa 55%, var(--cyan));
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--shadow-ink);
   animation: finish-reveal 500ms cubic-bezier(.2,.9,.2,1) both;
 }
 
@@ -2906,10 +4030,10 @@ footer > div {
   width: 48px;
   height: 48px;
   place-items: center;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 50%;
   background: var(--paper);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
   font-size: 23px;
   font-weight: 950;
 }
@@ -2920,8 +4044,8 @@ footer > div {
 }
 
 .lesson-finish-card h3 { font-size: 20px; }
-.lesson-finish-card p { color: var(--muted); font-size: 10px; font-weight: 750; }
-.lesson-finish-card small { font-size: 9px; font-weight: 950; letter-spacing: .08em; }
+.lesson-finish-card p { color: var(--muted); font-size: 12px !important; font-weight: 750; }
+.lesson-finish-card small { font-size: 11px !important; font-weight: 950; letter-spacing: .08em; }
 
 .activity-card.selected .activity-number {
   animation: card-beat 700ms ease both;
@@ -2934,20 +4058,23 @@ footer > div {
 
 .privacy-notice {
   position: fixed;
-  inset-inline: 50%;
+  /* Centred with auto margins rather than inset-inline + translateX: the old
+     pair pushed the banner completely off-canvas in RTL locales, because the
+     inset flips with direction while the translate does not. */
+  inset-inline: 0;
   inset-block-end: 18px;
   z-index: 80;
   display: grid;
   width: min(760px, calc(100% - 28px));
+  margin-inline: auto;
   grid-template-columns: auto 1fr auto auto;
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 18px;
   background: var(--paper);
-  box-shadow: 7px 7px 0 var(--ink);
-  transform: translateX(-50%);
+  box-shadow: 7px 7px 0 var(--shadow-ink);
   animation: notice-rise 420ms ease both;
 }
 
@@ -2965,7 +4092,7 @@ footer > div {
 .privacy-notice a { font-size: 11px; font-weight: 850; text-decoration: underline; }
 .privacy-notice button {
   padding: 9px 13px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 999px;
   background: var(--yellow);
   font: inherit;
@@ -3000,7 +4127,7 @@ footer > div {
 
 .legal-hero {
   padding-block: 74px 52px;
-  border-block-end: 2px solid var(--ink);
+  border-block-end: 2px solid var(--edge);
 }
 
 .legal-hero h1,
@@ -3028,7 +4155,7 @@ footer > div {
 .legal-status-row span,
 .benefit-pill {
   padding: 7px 10px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 999px;
   background: var(--paper);
   font-size: 9px;
@@ -3052,10 +4179,10 @@ footer > div {
   flex-direction: column;
   gap: 10px;
   padding: 18px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 16px;
   background: var(--paper);
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--shadow-ink);
   font-size: 11px;
 }
 
@@ -3085,7 +4212,7 @@ footer > div {
   gap: 5px;
   min-height: 86px;
   padding: 14px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 12px;
   background: var(--paper);
 }
@@ -3096,7 +4223,7 @@ footer > div {
 .policy-table {
   overflow: hidden;
   margin-block-start: 14px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 14px;
 }
 
@@ -3110,16 +4237,16 @@ footer > div {
 
 .launch-gate {
   padding: 30px !important;
-  border: 2px solid var(--ink) !important;
+  border: 2px solid var(--edge) !important;
   border-radius: 20px;
   background: #fff3bd;
-  box-shadow: 6px 6px 0 var(--ink);
+  box-shadow: 6px 6px 0 var(--shadow-ink);
 }
 
 .launch-checklist { display: grid; gap: 8px; margin-block: 22px; }
 .launch-checklist span { padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: rgba(255,255,255,.65); font-size: 11px; font-weight: 750; }
 .launch-checklist b { margin-inline-end: 7px; color: var(--purple); }
-.legal-note { padding-block-start: 16px; border-block-start: 1px dashed var(--ink); font-size: 11px !important; }
+.legal-note { padding-block-start: 16px; border-block-start: 1px dashed var(--edge); font-size: 11px !important; }
 
 .profile-welcome {
   display: flex;
@@ -3136,10 +4263,10 @@ footer > div {
   height: 94px;
   flex: none;
   place-items: center;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--edge);
   border-radius: 50%;
   background: var(--pink);
-  box-shadow: 7px 7px 0 var(--ink);
+  box-shadow: 7px 7px 0 var(--shadow-ink);
   font-size: 36px;
   font-weight: 950;
 }
@@ -3155,10 +4282,10 @@ footer > div {
   align-items: center;
   gap: 13px;
   padding: 16px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 16px;
   background: var(--paper);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
 }
 
 .profile-stat > span { font-size: 24px; }
@@ -3176,23 +4303,23 @@ footer > div {
 }
 
 .reward-grid { grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr); }
-.profile-card { padding: 24px; border: 2px solid var(--ink); border-radius: 20px; background: var(--paper); box-shadow: 5px 5px 0 var(--ink); }
+.profile-card { padding: 24px; border: 2px solid var(--edge); border-radius: 20px; background: var(--paper); box-shadow: 5px 5px 0 var(--shadow-ink); }
 .profile-card h2 { margin: 0; font-size: clamp(26px, 3vw, 40px); letter-spacing: -.05em; }
 .profile-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .profile-card-heading > b { font-size: 28px; }
-.profile-progress-track { overflow: hidden; height: 11px; margin-block: 22px 13px; border: 1.5px solid var(--ink); border-radius: 999px; background: #dddcd4; }
+.profile-progress-track { overflow: hidden; height: 11px; margin-block: 22px 13px; border: 1.5px solid var(--edge); border-radius: 999px; background: #dddcd4; }
 .profile-progress-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg,var(--purple),var(--pink)); transition: width 450ms ease; }
 .lesson-summary-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .lesson-summary-row span { padding: 8px 10px; border-radius: 9px; background: #efeee7; font-size: 10px; font-weight: 750; }
 .progress-card .button { margin-block-start: 22px; }
 .level-card { position: relative; overflow: hidden; background: linear-gradient(145deg,#e9e2ff,#ffddeb); }
-.level-orbit { display: grid; width: 110px; height: 110px; margin: 22px auto 0; place-items: center; border: 3px solid var(--ink); border-radius: 50%; background: var(--yellow); box-shadow: 6px 6px 0 var(--ink); animation: profile-orbit 3s ease-in-out infinite; }
+.level-orbit { display: grid; width: 110px; height: 110px; margin: 22px auto 0; place-items: center; border: 3px solid var(--edge); border-radius: 50%; background: var(--yellow); box-shadow: 6px 6px 0 var(--shadow-ink); animation: profile-orbit 3s ease-in-out infinite; }
 .level-orbit span { font-size: 42px; font-weight: 950; }
 .level-card > small { display: block; color: var(--muted); font-size: 9px; font-weight: 800; text-align: center; }
 
 .week-rhythm { display: grid; grid-template-columns: repeat(7,1fr); gap: 6px; margin-block: 24px; }
 .week-rhythm span { display: grid; gap: 6px; place-items: center; }
-.week-rhythm i { display: grid; width: 38px; height: 38px; place-items: center; border: 1.5px solid var(--ink); border-radius: 12px; background: #ecebe4; font-style: normal; font-size: 10px; font-weight: 900; }
+.week-rhythm i { display: grid; width: 38px; height: 38px; place-items: center; border: 1.5px solid var(--edge); border-radius: 12px; background: #ecebe4; font-style: normal; font-size: 10px; font-weight: 900; }
 .week-rhythm span.active i { background: var(--lime); animation: success-pop 400ms ease both; }
 .week-rhythm small { color: var(--muted); font-size: 8px; }
 .visit-card > p { color: var(--muted); font-size: 12px; }
@@ -3206,7 +4333,7 @@ footer > div {
 .empty-reward p { display: grid; gap: 3px; margin: 0; }
 .badge-list small,
 .empty-reward small { color: var(--muted); font-size: 9px; }
-.account-note { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-block-start: 22px; padding: 18px; border: 1.5px dashed var(--ink); border-radius: 14px; }
+.account-note { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-block-start: 22px; padding: 18px; border: 1.5px dashed var(--edge); border-radius: 14px; }
 .account-note div { display: grid; gap: 3px; font-size: 11px; }
 .account-note span { color: var(--muted); }
 .account-note p { max-width: 620px; margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
@@ -3253,10 +4380,10 @@ footer > div {
   display: grid;
   gap: 3px;
   padding: 12px 15px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 12px;
   background: var(--yellow);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
 }
 
 .admin-owner small { font-size: 8px; font-weight: 850; }
@@ -3273,10 +4400,10 @@ footer > div {
 .admin-library,
 .admin-denied-card {
   padding: 26px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 22px;
   background: var(--paper);
-  box-shadow: 6px 6px 0 var(--ink);
+  box-shadow: 6px 6px 0 var(--shadow-ink);
 }
 
 .admin-editor-heading,
@@ -3318,7 +4445,7 @@ footer > div {
   width: 100%;
   min-width: 0;
   padding: 11px 12px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 10px;
   background: var(--ivory);
   color: var(--ink);
@@ -3349,7 +4476,7 @@ footer > div {
   gap: 6px;
   margin-block-start: 5px;
   padding: 14px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 12px;
 }
 
@@ -3436,9 +4563,12 @@ footer > div {
   to { filter: saturate(1.2) drop-shadow(0 0 5px rgba(255,220,45,.7)); }
 }
 
+/* The banner centres itself with auto margins now, so the animation only has to
+   move it vertically. Keeping the old translateX(-50%) here would drag it back
+   off-centre. */
 @keyframes notice-rise {
-  from { opacity: 0; transform: translate(-50%, 18px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes profile-orbit {
@@ -3556,7 +4686,8 @@ footer > div {
 
   .practice-card {
     padding: 20px;
-    border-radius: 28px 14px;
+    --card-corner-tr: 14px;
+    border-radius: 28px var(--card-corner-tr) 28px 14px;
   }
 
   .practice-card-header {
@@ -3754,7 +4885,7 @@ footer > div {
   }
 
   .practice-card {
-    box-shadow: 6px 8px 0 var(--ink);
+    box-shadow: 6px 8px 0 var(--shadow-ink);
   }
 
   .practice-card-header {
@@ -3867,7 +4998,7 @@ footer > div {
 
   .game-demo {
     padding: 24px 18px;
-    box-shadow: 5px 5px 0 var(--ink);
+    box-shadow: 5px 5px 0 var(--shadow-ink);
   }
 
   .word-rain-board {
@@ -3900,7 +5031,7 @@ footer > div {
   }
 
   .free-note {
-    box-shadow: 5px 5px 0 var(--ink);
+    box-shadow: 5px 5px 0 var(--shadow-ink);
   }
 
   .privacy-notice {
@@ -3990,28 +5121,81 @@ footer > div {
 }
 
 .hero-copy {
-  overflow: clip;
-  max-height: 760px;
+  overflow: visible;
+  max-height: none;
 }
 
 .hero-copy h1 {
-  overflow: hidden;
-  max-height: 310px;
+  overflow: visible;
+  max-height: none;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  text-wrap: balance;
+}
+
+.hero-copy h1 span {
+  display: inline-block !important;
+  word-break: keep-all !important;
+}
+
+.headline-accent {
+  display: inline-block !important;
+  word-break: keep-all !important;
+  white-space: nowrap !important;
+  max-width: 100%;
+}
+
+/* `keep-all` + `nowrap` hold the highlighted headline on one unbroken line.
+   That is right for CJK, where the phrase is short and breaking mid-phrase reads
+   badly. Everywhere else the same sentence runs 2-3x longer and, with no break
+   opportunity allowed, it simply painted outside the hero: measured on
+   production in Tamil at a 1920px viewport, the headline text ran 246px past its
+   own box and 198px over the practice card. Non-CJK scripts wrap normally. */
+html:not([lang="ko"]):not([lang="ja"]):not([lang="zh-Hans"]):not([lang="zh-Hant"]) .hero-copy h1,
+html:not([lang="ko"]):not([lang="ja"]):not([lang="zh-Hans"]):not([lang="zh-Hant"]) .hero-copy h1 span,
+html:not([lang="ko"]):not([lang="ja"]):not([lang="zh-Hans"]):not([lang="zh-Hant"]) .headline-accent {
+  word-break: normal !important;
+  /* Not `anywhere`: the overflow this rule fixes came from `nowrap`, not from a
+     missing emergency break, and `anywhere` would authorise cutting a word in
+     half. These scripts all break at spaces. */
+  overflow-wrap: normal !important;
+}
+
+/* Both headline spans need the nowrap lifted, not just `.headline-accent`: the
+   first line is a bare `<span>` that inherits `inline-block` + `nowrap`, and an
+   inline-block that may not wrap sizes to its content and overflows the column. */
+html:not([lang="ko"]):not([lang="ja"]):not([lang="zh-Hans"]):not([lang="zh-Hant"]) .hero-copy h1 span,
+html:not([lang="ko"]):not([lang="ja"]):not([lang="zh-Hans"]):not([lang="zh-Hant"]) .headline-accent {
+  white-space: normal !important;
+  max-width: 100%;
+}
+
+/* Once the accent is allowed to wrap, `inline-block` stops hugging its text: an
+   inline-block shrink-to-fits to the *available* width when its unwrapped
+   preferred width exceeds it, so the box stayed the full 491px column while the
+   wrapped lines were much shorter — and the highlight, sized `100%`, painted
+   209px past the text in Urdu. `inline` paints the background per line box, so
+   it tracks each line instead. CJK keeps `inline-block`: it never wraps there,
+   so the box already equals the text. */
+html:not([lang="ko"]):not([lang="ja"]):not([lang="zh-Hans"]):not([lang="zh-Hant"]) .headline-accent {
+  display: inline !important;
 }
 
 .hero-description {
-  overflow: hidden;
-  max-height: 180px;
+  overflow: visible;
+  max-height: none;
+  line-height: 1.5;
+  padding-bottom: 2px;
 }
 
 .trust-row {
-  overflow: hidden;
-  max-height: 110px;
+  overflow: visible;
+  max-height: none;
 }
 
 .hero-actions .button-secondary {
-  overflow: hidden;
-  max-height: 72px;
+  overflow: visible;
+  max-height: none;
 }
 
 .eyebrow {
@@ -4047,7 +5231,7 @@ footer > div {
   grid-template-columns: minmax(82px, .12fr) minmax(0, 1.88fr);
   align-items: start;
   gap: 14px;
-  min-height: calc(100svh - 88px);
+  min-height: calc(100svh - var(--chrome-h));
   padding-block-start: 9px;
 }
 
@@ -4063,53 +5247,19 @@ footer > div {
 .practice-focus-mode .hero-copy h1,
 .practice-focus-mode .hero-description,
 .practice-focus-mode .trust-row,
-.practice-focus-mode .hero-actions .button-secondary {
+.practice-focus-mode .hero-actions a.button-secondary,
+.practice-focus-mode .eyebrow {
   overflow: hidden;
   max-height: 0;
-  margin: 0;
-  opacity: 0;
-  pointer-events: none;
+  margin: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  display: none !important;
   transform: translateX(-28px) scale(.92);
-}
-
-.practice-focus-mode .eyebrow {
-  width: 72px;
-  margin: 0 0 12px;
-  padding: 9px;
-  justify-content: center;
-  font-size: 0;
-}
-
-.practice-focus-mode .eyebrow span {
-  margin: 0 16px 0 0;
 }
 
 .practice-focus-mode .hero-actions {
   margin: 0;
-}
-
-.practice-focus-mode .hero-actions .button-primary {
-  display: grid;
-  width: 72px;
-  min-height: 76px;
-  padding: 10px 6px 8px;
-  border-radius: 18px;
-  gap: 3px;
-  font-size: 9px;
-  line-height: 1.15;
-  text-align: center;
-  box-shadow: 4px 4px 0 var(--pink);
-}
-
-.practice-focus-mode .hero-actions .button-primary .hero-focus-label {
-  max-width: 58px;
-  font-size: 9px;
-  white-space: normal;
-}
-
-.practice-focus-mode .hero-actions .button-primary .hero-focus-arrow {
-  font-size: 19px;
-  transform: none;
 }
 
 .practice-focus-mode .practice-stage {
@@ -4118,9 +5268,12 @@ footer > div {
 }
 
 .practice-focus-mode .practice-card {
-  min-height: calc(100svh - 110px);
-  border-radius: 24px 14px 28px 14px;
-  box-shadow: 10px 8px 0 var(--ink), 0 20px 70px rgb(91 62 203 / .16);
+  /* The card fills what is left inside the focus-mode hero, so it is the chrome
+     plus that hero's own 9px top padding and 13px of breathing room below. */
+  min-height: calc(100svh - var(--chrome-h) - 22px);
+  --card-corner-tr: 14px;
+  border-radius: 24px var(--card-corner-tr) 28px 14px;
+  box-shadow: 10px 8px 0 var(--shadow-ink), 0 20px 70px rgb(91 62 203 / .16);
 }
 
 .practice-focus-mode .typing-panel {
@@ -4175,9 +5328,15 @@ footer > div {
 }
 
 .practice-card .keyboard-row kbd.active {
-  z-index: 8;
+  z-index: 31 !important;
   transform: translateY(-8px) scale(1.24);
-  box-shadow: 0 0 0 7px rgb(199 255 66 / .32), 5px 7px 0 var(--ink);
+  box-shadow: 0 0 0 7px rgb(199 255 66 / .32), 5px 7px 0 var(--shadow-ink);
+}
+
+.practice-card .keyboard-row.active-row {
+  z-index: 30 !important;
+  opacity: 1 !important;
+  filter: none !important;
 }
 
 .practice-focus-mode .hand-overlay.is-pressing {
@@ -4226,7 +5385,7 @@ footer > div {
   gap: 18px;
   margin-block-start: 14px;
   padding: 18px;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--edge);
   border-radius: 18px;
   background:
     radial-gradient(circle at 90% 10%, rgb(255 255 255 / .7) 0 3px, transparent 4px),
@@ -4261,10 +5420,10 @@ footer > div {
   height: 82px;
   place-items: center;
   align-content: center;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--edge);
   border-radius: 50%;
   background: var(--pink);
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--shadow-ink);
   color: var(--ink);
   transform: rotate(-6deg);
   animation: badge-beat 1.1s ease-in-out infinite alternate;
@@ -4344,7 +5503,7 @@ footer > div {
     radial-gradient(circle at 20% 20%, rgba(255,255,255,.95) 0 2px, transparent 3px),
     radial-gradient(circle at 76% 10%, rgba(255,255,255,.7) 0 1px, transparent 2px),
     linear-gradient(180deg, #604ccc 0%, #736bdc 24%, #8fe9ed 63%, #fff0a5 83%);
-  box-shadow: inset 0 0 70px rgb(22 16 72 / .18), 7px 7px 0 var(--ink);
+  box-shadow: inset 0 0 70px rgb(22 16 72 / .18), 7px 7px 0 var(--shadow-ink);
 }
 
 .word-rain-level,
@@ -4359,10 +5518,10 @@ footer > div {
   display: grid;
   min-width: 54px;
   padding: 6px 9px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 11px;
   background: rgb(255 255 255 / .82);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
 }
 
 .word-rain-level small { font-size: 7px; font-weight: 950; letter-spacing: .12em; }
@@ -4373,13 +5532,13 @@ footer > div {
   display: flex;
   gap: 3px;
   padding: 6px 8px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 999px;
   background: rgb(255 255 255 / .82);
 }
 
 .word-rain-lives span { color: #b7b6b0; font-size: 14px; }
-.word-rain-lives span.alive { color: #ff4578; filter: drop-shadow(1px 1px 0 var(--ink)); animation: heart-beat 1.4s ease-in-out infinite; }
+.word-rain-lives span.alive { color: #ff4578; filter: drop-shadow(1px 1px 0 var(--shadow-ink)); animation: heart-beat 1.4s ease-in-out infinite; }
 
 .rain-word {
   padding: 9px 13px 8px;
@@ -4400,7 +5559,7 @@ footer > div {
 
 .rain-word.targeted {
   background: var(--lime);
-  box-shadow: 0 0 0 7px rgb(200 255 66 / .25), 5px 6px 0 var(--ink);
+  box-shadow: 0 0 0 7px rgb(200 255 66 / .25), 5px 6px 0 var(--shadow-ink);
 }
 
 .game-curtain {
@@ -4429,7 +5588,7 @@ footer > div {
   overflow: hidden;
   height: 12px;
   margin: -12px 0 22px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 999px;
   background: #dedcd2;
 }
@@ -4659,6 +5818,38 @@ footer > div {
   content: "";
   filter: drop-shadow(0 5px 4px rgb(3 3 16 / .7));
   transform: translateX(-50%);
+}
+
+.hero h1 {
+  font-size: clamp(2.1rem, 3.8vw, 3.4rem);
+  font-weight: 950;
+  letter-spacing: -0.05em;
+  line-height: 1.12;
+  padding-bottom: 4px;
+}
+
+.hero h1 span {
+  display: inline-block;
+  word-break: keep-all;
+  white-space: nowrap;
+}
+
+.headline-accent {
+  position: relative;
+  display: inline-block !important;
+  width: fit-content;
+  max-width: 100%;
+  z-index: 1;
+  word-break: keep-all !important;
+  white-space: nowrap !important;
+  background-image: linear-gradient(90deg, var(--lime) 0 76%, var(--pink) 76% 100%) !important;
+  background-position: 0 84% !important;
+  background-size: 100% 40% !important;
+  background-repeat: no-repeat !important;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0 18px 4px 4px !important;
+  border-radius: 4px;
 }
 
 .rain-word > b {
@@ -5312,6 +6503,102 @@ footer > div {
 .wave-clear-curtain b { color: #f4ff6a; font: 950 clamp(23px, 3.5vw, 38px)/1 ui-monospace, SFMono-Regular, Consolas, monospace; text-shadow: 3px 3px 0 #6a27ca, 0 0 20px rgb(244 255 106 / .4); }
 .wave-clear-curtain span { color: white; font-size: 11px; font-weight: 850; letter-spacing: .05em; }
 
+/* ==========================================================================
+   City Defense: the scoreboard is above the board, not over it
+   WAVE, the mission readout, SHIELD and the threat line were each
+   `position: absolute` inside `.word-rain-board`, pinned to its top edge and
+   layered at z-index 10–12. Words spawn at the top and fall, so every one of
+   them entered play behind a panel — the middle lane behind the mission readout,
+   the outer lanes behind WAVE and SHIELD — and only became readable once it had
+   already used up a chunk of its descent. Lifting them into a row above the
+   board leaves the whole play area clear; nothing else about the game changes.
+   ========================================================================== */
+.word-rain-arena {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.word-rain-arena > .word-rain-board {
+  flex: 1 1 auto;
+}
+
+.word-rain-hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Each readout keeps its own look and loses only its pinning. The `> ` makes
+   these more specific than the originals, so no !important is needed and the
+   dark-theme colour rules still apply. */
+.word-rain-hud > .word-rain-level,
+.word-rain-hud > .mission-hud,
+.word-rain-hud > .word-rain-lives,
+.word-rain-hud > .threat-alert {
+  position: static;
+  inset: auto;
+  transform: none;
+  margin: 0;
+}
+
+.word-rain-hud > .mission-hud {
+  flex: 1 1 200px;
+  min-width: 0;
+  align-content: center;
+}
+
+.word-rain-hud > .word-rain-level,
+.word-rain-hud > .word-rain-lives {
+  flex: 0 0 auto;
+  align-content: center;
+}
+
+/* The threat line is a status message, not a gauge — it takes the full row
+   under the three panels when the bar has to wrap. */
+.word-rain-hud > .threat-alert {
+  flex: 1 1 100%;
+  justify-content: center;
+}
+
+@media (min-width: 720px) {
+  .word-rain-hud > .threat-alert {
+    flex: 0 1 auto;
+  }
+}
+
+/* On a phone the bar has to wrap. Pairing the two small gauges on one row keeps
+   it to three tight rows instead of three ragged ones, and the bar is above the
+   board now, so height here is height taken from the page, not from play. */
+@media (max-width: 719px) {
+  .word-rain-hud {
+    gap: 6px;
+  }
+
+  /* Reordered so the two gauges are adjacent. In DOM order the mission panel sits
+     between them, and at 100% width it kept them apart — each then stretched to a
+     full row of its own and the bar grew to four. */
+  .word-rain-hud > .word-rain-level { order: 1; }
+  .word-rain-hud > .word-rain-lives { order: 2; }
+  .word-rain-hud > .mission-hud { order: 3; }
+  .word-rain-hud > .threat-alert { order: 4; }
+
+  .word-rain-hud > .word-rain-level,
+  .word-rain-hud > .word-rain-lives {
+    flex: 1 1 calc(50% - 3px);
+    min-width: 0;
+  }
+
+  .word-rain-hud > .mission-hud {
+    flex: 1 1 100%;
+    min-width: 0;
+    padding-block: 7px;
+  }
+}
+
 .word-rain-game.has-shock .word-rain-board { animation: city-impact .58s ease both; }
 .word-rain-game.has-shock .retro-scanlines { background-color: rgb(255 40 96 / .22); opacity: .6; }
 .word-rain-game.is-critical .word-rain-board { box-shadow: inset 0 0 0 2px rgb(255 61 103 / .42), inset 0 0 110px rgb(142 5 37 / .26), 6px 6px 0 #080715, 0 0 44px rgb(255 55 100 / .28); }
@@ -5556,10 +6843,10 @@ footer > div {
 
 .game-key-help kbd {
   padding: 3px 6px;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--edge);
   border-radius: 5px;
   background: var(--paper);
-  box-shadow: 1px 1px 0 var(--ink);
+  box-shadow: 1px 1px 0 var(--shadow-ink);
   color: var(--ink);
   font: inherit;
   font-size: 10px;
@@ -5572,12 +6859,12 @@ footer > div {
   overflow: hidden;
   width: min(880px, 100%);
   padding: clamp(22px, 4vw, 42px);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--edge);
   border-radius: 28px;
   background:
     radial-gradient(circle at 88% 8%, var(--yellow) 0 6%, transparent 6.2%),
     linear-gradient(145deg, #fffdf2, #f1edff);
-  box-shadow: 8px 8px 0 var(--ink);
+  box-shadow: 8px 8px 0 var(--shadow-ink);
 }
 
 .puzzle-head > div { display: flex; gap: 6px; }
@@ -5619,14 +6906,14 @@ footer > div {
   height: 36px;
   justify-self: center;
   place-items: center;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 50%;
   background: #dedcd2;
   font-size: 11px;
   font-weight: 950;
 }
 
-.missing-level-track > span.current { background: var(--yellow); box-shadow: 3px 3px 0 var(--ink); transform: scale(1.1); }
+.missing-level-track > span.current { background: var(--yellow); box-shadow: 3px 3px 0 var(--shadow-ink); transform: scale(1.1); }
 .missing-level-track > span.done { background: var(--lime); }
 .missing-level-track > i { position: absolute; z-index: 1; inset: calc(50% - 2.5px) auto auto 8%; max-width: 84%; height: 5px; border-radius: 99px; background: var(--purple); transition: width .35s ease; }
 
@@ -5722,10 +7009,10 @@ footer > div {
   width: 25px;
   height: 25px;
   place-items: center;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 6px;
   background: var(--yellow);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--shadow-ink);
   font: 950 12px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
 }
 
@@ -5758,7 +7045,7 @@ footer > div {
   animation: level-curtain 1.45s ease both;
 }
 .missing-level-up span { font-size: 13px; font-weight: 950; letter-spacing: .2em; }
-.missing-level-up b { font-size: clamp(44px, 9vw, 86px); letter-spacing: -.07em; text-shadow: 5px 5px 0 var(--ink); }
+.missing-level-up b { font-size: clamp(44px, 9vw, 86px); letter-spacing: -.07em; text-shadow: 5px 5px 0 var(--shadow-ink); }
 .missing-level-up small { margin-block-start: 8px; font-size: 11px; font-weight: 850; }
 
 .crossword-board-heading > div { display: flex; align-items: center; gap: 7px; }
@@ -5778,10 +7065,10 @@ footer > div {
   gap: 11px;
   margin-block: 12px;
   padding: 12px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 13px;
   background: var(--yellow);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
 }
 .active-clue-banner > span {
   display: grid;
@@ -5824,8 +7111,8 @@ footer > div {
 @keyframes practice-stage-expand { from { opacity: .72; transform: translateX(40px) scale(.96); } }
 @keyframes keyboard-deck-arrive { from { opacity: .45; transform: translateY(24px) scale(.95); } }
 @keyframes whole-hand-react { 50% { transform: translateY(3px) scale(.995); } }
-@keyframes finger-callout-beat { to { box-shadow: 5px 5px 0 var(--ink), 0 0 0 7px rgb(255 77 131 / .12); transform: translateY(-2px); } }
-@keyframes card-mastered-glow { to { box-shadow: 10px 8px 0 var(--ink), 0 0 0 8px rgb(199 255 66 / .3), 0 22px 74px rgb(91 62 203 / .24); } }
+@keyframes finger-callout-beat { to { box-shadow: 5px 5px 0 var(--shadow-ink), 0 0 0 7px rgb(255 77 131 / .12); transform: translateY(-2px); } }
+@keyframes card-mastered-glow { to { box-shadow: 10px 8px 0 var(--shadow-ink), 0 0 0 8px rgb(199 255 66 / .3), 0 22px 74px rgb(91 62 203 / .24); } }
 @keyframes mastery-arrive { from { opacity: 0; transform: translateY(18px) scale(.97); } }
 @keyframes mastery-rays { to { transform: rotate(360deg); } }
 @keyframes badge-beat { to { transform: rotate(4deg) scale(1.04); } }
@@ -5912,9 +7199,9 @@ footer > div {
   transition: transform .2s ease, box-shadow .2s ease, opacity .2s ease;
 }
 .mastery-map-list > div.current {
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   background: #fff6af;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
   transform: translateX(3px);
 }
 .mastery-map-list > div.locked { opacity: .48; }
@@ -5924,7 +7211,7 @@ footer > div {
   width: 30px;
   height: 30px;
   place-items: center;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 50%;
   background: var(--paper);
   font-size: 10px;
@@ -5957,10 +7244,10 @@ footer > div {
   height: 168px;
   margin: 24px auto;
   place-items: center;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--edge);
   border-radius: 50%;
   background: conic-gradient(var(--purple) calc(var(--accuracy) * 1%), rgb(255 255 255 / .52) 0);
-  box-shadow: 7px 7px 0 var(--ink);
+  box-shadow: 7px 7px 0 var(--shadow-ink);
   transform: rotate(-3deg);
   animation: profile-dial-arrive .7s cubic-bezier(.2, 1.4, .4, 1) both;
 }
@@ -5968,7 +7255,7 @@ footer > div {
   position: absolute;
   width: 126px;
   height: 126px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--edge);
   border-radius: 50%;
   background: #f8fff1;
   content: "";
@@ -6036,4 +7323,2659 @@ footer > div {
     animation: none !important;
     opacity: 1;
   }
+}
+
+/* Social Share Buttons Cluster */
+.social-share-cluster {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: fit-content !important;
+  max-width: 640px;
+  margin: 32px auto 24px !important;
+  padding: 14px 28px;
+  border: 2px solid var(--edge);
+  border-radius: 20px;
+  background: var(--paper);
+  box-shadow: 4px 4px 0 var(--shadow-ink);
+}
+
+.social-share-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.social-share-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.social-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--edge);
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.2, 1, 0.4, 1), box-shadow 0.15s ease, background-color 0.15s ease;
+  box-shadow: 2px 2px 0 var(--shadow-ink);
+}
+
+.social-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
+}
+
+.social-btn:active {
+  transform: translateY(0);
+  box-shadow: 1px 1px 0 var(--shadow-ink);
+}
+
+.social-btn.btn-x { background: #000000; color: #ffffff; }
+.social-btn.btn-facebook { background: #1877f2; color: #ffffff; }
+.social-btn.btn-kakao { background: #fee500; color: #000000; }
+.social-btn.btn-line { background: #06c755; color: #ffffff; }
+.social-btn.btn-reddit { background: #ff4500; color: #ffffff; }
+.social-btn.btn-copy { background: #f1f5f9; color: #0f172a; }
+
+/* Modal & Keyboard Setup Helper Styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(13, 17, 23, 0.72);
+  backdrop-filter: blur(8px);
+  animation: modal-fade-in 0.2s cubic-bezier(0.2, 1, 0.4, 1);
+}
+
+.modal-content.keyboard-setup-modal {
+  position: relative;
+  width: 100%;
+  max-width: 620px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 24px;
+  border: 3px solid var(--edge);
+  border-radius: 24px;
+  background: var(--paper);
+  box-shadow: 8px 8px 0 var(--shadow-ink);
+  color: var(--ink);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-block-end: 12px;
+}
+
+.modal-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--cyan);
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 900;
+  margin-block-end: 6px;
+}
+
+.modal-header h2 {
+  font-size: 20px;
+  font-weight: 850;
+  margin: 0;
+}
+
+.modal-close-btn {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--edge);
+  border-radius: 50%;
+  background: #ffffff;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.modal-intro {
+  font-size: 13px;
+  color: #475569;
+  margin-block-end: 18px;
+  line-height: 1.5;
+}
+
+.os-tab-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block-end: 18px;
+}
+
+.os-tab-selector button {
+  padding: 8px 14px;
+  border: 2px solid var(--edge);
+  border-radius: 12px;
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--shadow-ink);
+}
+
+.os-tab-selector button.active {
+  background: var(--ink);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.instruction-card {
+  padding: 16px;
+  border: 2px solid var(--edge);
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.instruction-card h3 {
+  font-size: 14px;
+  font-weight: 800;
+  margin-block-end: 8px;
+  color: #0f172a;
+}
+
+.instruction-card p {
+  font-size: 12px;
+  color: #64748b;
+  margin-block-end: 10px;
+}
+
+.code-command-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #38bdf8;
+}
+
+.code-command-box code {
+  font-family: monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.copy-cmd-btn {
+  align-self: flex-end;
+  font-size: 11px;
+  padding: 6px 12px;
+}
+
+.step-list {
+  padding-left: 20px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #334155;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-block-start: 20px;
+  padding-block-start: 14px;
+  border-top: 1px dashed #cbd5e1;
+}
+
+/* Complete RTL (Urdu, Arabic, Persian, Hebrew) Layout & Typography Polish */
+[dir="rtl"] .hero {
+  direction: rtl;
+  grid-template-columns: minmax(0, 0.68fr) minmax(0, 1.32fr) !important;
+  gap: clamp(18px, 2.2vw, 36px) !important;
+  /* Same reasoning as the LTR rule: clipping here cut the practice card off. */
+  overflow: visible !important;
+}
+
+[dir="rtl"] .hero-copy {
+  text-align: right;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+[dir="rtl"] .hero h1 {
+  font-size: clamp(1.75rem, 3.2vw, 3.0rem) !important;
+  line-height: 1.28 !important;
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+[dir="rtl"] .hero h1 span {
+  display: inline-block !important;
+  white-space: nowrap !important;
+  direction: rtl !important;
+}
+
+[dir="rtl"] .headline-accent {
+  display: inline-block !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  direction: rtl !important;
+  max-width: 100%;
+  padding: 0 16px 4px 6px !important;
+  box-decoration-break: clone !important;
+  -webkit-box-decoration-break: clone !important;
+}
+
+[dir="rtl"] .practice-stage {
+  direction: ltr; /* Keeps practice card input & keyboard map standard for Korean typing */
+}
+
+/* Unified Global Core Typography for Hero Section (All 33 Languages) */
+.hero h1 {
+  font-size: clamp(1.6rem, 3.0vw, 2.9rem) !important;
+  line-height: 1.3 !important;
+  /* `break-word` on a headline authorises cutting a word in half. Headlines wrap
+     at spaces and balance their lines instead. */
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  text-wrap: balance;
+}
+
+.headline-accent {
+  display: inline-block !important;
+  box-decoration-break: clone !important;
+  -webkit-box-decoration-break: clone !important;
+  padding: 0 12px 4px 6px !important;
+  border-radius: 4px !important;
+}
+
+.shortcut-tip {
+  font-size: 11px;
+  color: #64748b;
+}
+
+@keyframes modal-fade-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.footer-link-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  opacity: 0.8;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.footer-link-btn:hover {
+  opacity: 1;
+  color: #58a6ff;
+}
+
+/* ==========================================================================
+   DARK THEME — generated surface adaptations
+   Every rule below mirrors a light-theme rule that paints a literal off-white
+   or near-black. Rather than inverting them, each colour is re-derived on the
+   dark surface: neutrals map onto the surface ramp, and tinted panels are
+   rebuilt as the same brand hue mixed into --paper, so a pale lime card stays
+   recognisably lime instead of turning grey. Hand-tuned rules in the "Seoul
+   night" block below intentionally override these.
+   ========================================================================== */
+:where(html[data-theme="dark"]) .speech-toggle-track {
+  background: var(--surface-3);
+}
+
+:where(html[data-theme="dark"]) .voice-picker > span:first-child {
+  background: color-mix(in srgb, var(--purple) 10%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .curriculum-progress li {
+  background: color-mix(in srgb, var(--yellow) 10%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .curriculum-progress li.done {
+  color: color-mix(in srgb, var(--lime) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .hero-description {
+  color: var(--muted);
+}
+
+:where(html[data-theme="dark"]) .target-sentence .incorrect {
+  color: color-mix(in srgb, var(--pink) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .typing-feedback.complete,
+:where(html[data-theme="dark"]) .form-message.success {
+  color: color-mix(in srgb, var(--cyan) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .lesson-evaluation.rejected {
+  background: color-mix(in srgb, var(--pink) 10%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .lesson-evaluation dl div {
+  background: color-mix(in srgb, var(--paper) 68%, transparent);
+}
+
+:where(html[data-theme="dark"]) .inline-sound-control span {
+  background: var(--surface-3);
+}
+
+:where(html[data-theme="dark"]) .keyboard-row kbd small {
+  color: color-mix(in srgb, var(--cyan) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .hand-press-layer::after {
+  background: linear-gradient(180deg, rgba(255, 77, 141, .58), color-mix(in srgb, color-mix(in srgb, var(--yellow) 32%, var(--paper)) 48%, transparent));
+}
+
+:where(html[data-theme="dark"]) .practice-pause-banner {
+  background: color-mix(in srgb, color-mix(in srgb, var(--purple) 10%, var(--paper)) 96%, transparent);
+}
+
+:where(html[data-theme="dark"]) .activity-card.stripe {
+  background: repeating-linear-gradient(130deg, color-mix(in srgb, var(--pink) 10%, var(--paper)) 0 18px, color-mix(in srgb, var(--yellow) 18%, var(--paper)) 18px 36px);
+}
+
+:where(html[data-theme="dark"]) .activity-card.sunset {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--yellow) 14%, var(--paper)), color-mix(in srgb, var(--pink) 12%, var(--paper)) 54%, color-mix(in srgb, var(--purple) 11%, var(--paper)));
+}
+
+:where(html[data-theme="dark"]) .google-signin-status.error {
+  color: color-mix(in srgb, var(--pink) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .analytics-cloudflare {
+  color: color-mix(in srgb, var(--yellow) 82%, white);
+  background: color-mix(in srgb, var(--yellow) 32%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .analytics-clarity {
+  color: color-mix(in srgb, var(--purple) 82%, white);
+  background: color-mix(in srgb, var(--cyan) 32%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .word-rain-board {
+  background: radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--paper) 95%, transparent) 0 3px, transparent 4px),
+    linear-gradient(180deg, color-mix(in srgb, var(--cyan) 32%, var(--paper)) 0%, color-mix(in srgb, var(--cyan) 13%, var(--paper)) 64%, color-mix(in srgb, var(--yellow) 15%, var(--paper)) 82%);
+}
+
+:where(html[data-theme="dark"]) .sky-cloud {
+  background: color-mix(in srgb, var(--paper) 72%, transparent);
+}
+
+:where(html[data-theme="dark"]) .rain-word small {
+  color: color-mix(in srgb, var(--yellow) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .sea-water {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cyan) 32%, var(--paper)), #286bce);
+}
+
+:where(html[data-theme="dark"]) .sea-water i {
+  background: color-mix(in srgb, var(--cyan) 32%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .game-scorebar span {
+  background: color-mix(in srgb, var(--purple) 10%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .word-rain-console input.input-error {
+  background: color-mix(in srgb, var(--pink) 10%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .puzzle-progress {
+  background: color-mix(in srgb, var(--yellow) 13%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .missing-word span {
+  background: color-mix(in srgb, var(--purple) 10%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .crossword-block {
+  background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--paper) 6%, transparent) 0 2px, transparent 3px),
+    #262623;
+}
+
+:where(html[data-theme="dark"]) .crossword-cell.active-word {
+  background: color-mix(in srgb, var(--yellow) 21%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .crossword-cell.wrong {
+  background: color-mix(in srgb, var(--pink) 11%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .crossword-status {
+  background: color-mix(in srgb, var(--paper) 58%, transparent);
+}
+
+:where(html[data-theme="dark"]) .crossword-status.incomplete {
+  background: color-mix(in srgb, var(--yellow) 14%, var(--paper));
+  color: color-mix(in srgb, var(--yellow) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .crossword-status.wrong {
+  background: color-mix(in srgb, var(--pink) 10%, var(--paper));
+  color: color-mix(in srgb, var(--pink) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .crossword-status.solved {
+  background: color-mix(in srgb, var(--lime) 14%, var(--paper));
+  color: color-mix(in srgb, var(--lime) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .crossword-status.correct {
+  background: color-mix(in srgb, var(--lime) 14%, var(--paper));
+  color: color-mix(in srgb, var(--lime) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .crossword-word-entry input {
+  background: var(--paper);
+}
+
+:where(html[data-theme="dark"]) .crossword-word-entry.correct input {
+  background: color-mix(in srgb, var(--lime) 13%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .crossword-clues button {
+  background: color-mix(in srgb, var(--paper) 68%, transparent);
+}
+
+:where(html[data-theme="dark"]) .crossword-clues button.active {
+  background: color-mix(in srgb, var(--purple) 10%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .kpop-passage blockquote {
+  background: color-mix(in srgb, var(--purple) 10%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .kpop-live-card textarea {
+  background: var(--paper);
+}
+
+:where(html[data-theme="dark"]) .scene-result .complete {
+  color: color-mix(in srgb, var(--cyan) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .travel-scene {
+  background: radial-gradient(circle at 82% 18%, color-mix(in srgb, color-mix(in srgb, var(--lime) 32%, var(--paper)) 82%, transparent) 0 54px, transparent 55px),
+    linear-gradient(145deg, color-mix(in srgb, var(--yellow) 23%, var(--paper)), color-mix(in srgb, var(--yellow) 22%, var(--paper)) 52%, color-mix(in srgb, var(--cyan) 28%, var(--paper)));
+}
+
+:where(html[data-theme="dark"]) .travel-scene > p {
+  color: var(--muted) !important;
+}
+
+:where(html[data-theme="dark"]) .level-track li {
+  background: color-mix(in srgb, color-mix(in srgb, var(--yellow) 10%, var(--paper)) 70%, transparent);
+}
+
+:where(html[data-theme="dark"]) .level-track li.done {
+  background: color-mix(in srgb, var(--lime) 11%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .level-track li.current {
+  background: color-mix(in srgb, var(--purple) 10%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .level-track li.reward {
+  background: repeating-linear-gradient(130deg, color-mix(in srgb, var(--pink) 10%, var(--paper)) 0 12px, color-mix(in srgb, var(--yellow) 18%, var(--paper)) 12px 24px);
+}
+
+:where(html[data-theme="dark"]) .legal-section > p,
+:where(html[data-theme="dark"]) .legal-section li {
+  color: var(--muted);
+}
+
+:where(html[data-theme="dark"]) .launch-gate {
+  background: color-mix(in srgb, var(--yellow) 17%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .launch-checklist span {
+  background: color-mix(in srgb, var(--paper) 65%, transparent);
+}
+
+:where(html[data-theme="dark"]) .lesson-summary-row span {
+  background: color-mix(in srgb, var(--yellow) 10%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .week-rhythm i {
+  background: color-mix(in srgb, var(--yellow) 10%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .badge-list > div,
+:where(html[data-theme="dark"]) .empty-reward {
+  background: color-mix(in srgb, var(--yellow) 10%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .admin-audio-hint {
+  background: color-mix(in srgb, var(--cyan) 10%, var(--paper));
+  color: color-mix(in srgb, var(--cyan) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .publish-control.ready {
+  background: color-mix(in srgb, var(--lime) 16%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .publish-control.blocked {
+  background: color-mix(in srgb, var(--yellow) 10%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .admin-item-list article {
+  background: color-mix(in srgb, var(--yellow) 10%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .admin-item-list article.selected {
+  background: color-mix(in srgb, var(--purple) 10%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .admin-item-main em.draft {
+  background: var(--surface-3);
+}
+
+:where(html[data-theme="dark"]) .admin-delete {
+  color: color-mix(in srgb, var(--pink) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .practice-coach-message {
+  background: color-mix(in srgb, var(--yellow) 14%, var(--paper));
+  color: color-mix(in srgb, var(--yellow) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .mastery-choice-card::after {
+  background: conic-gradient(from 45deg, transparent 0 9%, color-mix(in srgb, var(--paper) 35%, transparent) 9% 11%, transparent 11% 24%);
+}
+
+:where(html[data-theme="dark"]) .mastery-copy p {
+  color: var(--muted);
+}
+
+:where(html[data-theme="dark"]) .mastery-metrics span {
+  background: color-mix(in srgb, var(--paper) 50%, transparent);
+}
+
+:where(html[data-theme="dark"]) .mastery-actions kbd,
+:where(html[data-theme="dark"]) .word-rain-console .button kbd,
+:where(html[data-theme="dark"]) .crossword-actions kbd {
+  background: color-mix(in srgb, var(--paper) 14%, transparent);
+}
+
+:where(html[data-theme="dark"]) .word-rain-board {
+  background: radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--paper) 95%, transparent) 0 2px, transparent 3px),
+    radial-gradient(circle at 76% 10%, color-mix(in srgb, var(--paper) 70%, transparent) 0 1px, transparent 2px),
+    linear-gradient(180deg, #604ccc 0%, #736bdc 24%, color-mix(in srgb, var(--cyan) 32%, var(--paper)) 63%, color-mix(in srgb, var(--yellow) 23%, var(--paper)) 83%);
+}
+
+:where(html[data-theme="dark"]) .word-rain-level {
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
+}
+
+:where(html[data-theme="dark"]) .word-rain-lives {
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
+}
+
+:where(html[data-theme="dark"]) .rain-word {
+  background: color-mix(in srgb, var(--yellow) 14%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .rain-word > i {
+  background: color-mix(in srgb, var(--paper) 50%, transparent);
+}
+
+:where(html[data-theme="dark"]) .game-curtain kbd {
+  background: var(--paper);
+}
+
+:where(html[data-theme="dark"]) .wave-progress {
+  background: color-mix(in srgb, var(--yellow) 13%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .word-rain-game {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--paper) 4%, transparent) 25%, transparent 25%) 0 0 / 18px 18px,
+    #17142c;
+}
+
+:where(html[data-theme="dark"]) .word-rain-board {
+  background: radial-gradient(circle at 50% 118%, color-mix(in srgb, color-mix(in srgb, var(--cyan) 32%, var(--paper)) 34%, transparent), transparent 46%),
+    radial-gradient(circle at 12% 18%, rgb(255 53 174 / .19), transparent 26%),
+    linear-gradient(180deg, #100d2d 0%, #1d1753 52%, #123c65 82%, #0a172c 100%);
+}
+
+:where(html[data-theme="dark"]) .pixel-stars i {
+  background: color-mix(in srgb, var(--cyan) 15%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .shield-meter {
+  background: color-mix(in srgb, var(--paper) 16%, transparent);
+}
+
+:where(html[data-theme="dark"]) .shield-meter i {
+  background: linear-gradient(90deg, #ff5c90, color-mix(in srgb, var(--lime) 32%, var(--paper)), color-mix(in srgb, var(--cyan) 32%, var(--paper)));
+}
+
+:where(html[data-theme="dark"]) .threat-alert i {
+  background: color-mix(in srgb, var(--cyan) 32%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .rain-word {
+  background: linear-gradient(90deg, transparent 0 8%, color-mix(in srgb, var(--paper) 8%, transparent) 9% 15%, transparent 16%),
+    linear-gradient(180deg, rgb(40 46 100 / .98), rgb(10 12 40 / .99));
+}
+
+:where(html[data-theme="dark"]) .rain-word .word-tether {
+  background: linear-gradient(180deg, transparent, #ff4fb3 42%, color-mix(in srgb, var(--lime) 31%, var(--paper)) 88%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .missile-plume::before {
+  background: linear-gradient(180deg, var(--paper), color-mix(in srgb, var(--lime) 32%, var(--paper)) 28%, #ff6b32 60%, transparent);
+}
+
+:where(html[data-theme="dark"]) .missile-plume i {
+  background: linear-gradient(transparent, color-mix(in srgb, var(--cyan) 32%, var(--paper)));
+}
+
+:where(html[data-theme="dark"]) .rain-word.targeted {
+  border-color: color-mix(in srgb, var(--lime) 32%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .rain-word.critical.targeted {
+  border-color: color-mix(in srgb, var(--lime) 32%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .defense-grid {
+  background: repeating-linear-gradient(90deg, transparent 0 47px, color-mix(in srgb, var(--cyan) 32%, var(--paper)) 48px 49px),
+    repeating-linear-gradient(0deg, transparent 0 22px, color-mix(in srgb, var(--cyan) 32%, var(--paper)) 23px 24px);
+}
+
+:where(html[data-theme="dark"]) .neon-city > span {
+  background: repeating-linear-gradient(90deg, transparent 0 8px, color-mix(in srgb, color-mix(in srgb, var(--cyan) 32%, var(--paper)) 16%, transparent) 9px 10px),
+    repeating-linear-gradient(180deg, transparent 0 10px, color-mix(in srgb, var(--yellow) 32%, var(--paper)) 11px 13px),
+    linear-gradient(90deg, #0b1532, #1b3970 52%, #081128);
+}
+
+:where(html[data-theme="dark"]) .city-damage-layer i {
+  background: radial-gradient(circle at 50% 76%, color-mix(in srgb, var(--yellow) 23%, var(--paper)) 0 16%, #ff7b2d 17% 45%, #ff315b 46% 64%, transparent 65%);
+}
+
+:where(html[data-theme="dark"]) .city-smoke i {
+  background: radial-gradient(circle at 38% 43%, color-mix(in srgb, color-mix(in srgb, var(--purple) 16%, var(--paper)) 68%, transparent), rgb(58 61 78 / .74) 54%, transparent 69%);
+}
+
+:where(html[data-theme="dark"]) .word-rain-board .sea-water {
+  background: linear-gradient(180deg, color-mix(in srgb, color-mix(in srgb, var(--cyan) 32%, var(--paper)) 68%, transparent), rgb(18 53 119 / .93));
+}
+
+:where(html[data-theme="dark"]) .word-rain-board .sea-water i {
+  background: color-mix(in srgb, var(--cyan) 32%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .capture-burst::after {
+  border-color: color-mix(in srgb, var(--cyan) 32%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .blast-core {
+  background: radial-gradient(circle, var(--paper) 0 13%, color-mix(in srgb, var(--lime) 31%, var(--paper)) 14% 27%, #ff9d31 28% 48%, #ff376e 49% 66%, transparent 68%);
+}
+
+:where(html[data-theme="dark"]) .blast-smoke i {
+  background: radial-gradient(circle at 38% 34%, var(--surface-3), #5e5d72 58%, transparent 70%);
+}
+
+:where(html[data-theme="dark"]) .capture-burst > i {
+  background: linear-gradient(var(--paper), #ff5ec7, transparent);
+}
+
+:where(html[data-theme="dark"]) .mission-briefing {
+  background: linear-gradient(rgb(12 10 39 / .88), rgb(8 11 31 / .94)),
+    repeating-linear-gradient(90deg, transparent 0 28px, color-mix(in srgb, color-mix(in srgb, var(--cyan) 32%, var(--paper)) 8%, transparent) 29px 30px);
+}
+
+:where(html[data-theme="dark"]) .mission-emblem {
+  background: color-mix(in srgb, color-mix(in srgb, var(--cyan) 32%, var(--paper)) 8%, transparent);
+}
+
+:where(html[data-theme="dark"]) .mission-rules span {
+  background: color-mix(in srgb, color-mix(in srgb, var(--cyan) 32%, var(--paper)) 6%, transparent);
+}
+
+:where(html[data-theme="dark"]) .mission-start kbd,
+:where(html[data-theme="dark"]) .mission-console-head kbd {
+  background: color-mix(in srgb, var(--paper) 8%, transparent);
+}
+
+:where(html[data-theme="dark"]) .word-rain-console {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--paper) 4%, transparent), transparent 42%),
+    #211c3a;
+}
+
+:where(html[data-theme="dark"]) .mission-console-head > span i {
+  background: color-mix(in srgb, var(--lime) 32%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .word-rain-console .wave-progress > span {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 32%, var(--paper)), #8d63ff, #ff5ec7);
+}
+
+:where(html[data-theme="dark"]) .word-rain-console .inline-form input {
+  border-color: color-mix(in srgb, var(--cyan) 32%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .word-rain-console .inline-form .button {
+  background: color-mix(in srgb, var(--lime) 32%, var(--paper));
+  color: color-mix(in srgb, var(--purple) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .form-message.error {
+  color: color-mix(in srgb, var(--pink) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .puzzle-head > div span {
+  background: color-mix(in srgb, var(--paper) 70%, transparent);
+}
+
+:where(html[data-theme="dark"]) .missing-level-track::before {
+  background: var(--surface-3);
+}
+
+:where(html[data-theme="dark"]) .missing-level-track > span {
+  background: color-mix(in srgb, var(--yellow) 13%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .missing-word span {
+  background: color-mix(in srgb, var(--purple) 10%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .number-finger-guide > div > span {
+  background: var(--paper);
+}
+
+:where(html[data-theme="dark"]) .finger-tip {
+  background: color-mix(in srgb, currentColor 22%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .finger-tip.ring {
+  color: color-mix(in srgb, var(--purple) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .finger-tip.middle {
+  color: color-mix(in srgb, var(--cyan) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .crossword-clues button.solved {
+  background: color-mix(in srgb, var(--lime) 13%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .crossword-complete-stamp {
+  background: color-mix(in srgb, color-mix(in srgb, var(--lime) 14%, var(--paper)) 90%, transparent);
+  color: color-mix(in srgb, var(--lime) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .mastery-map-card {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--yellow) 10%, var(--paper)), color-mix(in srgb, var(--purple) 10%, var(--paper)));
+}
+
+:where(html[data-theme="dark"]) .mastery-map-list > div {
+  background: color-mix(in srgb, var(--paper) 68%, transparent);
+}
+
+:where(html[data-theme="dark"]) .mastery-map-list > div.current {
+  background: color-mix(in srgb, var(--yellow) 20%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .mastery-map-list > div.done {
+  background: color-mix(in srgb, var(--lime) 12%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .mastery-map-list i {
+  background: color-mix(in srgb, var(--yellow) 13%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .insight-card {
+  background: radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--paper) 55%, transparent), transparent 22%),
+    linear-gradient(145deg, color-mix(in srgb, var(--cyan) 32%, var(--paper)), color-mix(in srgb, var(--lime) 32%, var(--paper)));
+}
+
+:where(html[data-theme="dark"]) .accuracy-dial::before {
+  background: color-mix(in srgb, var(--lime) 10%, var(--paper));
+}
+
+:where(html[data-theme="dark"]) .insight-status > span {
+  background: color-mix(in srgb, var(--paper) 48%, transparent);
+}
+
+:where(html[data-theme="dark"]) .social-btn {
+  background: var(--paper);
+  color: color-mix(in srgb, var(--purple) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .social-btn.btn-kakao {
+  background: color-mix(in srgb, var(--yellow) 32%, var(--paper));
+  color: var(--ink);
+}
+
+:where(html[data-theme="dark"]) .social-btn.btn-copy {
+  background: color-mix(in srgb, var(--cyan) 10%, var(--paper));
+  color: color-mix(in srgb, var(--purple) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .modal-close-btn {
+  background: var(--paper);
+}
+
+:where(html[data-theme="dark"]) .modal-intro {
+  color: color-mix(in srgb, var(--purple) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .os-tab-selector button {
+  background: var(--paper);
+}
+
+:where(html[data-theme="dark"]) .instruction-card {
+  background: var(--paper);
+}
+
+:where(html[data-theme="dark"]) .instruction-card h3 {
+  color: color-mix(in srgb, var(--purple) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .instruction-card p {
+  color: color-mix(in srgb, var(--purple) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .step-list {
+  color: color-mix(in srgb, var(--purple) 82%, white);
+}
+
+:where(html[data-theme="dark"]) .shortcut-tip {
+  color: color-mix(in srgb, var(--purple) 82%, white);
+}
+
+/* ==========================================================================
+   Sign-up funnel, owner member insights, and the desktop-only notice
+   ========================================================================== */
+
+/* ---- Hero call to action -------------------------------------------------
+   One dominant action for signed-out visitors, with the reason to take it
+   sitting directly above the button rather than buried in the feature list. */
+.signup-cta {
+  display: grid;
+  gap: 9px;
+  justify-items: start;
+  max-width: 34rem;
+  margin-block: 18px 4px;
+  padding: 16px 18px;
+  border: 2.5px solid var(--edge);
+  border-radius: 20px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--lime) 34%, var(--paper)), var(--paper));
+  box-shadow: 6px 6px 0 var(--shadow-ink);
+}
+
+.signup-cta-value {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.signup-cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 14px 26px;
+  border: 2.5px solid var(--edge);
+  border-radius: 999px;
+  /* Fixed rather than var(--purple): the dark-theme purple is lightened for
+     legibility on dark surfaces, which drops white-on-purple below 4.5:1 when
+     it is used as a solid fill. */
+  background: #6032e6;
+  color: #ffffff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 var(--shadow-ink);
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+
+.signup-cta-button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--shadow-ink);
+}
+
+.signup-cta-button:active {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 var(--shadow-ink);
+}
+
+.signup-cta-sub {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ---- Sign-up modal ------------------------------------------------------- */
+.signup-overlay,
+.members-overlay,
+.desktop-notice-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  overflow-y: auto;
+  background: rgb(4 6 13 / 0.62);
+  backdrop-filter: blur(4px);
+}
+
+.signup-modal,
+.members-modal,
+.desktop-notice {
+  position: relative;
+  width: min(100%, 30rem);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding: 26px 24px 22px;
+  border: 3px solid var(--edge);
+  border-radius: 24px;
+  background: var(--paper);
+  box-shadow: 8px 8px 0 var(--shadow-ink);
+  text-align: center;
+}
+
+.members-modal {
+  width: min(100%, 34rem);
+  text-align: start;
+}
+
+.signup-modal h2,
+.desktop-notice h2 {
+  margin: 12px 0 8px;
+  font-size: clamp(19px, 2.4vw, 24px);
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.signup-modal-value,
+.desktop-notice p {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.55;
+}
+
+.signup-modal-note {
+  display: block;
+  margin-block-start: 14px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.signup-close {
+  position: absolute;
+  inset-block-start: 10px;
+  inset-inline-end: 12px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.signup-close:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+/* ---- Learner / teacher choice -------------------------------------------
+   Asked once, at sign-up, because the two roles get different dashboards. */
+.signup-role {
+  margin: 16px 0 6px;
+  padding: 0;
+  border: 0;
+  text-align: start;
+}
+
+.signup-role legend {
+  padding: 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.signup-role-options {
+  display: grid;
+  gap: 8px;
+  margin-block-start: 8px;
+}
+
+.signup-role-options label {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 2px 10px;
+  padding: 10px 13px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+
+.signup-role-options label.selected {
+  border-color: var(--purple);
+  background: color-mix(in srgb, var(--purple) 12%, var(--paper));
+}
+
+.signup-role-options input {
+  grid-row: span 2;
+  accent-color: var(--purple);
+}
+
+.signup-role-options label > span {
+  grid-row: span 2;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.signup-role-options b {
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.signup-role-options small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+/* ---- In-game save nudge -------------------------------------------------
+   Intentionally small and dismissible: play first, sign in second. */
+.save-nudge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-inline-start: auto;
+  padding: 6px 8px 6px 12px;
+  border: 1.5px dashed var(--edge);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--yellow) 26%, var(--paper));
+}
+
+.save-nudge p {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.save-nudge-cta {
+  padding: 4px 11px;
+  border: 1.5px solid var(--edge);
+  border-radius: 999px;
+  background: var(--purple);
+  color: #ffffff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.save-nudge-close {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* ---- Desktop-only notice ------------------------------------------------- */
+.desktop-notice-icon {
+  font-size: 38px;
+  line-height: 1;
+}
+
+.desktop-notice-tip {
+  padding: 11px 13px;
+  border: 1.5px dashed var(--edge);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--cyan) 22%, var(--paper));
+  color: var(--ink);
+}
+
+.desktop-notice-actions {
+  display: grid;
+  gap: 9px;
+  margin-block-start: 18px;
+}
+
+.desktop-notice-never {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---- Owner member insights ----------------------------------------------- */
+.owner-members {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 2px solid var(--edge);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lime) 40%, var(--paper));
+  color: var(--on-accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--shadow-ink);
+}
+
+.owner-members b {
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.owner-members:hover {
+  filter: brightness(1.04);
+}
+
+.analytics-studio {
+  color: #3a2a00;
+  background: #ffe9a8;
+}
+
+.members-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 9px;
+  margin-block: 16px 20px;
+}
+
+.members-summary article {
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.members-summary article.members-teacher {
+  border-color: var(--purple);
+  background: color-mix(in srgb, var(--purple) 14%, var(--paper));
+}
+
+.members-summary small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.members-summary b {
+  font-size: 22px;
+  font-weight: 950;
+}
+
+.members-subhead {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.members-country-list {
+  display: grid;
+  gap: 6px;
+  max-height: 46vh;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.members-country-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 8rem) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 8px;
+  border-radius: 10px;
+}
+
+.members-country-list li:nth-child(odd) {
+  background: var(--surface-2);
+}
+
+.members-flag {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.members-country-name {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.members-bar {
+  overflow: hidden;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.members-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--purple), var(--cyan));
+}
+
+.members-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 12px;
+}
+
+.members-count b {
+  font-weight: 950;
+}
+
+.members-count em {
+  color: var(--purple);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.members-empty {
+  padding: 20px 0;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+:where(html[data-theme="dark"]) .analytics-studio {
+  color: color-mix(in srgb, var(--yellow) 82%, white);
+  background: color-mix(in srgb, var(--yellow) 26%, var(--paper));
+}
+
+@media (max-width: 640px) {
+  .members-country-list li {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .members-bar {
+    display: none;
+  }
+
+  .signup-cta-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.greeting-original {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.save-nudge-cta,
+.crossword-word-entry input,
+.signup-role-options label {
+  min-width: 0;
+}
+
+/* Long words in Arabic, Thai, Sinhala, and Tamil overflow small chips that were
+   sized for Latin text. Let them wrap instead of being sheared off. */
+.curriculum-progress li button b,
+.theme-chip b,
+.practice-track-picker button,
+.trust-row span {
+  overflow-wrap: normal;
+  white-space: normal;
+}
+
+
+/* ---- "Also by the same maker" note ---------------------------------------
+   Deliberately quiet: a hairline rule and small type, so it reads as a footnote
+   about the maker's other work rather than as an ad slot. */
+.sister-promo {
+  width: min(1180px, 100% - 32px);
+  margin: 0 auto 24px;
+  padding-block-start: 20px;
+  border-block-start: 1px solid var(--line);
+}
+
+.sister-promo-eyebrow {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.sister-promo-body {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.sister-promo-logo {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 9px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.22);
+}
+
+.sister-promo-body > p {
+  display: grid;
+  gap: 1px;
+  flex: 1 1 18rem;
+  min-width: 0;
+  margin: 0;
+}
+
+.sister-promo-body b {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.sister-promo-body span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.sister-promo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  padding: 7px 15px;
+  border: 1.5px solid var(--edge);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  transition: background 0.14s ease;
+}
+
+.sister-promo-link:hover {
+  background: var(--surface-2);
+}
+
+.sister-promo-link span {
+  color: inherit;
+  font-size: 12px;
+}
+
+@media (max-width: 720px) {
+  .sister-promo-link {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+
+/* Elements that sit inside an accent-filled card but paint their own dark
+   surface. They inherit --on-accent from the card, which on their own dark
+   background is invisible — they need the normal light text instead. */
+html[data-theme="dark"] .next-key-jamo,
+html[data-theme="dark"] .next-key-copy kbd,
+html[data-theme="dark"] .next-key-card kbd,
+html[data-theme="dark"] .activity-card.stripe .activity-number,
+html[data-theme="dark"] .activity-card.sunset .activity-number {
+  color: var(--ink);
+}
+
+/* ==========================================================================
+   Header density and the practice card's choice row
+   ========================================================================== */
+
+/* ---- Nav labels ---------------------------------------------------------
+   These are single words in Korean but two or three in most other languages
+   ("Mein Fortschritt", "Meu progresso"). They must never wrap: a wrapped link
+   grows the whole 88px bar and shunts the tools into the nav. */
+.nav-links {
+  gap: clamp(16px, 1.8vw, 30px);
+  white-space: nowrap;
+}
+
+.nav-links a,
+.nav-links button {
+  white-space: nowrap;
+}
+
+/* ---- Audio cluster ------------------------------------------------------
+   Was 522px wide, which left the nav only 171px and forced the wrapping. The
+   toggle already shows its state visually, so the written "On/Off" line is
+   redundant; and the two <select>s were sized by their longest option rather
+   than by what is actually displayed. */
+.audio-control-cluster .speech-toggle {
+  padding: 6px 8px;
+  gap: 6px;
+}
+
+/* `8.5ch` is ~62px — eight Latin characters. "Voz automática",
+   "Automatyczna wymowa" and "தானியங்கி ஒலி" are all far longer, and because this
+   box let its content overflow, the caption painted up to 70px outside the
+   switch. The cap stays (the header has no room for the full caption) but the
+   box now clips, so the ellipsis on `b` is what the reader sees. */
+.audio-control-cluster .speech-toggle-copy {
+  min-width: 0;
+  max-width: 8.5ch;
+  overflow: hidden;
+}
+
+.audio-control-cluster .speech-toggle-copy b {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The label wraps the switch and the caption; without this the caption could
+   still paint past the label even once the copy box clips. */
+.audio-control-cluster .speech-toggle {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* The switch itself already communicates on/off. */
+.audio-control-cluster .speech-toggle-copy small {
+  display: none;
+}
+
+.audio-control-cluster .speech-toggle-track {
+  width: 32px;
+  height: 19px;
+}
+
+.audio-control-cluster .speech-toggle-track i {
+  inset-block-start: 2.5px;
+  width: 12px;
+  height: 12px;
+}
+
+.audio-control-cluster .speech-toggle input:checked + .speech-toggle-track i {
+  transform: translateX(12px);
+}
+
+[dir="rtl"] .audio-control-cluster .speech-toggle input:checked + .speech-toggle-track i {
+  transform: translateX(-12px);
+}
+
+/* A <select> takes the width of its widest option unless told otherwise. The
+   ♀/♂ glyph beside it already says which voice is selected. */
+.voice-picker select {
+  width: 4.5ch;
+  min-width: 0;
+  padding-inline: 2px;
+  text-overflow: ellipsis;
+}
+
+.voice-picker {
+  gap: 4px;
+  padding-inline: 8px;
+}
+
+/* ---- Language picker ----------------------------------------------------
+   Same widest-option problem, made worse by 33 options including
+   "Português (Brasil)". */
+.language-picker {
+  max-width: 8.5rem;
+}
+
+.language-picker select {
+  width: 100%;
+  min-width: 0;
+  text-overflow: ellipsis;
+}
+
+/* Keep the bar from ever growing a second row. */
+/* The header was `grid-template-columns: auto minmax(0, 1fr) auto`, so the nav
+   was the only column that could shrink — and `.nav-links` is a centered
+   `nowrap` flex row, which does not shrink but overflows *both* edges instead.
+   Measured in Tamil at 1920px: the nav needed 435px in a 373px column, so the
+   first link painted 62px left over the brand ("Seoul Keysக") and the last one
+   62px right, under the audio cluster. The three groups need 1541px against a
+   1480px bar — one line is 61px short, so no column width can fix it.
+
+   Flex with `wrap` sizes from content instead: `min-width: max-content` means
+   the nav can never be narrower than its links, and when the three groups no
+   longer fit, the tools drop to a second row rather than overlapping. Korean
+   still needs ~1406px, so it keeps the single row. */
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 8px;
+}
+
+.topbar > .brand,
+.topbar > .header-tools {
+  flex: 0 0 auto;
+}
+
+.topbar > .nav-links {
+  flex: 1 1 auto;
+  min-width: max-content;
+  justify-content: center;
+}
+
+.header-tools {
+  flex-wrap: nowrap;
+}
+
+/* Below this the header stacks anyway, so the compact treatment can relax. */
+@media (max-width: 900px) {
+  .language-picker {
+    max-width: none;
+  }
+}
+
+/* ---- Practice card: concept + track on one line -------------------------
+   Same row, but visibly two groups: the concept chips keep their outlined
+   pill look, the track buttons stay small and flat, and a divider separates
+   them so the shared row never reads as one long list of controls. */
+.practice-choice-row {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-block-start: 8px;
+}
+
+.practice-choice-row .theme-picker,
+.practice-choice-row .practice-track-picker {
+  margin-block-start: 0;
+}
+
+.practice-choice-row .theme-picker {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.practice-choice-row .practice-track-picker {
+  position: relative;
+  flex: 0 0 auto;
+  padding-inline-start: 14px;
+}
+
+/* The divider only appears when the two groups actually sit side by side. */
+.practice-choice-row .practice-track-picker::before {
+  position: absolute;
+  inset-block: 3px;
+  inset-inline-start: 0;
+  width: 1px;
+  background: var(--line);
+  content: "";
+}
+
+@media (max-width: 700px) {
+  .practice-choice-row .practice-track-picker {
+    padding-inline-start: 0;
+  }
+
+  .practice-choice-row .practice-track-picker::before {
+    display: none;
+  }
+}
+
+/* ---- Fitting concept + track on a single line ---------------------------
+   In German the two groups needed 964px inside an 822px card. Both groups are
+   tightened, and inactive concept labels are capped with an ellipsis while the
+   selected one always shows in full, so the current choice is never truncated.
+   -------------------------------------------------------------------------- */
+.practice-choice-row .theme-chip {
+  gap: 4px;
+  padding: 4px 9px;
+}
+
+.practice-choice-row .theme-chip b {
+  display: block;
+  overflow: hidden;
+  max-width: 11ch;
+  font-size: 11px;
+  text-overflow: ellipsis;
+}
+
+.practice-choice-row .theme-chip.active b {
+  max-width: none;
+}
+
+.practice-choice-row .theme-chip .theme-chip-icon {
+  font-size: 13px;
+}
+
+.practice-choice-row .practice-track-picker button {
+  padding: 5px 9px;
+}
+
+.practice-choice-row .practice-track-picker > span,
+.practice-choice-row .theme-picker-label {
+  max-width: 7ch;
+  line-height: 1.15;
+}
+
+/* The concept group was set to grow, so it swallowed the whole row and pushed
+   the track group onto a second line. It should size to its content and let the
+   track group sit beside it. */
+.practice-choice-row .theme-picker {
+  flex: 0 1 auto;
+}
+
+.practice-choice-row {
+  gap: 6px 10px;
+}
+
+.practice-choice-row .theme-chip b {
+  max-width: 9ch;
+}
+
+/* ==========================================================================
+   CONTROL SCALE
+   Every interactive control in the header and the practice card was sized
+   independently, so heights ranged from 28px to 50px and font sizes from 9px to
+   14px on the same row. These tokens define the scale; the rules below apply it
+   so nothing is left to chance per component.
+   ========================================================================== */
+:root {
+  --control-h: 38px;      /* header controls */
+  --control-h-sm: 28px;   /* in-card chips and track buttons */
+  --control-radius: 12px;
+  --control-font: 12px;
+  --control-font-sm: 11px;
+  --control-pad-x: 12px;
+}
+
+/* ---- Header controls: one height, one radius, one type size ------------- */
+.header-tools {
+  gap: 8px;
+}
+
+.header-tools > .audio-control-cluster,
+.header-tools > .language-picker,
+.header-tools > .theme-toggle-btn,
+.header-tools > .keyboard-setup-btn,
+.header-tools > .button {
+  height: var(--control-h);
+  min-height: var(--control-h);
+  box-sizing: border-box;
+  border-radius: var(--control-radius);
+  font-size: var(--control-font);
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.header-tools > .language-picker,
+.header-tools > .theme-toggle-btn,
+.header-tools > .keyboard-setup-btn,
+.header-tools > .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 var(--control-pad-x);
+  border: 2px solid var(--edge);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 3px 0 var(--shadow-ink);
+}
+
+/* The keyboard button carried its own inline padding/radius/font. */
+.header-tools > .keyboard-setup-btn {
+  padding: 0 var(--control-pad-x) !important;
+  border-radius: var(--control-radius) !important;
+  font-size: var(--control-font) !important;
+}
+
+.header-tools > .audio-control-cluster > * {
+  min-height: 0;
+  height: 100%;
+}
+
+.header-tools > .language-picker::before {
+  content: "🌐";
+  font-size: 13px;
+  line-height: 1;
+}
+
+.header-tools > .language-picker select,
+.header-tools > .language-picker {
+  height: auto;
+}
+
+.header-tools > .language-picker select {
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--control-font);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.header-tools > .theme-toggle-btn:hover,
+.header-tools > .keyboard-setup-btn:hover,
+.header-tools > .language-picker:hover {
+  transform: none;
+  filter: brightness(0.97);
+}
+
+/* ---- Practice card: one line for the instruction ----------------------- */
+.practice-instruction {
+  overflow: visible;
+  max-width: 100%;
+  margin: 0;
+  letter-spacing: -0.03em;
+  line-height: 1.35;
+  white-space: normal;
+  word-break: keep-all;
+}
+
+/* ---- Group labels must never wrap -------------------------------------- */
+.practice-choice-row .theme-picker-label,
+.practice-choice-row .practice-track-picker > span {
+  max-width: none;
+  white-space: nowrap;
+}
+
+/* ---- In-card controls: one height, one type size ----------------------- */
+.practice-choice-row .theme-chip,
+.practice-choice-row .practice-track-picker button {
+  display: inline-flex;
+  height: var(--control-h-sm);
+  align-items: center;
+  box-sizing: border-box;
+  padding: 0 10px;
+  font-size: var(--control-font-sm);
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.practice-choice-row .theme-chip b,
+.practice-choice-row .practice-track-picker button {
+  font-size: var(--control-font-sm);
+}
+
+.practice-choice-row .theme-chip b {
+  max-width: 10ch;
+}
+
+.practice-choice-row .theme-chip.active b {
+  max-width: none;
+}
+
+/* Track buttons are flat and unshadowed so the row still reads as two groups
+   even though every control is now the same height. */
+.practice-choice-row .practice-track-picker button {
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+.practice-choice-row .practice-track-picker button.active {
+  box-shadow: 0 2px 0 var(--shadow-ink);
+}
+
+/* ---- Curriculum stage chips: uniform height, single line --------------- */
+.curriculum-progress li button {
+  min-height: 34px;
+  align-items: center;
+}
+
+.curriculum-progress li b {
+  -webkit-line-clamp: 2;
+  font-size: 9px;
+  line-height: 1.2;
+}
+
+@media (max-width: 900px) {
+  .header-tools > .audio-control-cluster,
+  .header-tools > .language-picker,
+  .header-tools > .theme-toggle-btn,
+  .header-tools > .keyboard-setup-btn,
+  .header-tools > .button {
+    height: auto;
+    min-height: var(--control-h);
+  }
+}
+
+/* The instruction never wraps (nowrap above). It also has to shrink rather than
+   ellipsise, so its size is tied to the card width via container units. FitText
+   then fine-tunes per language on top of this baseline. */
+.practice-card h2.practice-instruction {
+  font-size: clamp(13px, 2.45cqi, 26px);
+}
+
+/* Standard line-height and headline accent sizing for all languages */
+.hero h1 {
+  line-height: 1.35 !important;
+}
+
+/* ---- Instruction heading: one line, in every language --------------------
+   The heading is a full sentence, and the same sentence runs ~2.5x longer in
+   Tamil than in Korean. One font size cannot serve all of them, so the size is
+   set per script family against the card width (cqi). Measured longest strings
+   at an 820px card: Korean 485px @20px, German 638px, Russian 670px,
+   Tamil 882px — each tier below is chosen to keep the longest string inside.
+   -------------------------------------------------------------------------- */
+.practice-card h2.practice-instruction {
+  font-size: clamp(12px, 1.95cqi, 17px);
+}
+
+/* Korean, Japanese and Chinese pack far more meaning per character. */
+html[lang="ko"] .practice-card h2.practice-instruction,
+html[lang="ja"] .practice-card h2.practice-instruction,
+html[lang="zh-Hans"] .practice-card h2.practice-instruction,
+html[lang="zh-Hant"] .practice-card h2.practice-instruction {
+  font-size: clamp(15px, 2.45cqi, 26px);
+}
+
+/* Indic and South-East Asian scripts run longest of all. */
+html[lang="ta"] .practice-card h2.practice-instruction,
+html[lang="hi"] .practice-card h2.practice-instruction,
+html[lang="bn"] .practice-card h2.practice-instruction,
+html[lang="ne"] .practice-card h2.practice-instruction,
+html[lang="si"] .practice-card h2.practice-instruction,
+html[lang="km"] .practice-card h2.practice-instruction,
+html[lang="lo"] .practice-card h2.practice-instruction,
+html[lang="my"] .practice-card h2.practice-instruction,
+html[lang="th"] .practice-card h2.practice-instruction {
+  font-size: clamp(11px, 1.5cqi, 14px);
+}
+
+/* ---- Clean & Flawless Language Picker (No overlapping shape frames) ---- */
+.language-picker,
+.header-tools > .language-picker {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 0 28px 0 32px !important;
+  height: var(--control-h, 36px) !important;
+  min-height: var(--control-h, 36px) !important;
+  border: 2px solid var(--edge, #0f172a) !important;
+  border-radius: var(--control-radius, 999px) !important;
+  background: var(--paper, #ffffff) !important;
+  color: var(--ink, #0f172a) !important;
+  box-shadow: 0 3px 0 var(--shadow-ink, #0f172a) !important;
+  overflow: hidden !important;
+  max-width: 13rem !important;
+  box-sizing: border-box !important;
+}
+
+.language-picker::before,
+.header-tools > .language-picker::before {
+  position: absolute !important;
+  inset-inline-start: 10px !important;
+  inset-block-start: 50% !important;
+  transform: translateY(-50%) !important;
+  content: "🌐" !important;
+  font-size: 13px !important;
+  line-height: 1 !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+
+.language-picker::after,
+.header-tools > .language-picker::after {
+  position: absolute !important;
+  inset-inline-end: 10px !important;
+  inset-block-start: 50% !important;
+  transform: translateY(-50%) !important;
+  content: "▾" !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+  color: var(--ink, #0f172a) !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+
+.language-picker select,
+.header-tools > .language-picker select {
+  width: 100% !important;
+  height: 100% !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  font-family: inherit !important;
+  font-size: var(--control-font, 13px) !important;
+  font-weight: 800 !important;
+  color: var(--ink, #0f172a) !important;
+  cursor: pointer !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  z-index: 1 !important;
+  /* The header controls share `line-height: 1`, which is right for the buttons
+     but not for this one: a <select> clips its label to the line box, and at
+     12px that box is 12px tall while the font alone needs 17px. 21 of the 33
+     language names lost their descenders — only the CJK names looked intact,
+     because they have nothing below the baseline. 1.85 (≈22px) is the first
+     value at which no language clips, Burmese included; its ink runs deeper
+     than the font's own descent metric, so `normal` is not enough. The control
+     is 34px tall, so the taller line box changes no geometry. */
+  line-height: 1.85 !important;
+}
+
+/* This used to force `color: #0f172a` — near-black — while the background came
+   from `--paper`, which is #0e0f13 in dark mode. Black on black: the whole
+   language list was invisible. Colour is left to the theme rules above. */
+.language-picker select option {
+  font-weight: 700 !important;
+}
+
+/* ==========================================================================
+   Choice row: hard guarantees, not per-language tuning
+   Earlier attempts sized this by hand against German at 1440px, which is why
+   most other languages still wrapped to two lines and pushed text outside the
+   buttons. These rules hold in every language instead:
+     - the row never wraps
+     - each group may shrink and scroll rather than break the layout
+     - no text can escape its button
+   ========================================================================== */
+/* The row used to be forced to one line. That works in Korean, where both groups
+   are short, but everywhere else the two groups need ~1220px against an 887px
+   row, so the concept group was squeezed to 376px around 661px of chips: two of
+   the four concepts sat inside a scroller with `scrollbar-width: none`, i.e.
+   invisible and with nothing to suggest they existed. `wrap` keeps the single
+   line whenever both groups fit — Korean still gets one line — and drops the
+   track group to a second line only when the alternative is hiding buttons. */
+/* ==========================================================================
+   ELEGANT OUTSIDE LEARNING CONCEPT BAR & FULL UNTRUNCATED TEXT SYSTEM
+   ========================================================================== */
+
+/* 1. OUTSIDE CONCEPT BAR (LOCATED ABOVE PRACTICE CARD, EXPANDED & SPACIOUS) */
+.global-theme-bar {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  margin-bottom: 12px !important;
+  padding: 4px 0 !important;
+  box-sizing: border-box !important;
+  /* Was `overflow-x: auto` with the scrollbar hidden, which is what silently cut
+     the last chip off. The row wraps now, so there is nothing to scroll. */
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+.global-theme-bar::-webkit-scrollbar {
+  display: none !important;
+}
+
+.global-theme-bar .theme-picker-label {
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  color: var(--text-muted) !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+/* Measured in Portuguese at 1280px: the row has 686px of space and its four
+   chips plus gaps come to 703px — 17px short. The gap gives some of that back,
+   and `wrap` is the guarantee: when a language still cannot fit, the chips take
+   a second line instead of the last one being clipped away by the scroller. */
+.global-theme-bar .theme-picker-row {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 6px !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+}
+
+/* 2. CHIP BUTTONS: NO TRUNCATION (NO '...'), NO SPILLING OUTSIDE BUTTON
+   Sized down from 13px/6px-14px. Measured in Portuguese: the four chips came to
+   753px plus 24px of gaps against a 762px bar, so "Leitura e alfabetização" was
+   cut off at every width from 1280 to 1920. Solved by making the chip smaller
+   rather than by moving it — the row has to hold all four, whatever the language. */
+.theme-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 5px 11px !important;
+  border-radius: 999px !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  flex-shrink: 0 !important;
+  max-width: none !important;
+  /* Same undefined-token bug as .desktop-notice-bar below: these two !important
+     declarations were dropped at computed-value time, which left every unselected
+     chip transparent instead of the `var(--paper)` fill the base rule asks for. */
+  background: var(--paper) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--edge) !important;
+}
+
+.theme-chip b {
+  display: inline-block !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important; /* NO '...' TRUNCATION EVER */
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  line-height: 1.3 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: none !important;
+}
+
+/* 3. PRACTICE TRACK PICKER INSIDE CARD: SPACIOUS & NEAT */
+.practice-choice-row {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
+  margin-bottom: 16px !important;
+  box-sizing: border-box !important;
+}
+
+.practice-track-picker {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+}
+
+.practice-track-picker span {
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  color: #64748b !important;
+  white-space: nowrap !important;
+}
+
+.practice-track-picker button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 6px 16px !important;
+  border-radius: 999px !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important; /* NO '...' TRUNCATION EVER */
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  flex-shrink: 0 !important;
+  max-width: none !important;
+}
+
+/* ==========================================================================
+   PERFECT GLOBAL FIX: 33 LANGUAGES SINGLE-ROW TOPBAR & FIXED HERO DIRECTION
+   ========================================================================== */
+
+/* ==========================================================================
+   PERFECT GLOBAL FIX: 33 LANGUAGES RESPONSIVE CONTAINERS & MEDIA QUERIES
+   ========================================================================== */
+
+/* DESKTOP & LARGE SCREENS (901px+) */
+@media (min-width: 901px) {
+  header,
+  .topbar,
+  html[dir="rtl"] header,
+  html[dir="rtl"] .topbar,
+  body[dir="rtl"] .topbar {
+    direction: ltr !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    column-gap: clamp(8px, 1.5vw, 24px) !important;
+    row-gap: 0 !important;
+    width: 100% !important;
+    max-width: 1280px !important;
+    margin-inline: auto !important;
+    box-sizing: border-box !important;
+    padding-inline: 24px !important;
+    /* `overflow: hidden` used to live here. It did not make the header fit — it
+       just clipped whatever did not, so in 11 languages the nav links were cut
+       off mid-word and the brand sat under them. Overflow has to be solved by
+       letting the row wrap (see the 901px block below), never by hiding it. */
+  }
+
+  .hero,
+  html[dir="rtl"] .hero,
+  body[dir="rtl"] .hero {
+    direction: ltr !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr) !important;
+    align-items: center !important;
+    gap: clamp(20px, 3vw, 48px) !important;
+    min-height: calc(100svh - var(--chrome-h)) !important;
+    padding-block: 14px 22px !important;
+    padding-inline: 24px !important;
+    /* Same reason, and this one previously sheared the bottom off the practice
+       card on short viewports instead of letting the page scroll. */
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: 1280px !important;
+    margin-inline: auto !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* TABLET & MOBILE SCREENS (900px & BELOW) */
+/* ==========================================================================
+   PERFECT MASTER SYSTEM: ADSENSE SIDE MARGINS & ISOLATED NOTICE BAR
+   ========================================================================== */
+
+/* 1. TOP NOTICE BAR (COMPLETELY ISOLATED, NEVER INVADES HERO OR PRACTICE STAGE) */
+.desktop-notice-bar {
+  width: 100% !important;
+  max-width: 1400px !important;
+  margin: 12px auto 0 !important;
+  padding: 6px 16px !important;
+  text-align: center !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  /* --text-base / --bg-alt were never defined anywhere, so both declarations were
+     invalid at computed-value time: the colour fell back to inherited and the
+     background to transparent — and because they carry !important, they beat the
+     valid theme rules above them. Pointed at the real tokens. */
+  color: var(--ink) !important;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--edge) !important;
+  border-radius: 999px !important;
+  box-sizing: border-box !important;
+  line-height: 1.6 !important;
+}
+
+/* The "report a problem" link that closes the notice. Chrome blockifies buttons to
+   inline-block whatever `display` asks for, so the sentence cannot share a line with
+   the text before it — but the box shrinks to fit and wraps its own text at spaces,
+   which is what keeps the wordier languages from overflowing the bar. */
+.notice-bar-report {
+  display: inline !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: none !important;
+  font: inherit !important;
+  color: var(--info) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 2px !important;
+  cursor: pointer !important;
+}
+
+.notice-bar-report:hover,
+.notice-bar-report:focus-visible {
+  color: var(--ink) !important;
+}
+
+/* 2. DESKTOP 1:2 GOLDEN RATIO & ADSENSE SIDE SPACING (901px+) */
+@media (min-width: 901px) {
+  header,
+  .topbar,
+  html[dir="rtl"] header,
+  html[dir="rtl"] .topbar {
+    direction: ltr !important;
+    display: flex !important;
+    flex-direction: row !important;
+    /* One row, in every language, at every width — wrapping to a second row was
+       tried and reads as a broken header next to Korean/English, which do fit.
+       The row is made to fit instead: see the shrink order below. */
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    max-width: 1400px !important; /* Expanded wide container for generous practice space & AdSense side margins */
+    margin-inline: auto !important;
+    box-sizing: border-box !important;
+    padding-inline: 24px !important;
+    overflow: visible !important;
+  }
+
+  /* ---- Header shrink order -------------------------------------------------
+     Measured at the 1400px container (1352px usable): brand 149 + Spanish nav
+     371 + tools 832 = 1352 with nothing left for the gaps, so something has to
+     give. The brand and the nav links must not: a clipped logo or a half-shown
+     menu item is exactly the overlap this is meant to remove. The tools group
+     gives way instead, and inside it the audio cluster (403px — by far the
+     widest control) absorbs the squeeze, since its two toggles read from their
+     icons and switch state without the caption.
+     -------------------------------------------------------------------------- */
+  .topbar > .brand { flex: 0 0 auto !important; }
+  /* `min-width: 0` let the nav be squeezed below its own content, and because
+     the links are `white-space: nowrap` they then painted outside the column on
+     both sides — that was the "Seoul Keysganish" overlap. */
+  .topbar > .nav-links { flex: 0 0 auto !important; min-width: max-content !important; }
+  .topbar > .header-tools {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    display: flex !important;
+    gap: 6px !important;
+    justify-content: flex-end !important;
+  }
+
+  .header-tools > .language-picker {
+    flex: 0 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  .hero,
+  html[dir="rtl"] .hero,
+  body[dir="rtl"] .hero {
+    direction: ltr !important;
+    display: grid !important;
+    /* 1:2 Golden Ratio (Left Intro: 1fr / Right Practice Stage: 2fr) */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) !important;
+    align-items: center !important;
+    gap: clamp(24px, 3vw, 56px) !important;
+    min-height: calc(100svh - var(--chrome-h)) !important;
+    padding-block: 16px 24px !important;
+    padding-inline: 24px !important;
+    width: 100% !important;
+    max-width: 1400px !important; /* Expanded wide container for generous practice space & AdSense side margins */
+    margin-inline: auto !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* 3. NATURAL PHRASE WORD BREAKING (NO MID-WORD TRUNCATION LIKE '문/장까지')
+   `keep-all` is right — it stops Korean breaking inside a 어절. But the
+   `break-word` beside it re-authorised exactly that as an "emergency" break, and
+   the audit caught it doing so: Korean broke 지키세|요 and 완|성하세요. A break is
+   only ever allowed at a space, so the emergency escape hatch is removed. If a
+   phrase genuinely cannot fit, it must be solved with size or space, not by
+   cutting a word in half. */
+.hero-copy h1,
+.hero-copy p,
+.hero-description,
+.headline-accent {
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  word-wrap: normal !important;
+}
+
+/* 4. TABLET & MOBILE RESPONSIVE STACK (900px & BELOW) */
+@media (max-width: 900px) {
+  header,
+  .topbar,
+  html[dir="rtl"] header,
+  html[dir="rtl"] .topbar {
+    direction: ltr !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding-inline: 16px !important;
+  }
+
+  .hero,
+  html[dir="rtl"] .hero,
+  body[dir="rtl"] .hero {
+    direction: ltr !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 20px !important;
+    width: 100% !important;
+    padding-inline: 16px !important;
+    box-sizing: border-box !important;
+    min-height: auto !important;
+  }
+
+  .hero-copy,
+  .practice-stage {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* 5. WIDE PRACTICE FOCUS MODE (EXPANDS FULLY ON PRACTICE START) */
+.hero.practice-focus-mode,
+html[dir="rtl"] .hero.practice-focus-mode,
+body[dir="rtl"] .hero.practice-focus-mode {
+  display: block !important;
+  grid-template-columns: 1fr !important;
+  max-width: 1200px !important;
+  margin-inline: auto !important;
+  width: 100% !important;
+  min-height: auto !important;
+}
+
+.practice-focus-mode .hero-copy {
+  display: none !important;
+}
+
+.practice-focus-mode .practice-stage,
+.practice-focus-mode .practice-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  display: block !important;
+}
+
+
+/* ==========================================================================
+   SOUND MENU
+   The four audio controls used to sit open in the header. Measured at the
+   1400px container they took 403px of it — more than the nav — which is what
+   kept squeezing the nav into the brand in 11 languages. Collapsed into one
+   trigger, the group is ~92px and the header fits on one row everywhere.
+   ========================================================================== */
+.sound-menu {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.sound-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--control-h-sm, 34px);
+  padding: 0 12px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--control-font-sm, 12px);
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sound-menu-trigger:hover { background: var(--surface-2); }
+
+.sound-menu-caret { font-size: 10px; opacity: .7; }
+
+.sound-menu-panel {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-start: calc(100% + 8px);
+  z-index: 60;
+  display: grid;
+  gap: 10px;
+  /* Wide enough for the longest caption in any of the 33 languages, so nothing
+     inside ever has to be clipped or ellipsised. */
+  min-width: 280px;
+  padding: 14px;
+  border: 1px solid var(--edge);
+  border-radius: 16px;
+  background: var(--paper);
+  box-shadow: 0 18px 44px -18px var(--shadow-ink), 0 0 0 1px rgb(255 255 255 / .04);
+  text-align: start;
+}
+
+.sound-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+/* The name takes the slack so the control column stays aligned down the panel. */
+.sound-row-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+  /* A caption may wrap onto a second line here — there is room — but only ever
+     at a space. */
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+
+.sound-row select {
+  flex: 0 0 auto;
+  max-width: 130px;
+  padding: 4px 8px;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sound-row-badge {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+  color: var(--muted);
+}
+
+.sound-row.unavailable { cursor: not-allowed; opacity: .5; }
+
+.sound-row input[type="checkbox"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sound-row-volume { align-items: center; }
+
+.sound-volume-steps {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 4px;
+}
+
+.sound-volume-steps button {
+  padding: 4px 10px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sound-volume-steps button.active {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.sound-menu-panel .sound-preview-button {
+  /* `justify-self: stretch` collapsed this to a zero-width grid item, so the
+     label wrapped one character per line. The panel is a single column — the
+     button simply fills it. */
+  width: 100%;
+  display: block;
+  white-space: nowrap;
+  padding: 7px 12px;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+
+/* Decorative art in the practice area is z-index 0; everything the learner can
+   click is lifted above it so a ring or a blob can never cover a control. */
+.practice-choice-row,
+.practice-card-header,
+.practice-card-header-right,
+.curriculum-progress,
+.practice-workspace {
+  position: relative;
+  z-index: 1;
+}
+
+
+/* ==========================================================================
+   SELECTED LEARNING CONCEPT
+   The `.theme-chip { … !important }` block above sets background, colour, border
+   and shadow on every chip, so `.theme-chip.active` (no !important) lost every
+   one of them: measured, the selected chip and the unselected ones were
+   identical down to the font weight. Selection is signalled on four channels at
+   once — fill, text colour, border weight and a check mark — so it survives dark
+   mode, high-contrast mode and colour-blind vision.
+   ========================================================================== */
+.theme-chip.active,
+.global-theme-bar .theme-chip.active,
+.practice-choice-row .theme-chip.active {
+  background: var(--ink) !important;
+  color: var(--paper) !important;
+  border-color: var(--ink) !important;
+  border-width: 2px !important;
+  box-shadow: 3px 3px 0 var(--shadow-ink) !important;
+  font-weight: 900 !important;
+}
+
+.theme-chip.active b,
+.global-theme-bar .theme-chip.active b,
+.practice-choice-row .theme-chip.active b {
+  color: var(--paper) !important;
+  font-weight: 900 !important;
+}
+
+/* A shape cue as well as a colour one. */
+.theme-chip.active::after {
+  content: "✓";
+  margin-inline-start: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+html[data-theme="dark"] .theme-chip.active,
+html[data-theme="dark"] .global-theme-bar .theme-chip.active {
+  /* In dark mode `--ink` is the near-white body colour, so the fill is light and
+     the label has to flip back to the dark surface colour to stay readable. */
+  background: var(--lime) !important;
+  color: #08101f !important;
+  border-color: var(--lime) !important;
+}
+
+html[data-theme="dark"] .theme-chip.active b {
+  color: #08101f !important;
+}
+
+/* Preview art on the activity cards. Sits between the number and the kicker, so
+   the eye lands on the picture before the label — the point is that a learner
+   who has not opened the activity can still guess what it does. */
+.activity-preview {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 120 / 64;
+  margin-block: 6px 10px;
+  border-radius: 10px;
+}
+
+.activity-card.selected .activity-preview {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Teacher / school banner.
+   Its heading and body colours were hard-coded to #f0f6fc and #8b949e — the dark
+   palette — so on the light theme the heading was near-white on a pale lavender
+   panel and could not be read at all. Everything here comes from theme tokens,
+   so both themes resolve on their own. */
+.teacher-b2b-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 840px;
+  margin: 40px auto;
+  padding: 28px 32px;
+  border: 1px solid color-mix(in srgb, var(--info) 30%, transparent);
+  border-radius: 20px;
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--info) 10%, transparent),
+      color-mix(in srgb, var(--purple) 12%, transparent)),
+    var(--paper);
+}
+
+.teacher-b2b-banner h3 {
+  color: var(--ink);
+}
+
+.teacher-b2b-banner p {
+  color: var(--muted);
+}
+
+/* Icon scales with the smaller chip so the pill keeps its proportions. */
+.global-theme-bar .theme-chip .theme-chip-icon {
+  font-size: 13px;
+}
+
+
+/* The completed-stage pill mixes 46% lime into the surface. Against the old navy
+   surface that landed light enough; against the new near-black it came out at
+   rgb(84,122,52) and the dark label on it measured 3.8:1. More lime in the mix
+   in dark mode restores the contrast without changing the light theme. */
+html[data-theme="dark"] .curriculum-progress li.done {
+  background: color-mix(in srgb, var(--lime) 76%, var(--paper));
 }

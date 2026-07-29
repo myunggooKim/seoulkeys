@@ -27,3 +27,30 @@ export function decomposeHangulCharacter(character: string): string[] | null {
     ...(finalJamo[finalIndex] ?? []),
   ];
 }
+
+
+/**
+ * Flattens text to the jamo the learner actually pressed.
+ *
+ * Korean IMEs compose while you type, so a perfectly typed drill "ㅁㅓㄴㅏ"
+ * arrives as "머나" and matches nothing character-for-character. Whitespace is
+ * dropped as well: in a jamo drill, whether the space bar was pressed must not
+ * decide pass or fail.
+ */
+export function comparableJamo(text: string): string[] {
+  const jamo: string[] = [];
+  for (const character of text) {
+    if (/\s/.test(character)) continue;
+    const decomposed = decomposeHangulCharacter(character);
+    if (decomposed) jamo.push(...decomposed);
+    else jamo.push(character);
+  }
+  return jamo;
+}
+
+/** True when the typed text and the target are the same jamo sequence. */
+export function sameJamoSequence(a: string, b: string): boolean {
+  const left = comparableJamo(a);
+  const right = comparableJamo(b);
+  return left.length === right.length && left.every((j, i) => j === right[i]);
+}

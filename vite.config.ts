@@ -11,10 +11,17 @@ const { d1, r2 } = hostingConfig;
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
+// wrangler.json is the single source of truth for this project's bindings.
+// Anything repeated here is *merged* by the Cloudflare plugin rather than
+// replaced, which produced a duplicate `nodejs_compat` flag (the Workers runtime
+// then refuses to start) and a second D1 binding also called "DB" pointing at
+// the placeholder database. Only declare a binding here if wrangler.json has no
+// real one for it.
+const hasProjectD1 = true;
+
 const localBindingConfig = {
   main: "./worker/index.ts",
-  compatibility_flags: ["nodejs_compat"],
-  d1_databases: d1
+  d1_databases: d1 && !hasProjectD1
     ? [
         {
           binding: d1,

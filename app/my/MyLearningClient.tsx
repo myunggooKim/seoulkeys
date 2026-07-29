@@ -1,13 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useSyncExternalStore, type CSSProperties } from "react";
+import { useEffect, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { ContactModal } from "../ContactModal";
 import { readManualLocalePreference, resolveVisitorLocale } from "../locale-detection";
 import { practiceCurriculum, practiceStageLabels, practiceStageOrder, type PracticeKind } from "../practice-curriculum";
+import { applyTheme, readResolvedTheme } from "../theme";
+import { signOutEverywhere } from "../sign-out";
+import { MemberBreakdownModal, type MemberStats } from "./MemberBreakdownModal";
+import { displayNameForGreeting } from "../hangul-name";
 
 type MyLearningClientProps = {
   identity: { email: string };
   signOutPath: string;
+  /** The content studio is owner-only, so the link is hidden from everyone else. */
+  isAdmin: boolean;
   user: {
     displayName: string;
     streakDays: number;
@@ -62,8 +69,34 @@ function getKoreanLocaleSnapshot() {
   return locale === "ko";
 }
 
-export default function MyLearningClient({ identity, signOutPath, user, progress, rewards }: MyLearningClientProps) {
+export default function MyLearningClient({ identity, signOutPath, isAdmin, user, progress, rewards }: MyLearningClientProps) {
   const koreanUi = useSyncExternalStore(subscribeToLocale, getKoreanLocaleSnapshot, () => true);
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [themeMode, setThemeMode] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setThemeMode(readResolvedTheme()));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  const toggleThemeMode = () => {
+    const nextTheme = themeMode === "dark" ? "light" : "dark";
+    setThemeMode(nextTheme);
+    applyTheme(nextTheme);
+  };
+
+  const [studentAssignments, setStudentAssignments] = useState<Array<{ id: string; title: string; category: string; content: string; isCompleted: boolean }>>([]);
+  const [membersOpen, setMembersOpen] = useState(false);
+  const [memberStats, setMemberStats] = useState<MemberStats | null>(null);
+  const memberTotal = memberStats?.total ?? null;
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    void fetch("/api/admin/members", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: MemberStats | null) => { if (data) setMemberStats(data); })
+      .catch(() => undefined);
+  }, [isAdmin]);
 
   useEffect(() => {
     const locale = readManualLocalePreference(window.localStorage)
@@ -73,8 +106,17 @@ export default function MyLearningClient({ identity, signOutPath, user, progress
       });
     document.documentElement.lang = locale;
     document.documentElement.dir = locale === "ar" || locale === "fa" || locale === "ur" ? "rtl" : "ltr";
+
+    void fetch("/api/student/assignment").then((res) => {
+      if (res.ok) {
+        void res.json().then((data) => {
+          setStudentAssignments(data.assignments || []);
+        });
+      }
+    });
   }, [koreanUi]);
 
+  const greeting = displayNameForGreeting(user.displayName);
   const level = Math.floor(user.totalXp / 500) + 1;
   const levelXp = user.totalXp % 500;
   const levelPercent = Math.round((levelXp / 500) * 100);
@@ -114,25 +156,91 @@ export default function MyLearningClient({ identity, signOutPath, user, progress
   return (
     <main className="profile-shell">
       <header className="profile-header">
-        <Link className="brand" href="/" aria-label="Hangeul Pop home">
-          <span className="brand-mark" aria-hidden="true">ㅎ</span>
-          <span>Hangeul Pop</span>
+        <Link className="brand" href="/" aria-label="Seoul Keys home">
+          <span className="brand-mark" aria-hidden="true">ㅅ</span>
+          <span>Seoul Keys</span>
         </Link>
         <nav>
           <Link href="/#practice">{koreanUi ? "학습 계속하기" : "Continue lesson"}</Link>
-          <Link href="/admin">{koreanUi ? "콘텐츠 관리" : "Content studio"}</Link>
+          <Link href="/teacher">🎓 {koreanUi ? "교사 대시보드" : "Teacher Portal"}</Link>
+          <button type="button" className="theme-toggle-btn" onClick={toggleThemeMode}>
+            {themeMode === "dark" ? "☀️ Light" : "🌙 Dark"}
+          </button>
           <Link href="/legal">{koreanUi ? "개인정보·약관" : "Privacy & terms"}</Link>
-          <a href={signOutPath}>{koreanUi ? "로그아웃" : "Sign out"}</a>
+          <button type="button" className="footer-link-btn" onClick={() => setContactModalOpen(true)}>✉️ {koreanUi ? "관리자 문의" : "Contact Admin"}</button>
+          <button
+            type="button"
+            className="signout-link"
+            onClick={() => { void signOutEverywhere(signOutPath); }}
+          >
+            {koreanUi ? "로그아웃" : "Sign out"}
+          </button>
         </nav>
       </header>
+
+      {/* Owner-only tools, kept out of the main nav and given their own row so
+          they read as a separate toolset rather than more menu items. Content
+          studio belongs here too — it is the same class of thing. */}
+      {isAdmin && (
+        <div className="owner-tools">
+          <span className="owner-tools-label">{koreanUi ? "관리자 도구" : "Owner tools"}</span>
+
+          <button
+            type="button"
+            className="owner-members"
+            onClick={() => setMembersOpen(true)}
+            title={koreanUi ? "가입자 구성 보기" : "View member breakdown"}
+          >
+            <span aria-hidden="true">👥</span>
+            <b>{memberTotal === null ? "—" : memberTotal.toLocaleString()}</b>
+            {koreanUi ? "가입자" : "members"}
+          </button>
+
+          <div className="analytics-segment" role="group" aria-label={koreanUi ? "관리자 도구 모음" : "Owner tool group"}>
+            <Link className="analytics-seg analytics-studio" href="/admin" title={koreanUi ? "콘텐츠 관리" : "Content studio"}>
+              <span aria-hidden="true">🗂️</span>{koreanUi ? "콘텐츠 관리" : "Content"}
+            </Link>
+            <a
+              className="analytics-seg analytics-cloudflare"
+              href="https://dash.cloudflare.com/0c68d691e9cf8b5074d334b9c8a57438/web-analytics/overview/visits?siteTag~in=163ace21bf8a44cdaad07736996ffc86&excludeBots=Yes"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Cloudflare Web Analytics"
+            >
+              <span aria-hidden="true">📊</span>{koreanUi ? "방문 통계" : "Traffic"}
+            </a>
+            <a
+              className="analytics-seg analytics-clarity"
+              href="https://clarity.microsoft.com/projects/view/xsae5by824/dashboard"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Microsoft Clarity"
+            >
+              <span aria-hidden="true">🔥</span>{koreanUi ? "행동 분석" : "Clarity"}
+            </a>
+          </div>
+        </div>
+      )}
+
+      {isAdmin && (
+        <MemberBreakdownModal
+          open={membersOpen}
+          onClose={() => setMembersOpen(false)}
+          koreanUi={koreanUi}
+          stats={memberStats}
+        />
+      )}
 
       <section className="profile-welcome">
         <div>
           <p className="section-label">MY LEARNING SPACE</p>
-          <h1>{koreanUi ? `${user.displayName}님, 다시 만나 반가워요!` : `Welcome back, ${user.displayName}!`}</h1>
+          {/* Members are here to learn Hangul, so greet them with their whole
+              name written in it — not just their surname. */}
+          <h1>{koreanUi ? `${greeting.display}님, 다시 만나 반가워요!` : `Welcome back, ${greeting.display}!`}</h1>
+          {greeting.romanized && <p className="greeting-original">{greeting.original}</p>}
           <p>{koreanUi ? "오늘 한 단계만 완성해도 방문 리듬과 실력이 함께 쌓여요." : "Complete one step today to keep your learning rhythm growing."}</p>
         </div>
-        <div className="profile-avatar" aria-hidden="true">{user.displayName.slice(0, 1).toUpperCase()}</div>
+        <div className="profile-avatar" aria-hidden="true">{greeting.display.slice(0, 1)}</div>
       </section>
 
       <section className="profile-stat-grid" aria-label={koreanUi ? "학습 요약" : "Learning summary"}>
@@ -221,6 +329,33 @@ export default function MyLearningClient({ identity, signOutPath, user, progress
           <p>{koreanUi ? <><b>{remainingDays}일</b> 더 방문하면 {nextMilestone.rewardKo} 보상을 받아요.</> : <>Visit for <b>{remainingDays} more days</b> to unlock {nextMilestone.rewardEn}.</>}</p>
         </article>
 
+        {studentAssignments.length > 0 && (
+          <article className="profile-card assignment-card" style={{ gridColumn: "1 / -1", background: "linear-gradient(135deg, rgba(88,166,255,0.12), rgba(163,113,247,0.12))", border: "2px solid rgba(88,166,255,0.4)" }}>
+            <p className="section-label">CLASS ASSIGNMENTS</p>
+            <h2>🎓 {koreanUi ? "선생님이 출제한 맞춤 타자 지문" : "Teacher's Custom Typing Assignments"}</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "16px", marginTop: "16px" }}>
+              {studentAssignments.map((asgn) => (
+                <div key={asgn.id} style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "12px", padding: "16px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  <div>
+                    <span style={{ fontSize: "11px", background: "#58a6ff", color: "#fff", padding: "2px 6px", borderRadius: "4px", fontWeight: "bold" }}>{asgn.category}</span>
+                    <h3 style={{ margin: "8px 0 4px", fontSize: "16px", color: "var(--ink)" }}>{asgn.title}</h3>
+                    <p style={{ fontSize: "13px", color: "var(--ink)", opacity: 0.85, margin: 0, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{asgn.content}</p>
+                  </div>
+                  <div style={{ marginTop: "14px" }}>
+                    {asgn.isCompleted ? (
+                      <span style={{ color: "#2da44e", fontWeight: "bold", fontSize: "13px" }}>✅ {koreanUi ? "완료됨" : "Completed"}</span>
+                    ) : (
+                      <Link href={`/#practice`} className="button button-primary" style={{ display: "inline-block", padding: "6px 12px", fontSize: "12px", textAlign: "center" }}>
+                        🚀 {koreanUi ? "타자 연습 시작" : "Start Practice"}
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </article>
+        )}
+
         <article className="profile-card badges-card">
           <p className="section-label">MY REWARDS</p>
           <h2>{koreanUi ? "배지와 혜택" : "Badges & benefits"}</h2>
@@ -236,6 +371,12 @@ export default function MyLearningClient({ identity, signOutPath, user, progress
         <div><b>{koreanUi ? "로그인된 학습 계정" : "Signed-in learning account"}</b><span>{identity.email}</span></div>
         <p>{koreanUi ? "이 계정에 학습 진도, 방문 기록, 리워드가 안전하게 저장됩니다." : "Your lesson progress, visits, and rewards are saved to this account."}</p>
       </section>
+
+      <ContactModal
+        isOpen={contactModalOpen}
+        onClose={() => setContactModalOpen(false)}
+        locale={koreanUi ? "ko" : "en"}
+      />
     </main>
   );
 }

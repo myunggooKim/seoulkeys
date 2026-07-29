@@ -45,3 +45,6 @@ next-env.d.ts
 # local preview process files
 /tmp-*.log
 /tmp-*.pid
+
+# Local Python env for scripts/generate_static_korean_audio.py
+.venv-tts/

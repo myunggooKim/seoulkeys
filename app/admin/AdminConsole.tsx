@@ -167,11 +167,35 @@ export default function AdminConsole({ initialItems, adminEmail }: { initialItem
   return (
     <main className="admin-shell">
       <header className="admin-header">
-        <Link className="brand" href="/" aria-label="Hangeul Pop home">
-          <span className="brand-mark" aria-hidden="true">ㅎ</span>
-          <span>Hangeul Pop</span>
+        <Link className="brand" href="/" aria-label="Seoul Keys home">
+          <span className="brand-mark" aria-hidden="true">ㅅ</span>
+          <span>Seoul Keys</span>
         </Link>
-        <nav><Link href="/">학습 화면</Link><Link href="/my">내 진도</Link><Link href="/legal">정책</Link></nav>
+        <nav>
+          <Link href="/">학습 화면</Link>
+          <Link href="/my">내 진도</Link>
+          <Link href="/legal">정책</Link>
+          <div className="analytics-segment" role="group" aria-label="분석 대시보드">
+            <a
+              className="analytics-seg analytics-cloudflare"
+              href="https://dash.cloudflare.com/0c68d691e9cf8b5074d334b9c8a57438/web-analytics/overview/visits?siteTag~in=163ace21bf8a44cdaad07736996ffc86&excludeBots=Yes"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Cloudflare Web Analytics"
+            >
+              <span aria-hidden="true">📊</span>방문 통계
+            </a>
+            <a
+              className="analytics-seg analytics-clarity"
+              href="https://clarity.microsoft.com/projects/view/xsae5by824/dashboard"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Microsoft Clarity"
+            >
+              <span aria-hidden="true">🔥</span>행동 분석
+            </a>
+          </div>
+        </nav>
       </header>
 
       <section className="admin-hero">

@@ -1,8 +1,8 @@
 import { env } from "cloudflare:workers";
-import { getChatGPTUser } from "./chatgpt-auth";
+import { getAppUser } from "./google-auth";
 
 export async function getAdminUser() {
-  const user = await getChatGPTUser();
+  const user = await getAppUser();
   if (!user) return null;
 
   const runtimeEnv = env as unknown as Record<string, string | undefined>;

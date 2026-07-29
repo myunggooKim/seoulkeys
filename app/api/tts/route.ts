@@ -1,6 +1,23 @@
 import { env } from "cloudflare:workers";
+import { getAppUser } from "../../google-auth";
 
 export const dynamic = "force-dynamic";
+
+const RATE_WINDOW_MS = 60_000;
+const RATE_LIMIT = 30;
+const recentRequests = new Map<string, { count: number; resetAt: number }>();
+
+function withinRateLimit(email: string) {
+  const now = Date.now();
+  const current = recentRequests.get(email);
+  if (!current || current.resetAt <= now) {
+    recentRequests.set(email, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return true;
+  }
+  if (current.count >= RATE_LIMIT) return false;
+  current.count += 1;
+  return true;
+}
 
 function runtimeValue(name: string) {
   const runtimeEnv = env as unknown as Record<string, string | undefined>;
@@ -8,21 +25,28 @@ function runtimeValue(name: string) {
 }
 
 export async function GET() {
+  const user = await getAppUser();
   return Response.json({
-    available: Boolean(runtimeValue("SUPERTONIC_TTS_URL")),
+    available: Boolean(user && runtimeValue("SUPERTONIC_TTS_URL")),
     provider: "Supertonic 3",
     fallback: "prerecorded-audio-or-device-voice",
-  });
+  }, { headers: { "cache-control": "private, no-store" } });
 }
 
 export async function POST(request: Request) {
+  const user = await getAppUser();
+  if (!user) return Response.json({ error: "Authentication required" }, { status: 401 });
+  if (!withinRateLimit(user.email)) {
+    return Response.json({ error: "Too many voice requests" }, { status: 429 });
+  }
+
   const endpoint = runtimeValue("SUPERTONIC_TTS_URL").replace(/\/$/, "");
   if (!endpoint) return Response.json({ error: "Neural TTS service is not configured" }, { status: 503 });
 
   try {
     const payload = await request.json() as { text?: string; voice?: "female" | "male" };
     const text = payload.text?.trim() ?? "";
-    if (!text || text.length > 500) return Response.json({ error: "Text must contain 1–500 characters" }, { status: 400 });
+    if (!text || text.length > 200) return Response.json({ error: "Text must contain 1–200 characters" }, { status: 400 });
     const voice = payload.voice === "male" ? "M5" : "F1";
     const apiKey = runtimeValue("SUPERTONIC_TTS_API_KEY");
     const upstream = await fetch(`${endpoint}/v1/audio/speech`, {
@@ -38,7 +62,7 @@ export async function POST(request: Request) {
     return new Response(upstream.body, {
       headers: {
         "content-type": upstream.headers.get("content-type") ?? "audio/mpeg",
-        "cache-control": "public, max-age=31536000, immutable",
+        "cache-control": "private, no-store",
       },
     });
   } catch (error) {

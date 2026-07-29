@@ -1,6 +1,9 @@
 "use client";
 
-import { type CSSProperties, FormEvent, KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
+import { type CSSProperties, FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ThemeWord } from "./content-themes";
+import type { Locale } from "./locale-detection";
+import { tr } from "./ui-i18n";
 
 type FallingWord = {
   id: number;
@@ -113,12 +116,22 @@ function noiseHit(context: AudioContext, output: AudioNode, start: number, durat
   source.stop(start + duration);
 }
 
-export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKeySound }: {
+export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSound, onKeySound, suspended = false, themeWords }: {
   koreanUi: boolean;
+  locale: Locale;
   soundEnabled: boolean;
   onSuccessSound: () => void;
   onKeySound: (code: string) => void;
+  suspended?: boolean;
+  themeWords?: ThemeWord[];
 }) {
+  const activeBank = useMemo(() => (themeWords && themeWords.length
+    ? themeWords.map((entry) => ({ korean: entry.word, meaning: koreanUi ? entry.meaningKo : entry.meaningEn, difficulty: entry.difficulty ?? 1 }))
+    : wordBank), [koreanUi, themeWords]);
+  const bankRef = useRef(activeBank);
+  useEffect(() => {
+    bankRef.current = activeBank;
+  }, [activeBank]);
   const nextId = useRef(4);
   const composingRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -127,6 +140,7 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
   const burstTimerRef = useRef<number | null>(null);
   const shockTimerRef = useRef<number | null>(null);
   const waveTimerRef = useRef<number | null>(null);
+  const gameOverTimeRef = useRef<number>(0);
   const audioEngineRef = useRef<RetroAudioEngine | null>(null);
   const audioStateRef = useRef({
     paused: false,
@@ -151,13 +165,17 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
   const [misses, setMisses] = useState(0);
   const [caught, setCaught] = useState(0);
   const [combo, setCombo] = useState(0);
+  const [maxCombo, setMaxCombo] = useState(0);
   const [paused, setPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  const [showGameOverModal, setShowGameOverModal] = useState(false);
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+  const [copiedResult, setCopiedResult] = useState(false);
   const [briefing, setBriefing] = useState(true);
   const [waveClear, setWaveClear] = useState<number | null>(null);
   const [localAudioEnabled, setLocalAudioEnabled] = useState(true);
   const [shock, setShock] = useState(false);
-  const [message, setMessage] = useState(koreanUi ? "Enter를 눌러 한글시티 방어 임무를 시작하세요." : "Press Enter to begin the Hangul City defense mission.");
+  const [message, setMessage] = useState(tr(locale, "Press Enter to begin the Hangul City defense mission.", "Enter를 눌러 한글시티 방어 임무를 시작하세요."));
   const [splash, setSplash] = useState(false);
   const [captureBurst, setCaptureBurst] = useState<CaptureBurst | null>(null);
 
@@ -183,6 +201,7 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
 
   const ensureRetroAudio = useCallback((forceLocal = false) => {
     if (!soundEnabled || (!localAudioEnabledRef.current && !forceLocal)) return null;
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return null;
     const existing = audioEngineRef.current;
     if (existing) {
       if (existing.context.state === "suspended") void existing.context.resume();
@@ -201,6 +220,7 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
     const bassPattern = [110, 110, 146.83, 110, 164.81, 146.83, 98, 123.47];
     const leadPattern = [440, 523.25, 659.25, 523.25, 392, 493.88, 587.33, 493.88];
     const playMusicStep = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       const state = audioStateRef.current;
       const threatPressure = Math.max(0, Math.min(1,
         Math.max(0, state.threatCount - 2) / 4 * 0.45
@@ -298,7 +318,9 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
 
   const spawnWord = useCallback((slot = 0, atLevel = 1): FallingWord => {
     const unlockedDifficulty = atLevel >= 7 ? 3 : atLevel >= 3 ? 2 : 1;
-    const unlocked = wordBank.filter((item) => item.difficulty <= unlockedDifficulty);
+    const bank = bankRef.current;
+    const unlockedRaw = bank.filter((item) => item.difficulty <= unlockedDifficulty);
+    const unlocked = unlockedRaw.length ? unlockedRaw : bank;
     const fresh = unlocked.filter((item) => !recentWordsRef.current.includes(item.korean));
     const pool = fresh.length ? fresh : unlocked;
     const item = pool[Math.floor(Math.random() * pool.length)];
@@ -327,15 +349,18 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
     setMisses(0);
     setCaught(0);
     setCombo(0);
+    setMaxCombo(0);
     setPaused(false);
     setGameOver(false);
+    setShowGameOverModal(false);
+    setShowRestartConfirm(false);
     setBriefing(false);
     setWaveClear(null);
     setShock(false);
-    setMessage(koreanUi ? "방어막 충전 시작! 단어를 완성하고 Enter로 격파하세요." : "Shield charging! Complete a word and press Enter to blast it.");
+    setMessage(tr(locale, "Shield charging! Complete a word and press Enter to blast it.", "방어막 충전 시작! 단어를 완성하고 Enter로 격파하세요."));
     playGameEffect("start");
     window.setTimeout(focusInput, 0);
-  }, [focusInput, koreanUi, playGameEffect, spawnWord]);
+  }, [focusInput, locale, playGameEffect, spawnWord]);
 
   useEffect(() => {
     if (briefing) window.requestAnimationFrame(() => rootRef.current?.focus({ preventScroll: true }));
@@ -344,7 +369,7 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
 
   useEffect(() => {
     audioStateRef.current = {
-      paused,
+      paused: paused || suspended,
       gameOver,
       briefing,
       waveClear: Boolean(waveClear),
@@ -354,16 +379,16 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
     };
     const engine = audioEngineRef.current;
     if (!engine) return;
-    const audible = !paused && !gameOver && !briefing;
+    const audible = !paused && !gameOver && !briefing && !suspended;
     engine.music.gain.setTargetAtTime(audible ? 0.72 : 0.015, engine.context.currentTime, 0.045);
-  }, [briefing, danger, gameOver, misses, paused, waveClear, words.length]);
+  }, [briefing, danger, gameOver, misses, paused, suspended, waveClear, words.length]);
 
   useEffect(() => {
     if (!soundEnabled) stopRetroAudio();
   }, [soundEnabled, stopRetroAudio]);
 
   useEffect(() => {
-    if (paused || gameOver || briefing) return;
+    if (paused || gameOver || briefing || suspended) return;
     const timer = window.setInterval(() => {
       setWords((current) => {
         let missedNow = 0;
@@ -392,7 +417,10 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
             shockTimerRef.current = window.setTimeout(() => setShock(false), 650);
             if (nextMisses >= MAX_LIVES) {
               setGameOver(true);
-              setMessage(koreanUi ? "도시 방어막이 무너졌습니다. Enter로 즉시 재출격하세요." : "The city shield collapsed. Press Enter to redeploy instantly.");
+              setShowGameOverModal(true);
+              setShowRestartConfirm(false);
+              gameOverTimeRef.current = Date.now();
+              setMessage(tr(locale, "The city shield collapsed. Inspect your record or restart.", "도시 방어막이 무너졌습니다. 최종 기록을 확인하세요."));
               window.setTimeout(() => rootRef.current?.focus({ preventScroll: true }), 0);
             } else {
               setMessage(koreanUi ? `방어막 피격! 에너지 코어 ${MAX_LIVES - nextMisses}개 · 도시를 지켜주세요.` : `Shield hit! ${MAX_LIVES - nextMisses} energy cores remain. Defend the city.`);
@@ -407,7 +435,7 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
       });
     }, 50);
     return () => window.clearInterval(timer);
-  }, [briefing, desiredWords, gameOver, koreanUi, level, paused, playGameEffect, spawnWord]);
+  }, [briefing, desiredWords, gameOver, koreanUi, level, locale, paused, playGameEffect, spawnWord, suspended]);
 
   useEffect(() => () => {
     if (burstTimerRef.current) window.clearTimeout(burstTimerRef.current);
@@ -416,21 +444,46 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
     stopRetroAudio();
   }, [stopRetroAudio]);
 
+  useEffect(() => {
+    const teardown = () => stopRetroAudio();
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") stopRetroAudio();
+    };
+    window.addEventListener("pagehide", teardown);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", teardown);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [stopRetroAudio]);
+
   function startMission() {
     setBriefing(false);
-    setMessage(koreanUi
-      ? "임무 시작! 오염된 단어를 정확히 입력하고 Enter로 격파하세요."
-      : "Mission live! Type each corrupted word exactly and press Enter to blast it.");
+    recentWordsRef.current = [];
+    setWords([spawnWord(0, 1), spawnWord(2, 1), spawnWord(4, 1)]);
+    setMessage(tr(locale, "Mission live! Type each corrupted word exactly and press Enter to blast it.", "임무 시작! 오염된 단어를 정확히 입력하고 Enter로 격파하세요."));
     playGameEffect("start");
     window.setTimeout(focusInput, 0);
   }
 
-  function submitWord() {
-    if (composingRef.current || paused || briefing) return;
-    if (gameOver) {
-      resetGame();
-      return;
+  const copyResultReport = async () => {
+    const reportText = `🏆 [Seoul Keys] 한글시티 단어 방어 임무 완료 리포트!\n- 최종 점수: ${score.toLocaleString()}점\n- 격파한 단어 수: ${caught}개\n- 최대 연속 격파: ${maxCombo} Combo\n- 최종 등급: RANK ${rank}\n\n지금 나와 함께 한글 타자 게임 도전하자! https://seoulkeys.com`;
+    try {
+      await navigator.clipboard.writeText(reportText);
+      setCopiedResult(true);
+      setTimeout(() => setCopiedResult(false), 3000);
+    } catch {
+      // Fallback
     }
+  };
+
+  const shareToTwitter = () => {
+    const text = `🏆 Seoul Keys 한글시티 방어 완료!\n최종 점수: ${score.toLocaleString()}점, ${caught}개 단어 격파! (RANK ${rank})\n같이 한글 타자 연습하자! https://seoulkeys.com`;
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+  };
+
+  function submitWord() {
+    if (composingRef.current || paused || briefing || gameOver) return;
     const normalized = input.trim();
     if (!normalized) return;
     const matched = words
@@ -440,9 +493,7 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
       setInputError(true);
       setCombo(0);
       playGameEffect("error");
-      setMessage(koreanUi
-        ? "조준 실패! 단어는 그대로입니다. Backspace로 수정한 뒤 Enter!"
-        : "Target lock failed. The word stays. Correct it with Backspace, then Enter.");
+      setMessage(tr(locale, "Target lock failed. The word stays. Correct it with Backspace, then Enter.", "조준 실패! 단어는 그대로입니다. Backspace로 수정한 뒤 Enter!"));
       focusInput();
       return;
     }
@@ -451,6 +502,8 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
     const gained = 100 + level * 20 + Math.min(200, combo * 15) + urgencyBonus;
     const nextCaught = caught + 1;
     const nextCombo = combo + 1;
+    if (nextCombo > maxCombo) setMaxCombo(nextCombo);
+
     const clearedWave = nextCaught % CAUGHT_PER_LEVEL === 0;
     setWords((current) => [...current.filter((word) => word.id !== matched.id), spawnWord(current.length, level)]);
     setScore((current) => current + gained);
@@ -500,12 +553,21 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
         window.setTimeout(() => next ? rootRef.current?.focus({ preventScroll: true }) : focusInput(), 0);
         return next;
       });
-    } else if ((paused || gameOver) && event.key === "Enter") {
+    } else if (paused && event.key === "Enter") {
       event.preventDefault();
-      if (gameOver) resetGame();
-      else {
-        setPaused(false);
-        window.setTimeout(focusInput, 0);
+      setPaused(false);
+      window.setTimeout(focusInput, 0);
+    } else if (gameOver && event.key === "Enter") {
+      event.preventDefault();
+      // Block accidental double-tap for 1.2 seconds after game over
+      const elapsedSinceGameOver = Date.now() - gameOverTimeRef.current;
+      if (elapsedSinceGameOver < 1200) {
+        return;
+      }
+      if (!showRestartConfirm) {
+        setShowRestartConfirm(true);
+      } else {
+        resetGame();
       }
     }
   }
@@ -517,15 +579,18 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
       className={`word-rain-game damage-${misses} ${briefing ? "is-briefing" : ""} ${paused ? "is-paused" : ""} ${gameOver ? "is-game-over" : ""} ${waveClear ? "is-wave-clear" : ""} ${shock ? "has-shock" : ""} ${criticalThreats ? "is-critical" : ""} ${combo >= 5 ? "combo-hot" : ""}`}
       onKeyDownCapture={handleGameKeys}
     >
-      <div className="word-rain-board" aria-label={koreanUi ? "네온 한글시티를 방어하는 낙하 단어 게임" : "Falling word defense game for Neon Hangul City"}>
-        <div className="retro-scanlines" aria-hidden="true" />
-        <div className="pixel-stars" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /><i /></div>
-        <div className="aurora aurora-one" /><div className="aurora aurora-two" />
-        <div className="sky-cloud cloud-one" /><div className="sky-cloud cloud-two" />
+      {/* The scoreboard sits above the board, not on top of it. All four readouts
+          used to be absolutely positioned inside the play area, so a word falling
+          down the middle or either edge spent its first second hidden behind them
+          — unreadable exactly when there is still time to type it. The arena
+          wrapper keeps the pair in the grid's first column; the game itself is a
+          two-column grid and a third child would have broken the layout. */}
+      <div className="word-rain-arena">
+      <div className="word-rain-hud">
         <div className="word-rain-level"><small>WAVE</small><b>{level.toString().padStart(2, "0")}</b><em>RANK {rank}</em></div>
         <div className="mission-hud">
-          <small>{koreanUi ? "도시 방어 임무" : "CITY DEFENSE"}</small>
-          <b>{koreanUi ? "오염 단어 해독" : "DECODE CORRUPTED WORDS"}</b>
+          <small>{tr(locale, "CITY DEFENSE", "도시 방어 임무")}</small>
+          <b>{tr(locale, "DECODE CORRUPTED WORDS", "오염 단어 해독")}</b>
           <span>{caught % CAUGHT_PER_LEVEL} / {CAUGHT_PER_LEVEL}</span>
         </div>
         <div className="word-rain-lives" aria-label={`${shield}% shield`}>
@@ -535,8 +600,14 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
         </div>
         <div className={`threat-alert ${criticalThreats ? "active" : ""}`} role="status" aria-live="polite">
           <i aria-hidden="true" />
-          <span>{criticalThreats ? koreanUi ? `충돌 경보 ${criticalThreats}` : `IMPACT ALERT ${criticalThreats}` : koreanUi ? "영공 안정" : "AIRSPACE CLEAR"}</span>
+          <span>{criticalThreats ? koreanUi ? `충돌 경보 ${criticalThreats}` : `IMPACT ALERT ${criticalThreats}` : tr(locale, "AIRSPACE CLEAR", "영공 안정")}</span>
         </div>
+      </div>
+      <div className="word-rain-board" aria-label={tr(locale, "Falling word defense game for Neon Hangul City", "네온 한글시티를 방어하는 낙하 단어 게임")}>
+        <div className="retro-scanlines" aria-hidden="true" />
+        <div className="pixel-stars" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /><i /></div>
+        <div className="aurora aurora-one" /><div className="aurora aurora-two" />
+        <div className="sky-cloud cloud-one" /><div className="sky-cloud cloud-two" />
         {words.map((word) => (
           <span
             className={`rain-word ${input.trim() && word.korean.startsWith(input.trim()) ? "targeted" : ""} ${word.y > 67 ? "critical" : ""} lane-${word.lane}`}
@@ -573,39 +644,112 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
           <div className="city-smoke"><i /><i /><i /><i /><i /><i /><i /></div>
           <div className="city-rubble"><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /></div>
         </div>
-        <div className={`sea-water ${splash ? "splash" : ""}`}><i /><i /><i /><b>{koreanUi ? "한글시티 방어선" : "HANGUL CITY BARRIER"}</b></div>
+        <div className={`sea-water ${splash ? "splash" : ""}`}><i /><i /><i /><b>{tr(locale, "HANGUL CITY BARRIER", "한글시티 방어선")}</b></div>
+
         {briefing && (
           <div className="mission-curtain mission-briefing" role="status">
             <div className="mission-emblem" aria-hidden="true"><span>ㅎ</span></div>
-            <small>MISSION 01 · NEON HARBOR</small>
-            <h3>{koreanUi ? "네온 한글시티를 지켜라" : "DEFEND NEON HANGUL CITY"}</h3>
-            <p>{koreanUi
-              ? "오염된 단어가 도시의 에너지 코어를 향해 낙하합니다. 정확한 한글을 입력하고 Enter를 눌러 충돌 전에 격파하세요."
-              : "Corrupted words are falling toward the city core. Type the exact Hangul and press Enter to destroy each threat before impact."}</p>
-            <div className="mission-rules"><span><b>01</b>{koreanUi ? "단어 조준" : "LOCK WORD"}</span><span><b>02</b>{koreanUi ? "한글 입력" : "TYPE HANGUL"}</span><span><b>03</b>ENTER · BLAST</span></div>
-            <span className="mission-start"><kbd>Enter</kbd>{koreanUi ? "임무 시작 · 레트로 BGM ON" : "START MISSION · RETRO BGM ON"}</span>
+            <small>{tr(locale, "MISSION 01 · NEON HARBOR", "미션 01 · 네온 하버")}</small>
+            <h3>{tr(locale, "DEFEND NEON HANGUL CITY", "네온 한글시티를 지켜라")}</h3>
+            <p>{tr(locale, "Corrupted words are falling toward the city core. Type the exact Hangul and press Enter to destroy each threat before impact.", "오염된 단어가 도시의 에너지 코어를 향해 낙하합니다. 정확한 한글을 입력하고 Enter를 눌러 충돌 전에 격파하세요.")}</p>
+            <div className="mission-rules"><span><b>01</b>{tr(locale, "LOCK WORD", "단어 조준")}</span><span><b>02</b>{tr(locale, "TYPE HANGUL", "한글 입력")}</span><span><b>03</b>{tr(locale, "ENTER · BLAST", "Enter · 격파")}</span></div>
+            <span className="mission-start" onClick={startMission} style={{ cursor: "pointer" }}><kbd>Enter</kbd>{tr(locale, "START MISSION · RETRO BGM ON", "임무 시작 · 레트로 BGM ON")}</span>
           </div>
         )}
+
         {waveClear && (
           <div className="wave-clear-curtain" role="status">
             <small>DEFENSE COMPLETE</small>
             <b>WAVE {waveClear.toString().padStart(2, "0")} CLEAR</b>
-            <span>{koreanUi ? "도시 전력 +1 · 다음 파도 분석 중" : "CITY POWER +1 · SCANNING NEXT WAVE"}</span>
+            <span>{tr(locale, "CITY POWER +1 · SCANNING NEXT WAVE", "도시 전력 +1 · 다음 파도 분석 중")}</span>
           </div>
         )}
-        {(paused || gameOver) && (
+
+        {paused && (
           <div className="game-curtain" role="status">
-            <small>{gameOver ? "CITY DESTROYED · MISSION FAILED" : "MISSION PAUSED"}</small>
-            <b>{gameOver ? score.toLocaleString() : koreanUi ? "시간 정지" : "TIME FREEZE"}</b>
-            {gameOver && <p>{koreanUi ? "내구도 0% · 단어 5개가 충돌해 도시가 붕괴했습니다." : "Integrity 0% · Five impacts collapsed the city."}</p>}
-            <span><kbd>Enter</kbd>{gameOver ? koreanUi ? "도시 복구 후 재출격" : "rebuild & redeploy" : koreanUi ? "임무 계속" : "resume mission"}</span>
+            <small>MISSION PAUSED</small>
+            <b>{tr(locale, "TIME FREEZE", "시간 정지")}</b>
+            <span><kbd>Enter</kbd>{tr(locale, "resume mission", "임무 계속")}</span>
           </div>
         )}
+
+        {/* GameOver Result & Confirmation Modal */}
+        {gameOver && showGameOverModal && (
+          <div className="game-curtain game-over-modal-curtain" role="status" style={{ background: "rgba(13, 17, 23, 0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", textAlign: "center", zIndex: 100 }}>
+            <div style={{ maxWidth: "480px", width: "100%", background: "var(--paper)", border: "3px solid #ff4d8d", borderRadius: "20px", padding: "28px", boxShadow: "0 12px 32px rgba(255, 77, 141, 0.3)", color: "var(--ink)" }}>
+              <span style={{ fontSize: "40px" }}>💥</span>
+              <small style={{ display: "block", color: "#ff4d8d", fontWeight: "bold", letterSpacing: "0.15em", marginTop: "8px" }}>CITY SHIELD COLLAPSED</small>
+              <h2 style={{ fontSize: "24px", margin: "8px 0", color: "var(--ink)", fontWeight: "900" }}>{tr(locale, "Mission Failed — City Destroyed", "방어 실패 — 임무 완수 리포트")}</h2>
+
+              {/* Detailed Performance Metrics */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", background: "var(--ivory)", border: "2px solid var(--line)", borderRadius: "14px", padding: "16px", margin: "16px 0", textAlign: "center" }}>
+                <div>
+                  <small style={{ color: "var(--ink)", opacity: 0.7, fontSize: "12px" }}>최종 전력 점수</small>
+                  <div style={{ fontSize: "22px", fontWeight: "900", color: "#58a6ff" }}>{score.toLocaleString()}</div>
+                </div>
+                <div>
+                  <small style={{ color: "var(--ink)", opacity: 0.7, fontSize: "12px" }}>격파 오염 단어</small>
+                  <div style={{ fontSize: "22px", fontWeight: "900", color: "#2da44e" }}>{caught}개</div>
+                </div>
+                <div>
+                  <small style={{ color: "var(--ink)", opacity: 0.7, fontSize: "12px" }}>도달한 웨이브</small>
+                  <div style={{ fontSize: "18px", fontWeight: "800", color: "var(--ink)" }}>WAVE {level}</div>
+                </div>
+                <div>
+                  <small style={{ color: "var(--ink)", opacity: 0.7, fontSize: "12px" }}>최고 연속 격파 / 등급</small>
+                  <div style={{ fontSize: "18px", fontWeight: "800", color: "#a371f7" }}>{maxCombo} Combo (RANK {rank})</div>
+                </div>
+              </div>
+
+              {/* Share & Brag Actions */}
+              <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+                <button type="button" className="button button-primary" onClick={copyResultReport} style={{ flex: 1, fontSize: "13px", padding: "10px", justifyContent: "center" }}>
+                  📋 {copiedResult ? "기록 복사 완료!" : "내 성적 복사하기"}
+                </button>
+                <button type="button" className="button button-secondary" onClick={shareToTwitter} style={{ fontSize: "13px", padding: "10px 14px" }}>
+                  🐤 X 자랑하기
+                </button>
+              </div>
+
+              {/* Confirmation Gate before restarting */}
+              {showRestartConfirm ? (
+                <div style={{ background: "rgba(255, 77, 141, 0.15)", border: "2px solid #ff4d8d", borderRadius: "12px", padding: "14px" }}>
+                  <p style={{ margin: "0 0 10px", fontWeight: "bold", fontSize: "14px", color: "var(--ink)" }}>⚠️ 처음부터 다시 도전하시겠습니까?</p>
+                  <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+                    <button type="button" className="button button-primary" onClick={resetGame} style={{ background: "#ff4d8d", borderColor: "#ff4d8d", color: "#fff", padding: "8px 16px" }}>
+                      🚀 예, 처음부터 시작!
+                    </button>
+                    <button type="button" className="button button-secondary" onClick={() => setShowRestartConfirm(false)} style={{ padding: "8px 16px" }}>
+                      기록 계속 보기
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="button button-primary"
+                  onClick={() => {
+                    const elapsed = Date.now() - gameOverTimeRef.current;
+                    if (elapsed < 1200) {
+                      setShowRestartConfirm(true);
+                    } else {
+                      setShowRestartConfirm(true);
+                    }
+                  }}
+                  style={{ width: "100%", justifyContent: "center", padding: "12px", fontSize: "15px", fontWeight: "bold" }}
+                >
+                  🔄 다시 도전하기 (확인창 열기)
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
       </div>
 
       <form className="word-rain-console" onSubmit={submit}>
         <div className="mission-console-head">
-          <span><i /> HANGEUL GUARD</span>
+          <span><i /> {tr(locale, "HANGEUL GUARD", "한글 가드")}</span>
           <button
             type="button"
             className={soundEnabled && localAudioEnabled ? "game-audio-toggle is-on" : "game-audio-toggle"}
@@ -616,17 +760,17 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
           </button>
         </div>
         <div className="game-scorebar">
-          <span>{koreanUi ? "도시 전력" : "CITY POWER"}<b>{score.toLocaleString()}</b></span>
-          <span>{koreanUi ? "연속 격파" : "CHAIN"}<b>×{combo}</b></span>
-          <span>{koreanUi ? "파일럿 등급" : "RANK"}<b>{rank}</b></span>
+          <span>{tr(locale, "CITY POWER", "도시 전력")}<b>{score.toLocaleString()}</b></span>
+          <span>{tr(locale, "CHAIN", "연속 격파")}<b>×{combo}</b></span>
+          <span>{tr(locale, "RANK", "파일럿 등급")}<b>{rank}</b></span>
         </div>
-        <div className="wave-progress"><span style={{ width: `${levelProgress}%` }} /><small>{koreanUi ? `웨이브 방어 ${caught % CAUGHT_PER_LEVEL}/${CAUGHT_PER_LEVEL}` : `WAVE DEFENSE ${caught % CAUGHT_PER_LEVEL}/${CAUGHT_PER_LEVEL}`}</small></div>
+        <div className="wave-progress"><span style={{ width: `${levelProgress}%` }} /><small>{`${tr(locale, "WAVE DEFENSE", "웨이브 방어")} ${caught % CAUGHT_PER_LEVEL}/${CAUGHT_PER_LEVEL}`}</small></div>
         <div>
-          <p className="demo-label">LIVE MISSION · WAVE {level.toString().padStart(2, "0")}</p>
-          <h3>{koreanUi ? "정확한 한글로 도시를 충전하세요." : "Power the city with accurate Hangul."}</h3>
-          <p>{koreanUi ? "단어가 방어선에 닿기 전에 정확히 입력하고 Enter로 격파하세요. 오타는 표적을 없애지 않습니다." : "Type the exact word and press Enter before it reaches the barrier. A typo never removes the target."}</p>
+          <p className="demo-label">{tr(locale, "LIVE MISSION · WAVE", "실시간 임무 · 웨이브")} {level.toString().padStart(2, "0")}</p>
+          <h3>{tr(locale, "Power the city with accurate Hangul.", "정확한 한글로 도시를 충전하세요.")}</h3>
+          <p>{tr(locale, "Type the exact word and press Enter before it reaches the barrier. A typo never removes the target.", "단어가 방어선에 닿기 전에 정확히 입력하고 Enter로 격파하세요. 오타는 표적을 없애지 않습니다.")}</p>
         </div>
-        <label htmlFor="word-rain-input">{koreanUi ? "표적 한글 입력" : "Target console"}</label>
+        <label htmlFor="word-rain-input">{tr(locale, "Target console", "표적 한글 입력")}</label>
         <div className="inline-form">
           <input
             className={inputError ? "input-error" : ""}
@@ -649,20 +793,22 @@ export function FallingWordsGame({ koreanUi, soundEnabled, onSuccessSound, onKey
               event.preventDefault();
               submitWord();
             }}
-            onBlur={() => {
+            onBlur={(event) => {
+              if (event.relatedTarget) return;
+              if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
               if (!briefing && !paused && !gameOver) window.setTimeout(focusInput, 0);
             }}
             autoComplete="off"
             spellCheck={false}
             aria-describedby="word-rain-message"
           />
-          <button className="button button-primary" type="submit">{koreanUi ? "격파" : "Blast"} <kbd>Enter</kbd></button>
+          <button className="button button-primary" type="submit">{tr(locale, "Blast", "격파")} <kbd>Enter</kbd></button>
         </div>
         <p className={`form-message ${inputError ? "error" : ""}`} id="word-rain-message" aria-live="polite">{message}</p>
         <div className="game-key-help">
-          <span><kbd>Enter</kbd>{koreanUi ? "표적 격파" : "blast target"}</span>
-          <span><kbd>Esc</kbd>{koreanUi ? "시간 정지/계속" : "pause/resume"}</span>
-          <span><kbd>Alt+M</kbd>{koreanUi ? "음악·효과음" : "music & effects"}</span>
+          <span><kbd>Enter</kbd>{tr(locale, "blast target", "표적 격파")}</span>
+          <span><kbd>Esc</kbd>{tr(locale, "pause/resume", "시간 정지/계속")}</span>
+          <span><kbd>Alt+M</kbd>{tr(locale, "music & effects", "음악·효과음")}</span>
         </div>
       </form>
     </div>

@@ -1,0 +1,34 @@
+export type SignupRole = "student" | "teacher";
+export type SignInKind = "signup" | "returning";
+
+export function normalizeAccountEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+export function normalizeSignupRole(value: unknown): SignupRole | null {
+  return value === "teacher" || value === "student" ? value : null;
+}
+
+export function classifySignIn(hasExistingAccount: boolean): SignInKind {
+  return hasExistingAccount ? "returning" : "signup";
+}
+
+/**
+ * Role choice is accepted only while creating an account. A returning learner
+ * cannot promote the stored account by editing the sign-in request payload.
+ */
+export function resolveMemberRole(
+  existingRole: string | null,
+  requestedRole: SignupRole | null,
+): SignupRole {
+  if (existingRole !== null) {
+    return existingRole === "teacher" || existingRole === "org_admin"
+      ? "teacher"
+      : "student";
+  }
+  return requestedRole ?? "student";
+}
+
+export function isTeacherRole(role: string): role is "teacher" | "org_admin" {
+  return role === "teacher" || role === "org_admin";
+}

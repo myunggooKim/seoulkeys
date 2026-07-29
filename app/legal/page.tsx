@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Legal & Safety Center — Hangeul Pop",
-  description: "Privacy, terms, cookies, advertising, copyright, child safety, and operating disclosures for Hangeul Pop.",
+  title: "Legal & Safety Center — Seoul Keys",
+  description: "Privacy, terms, cookies, advertising, copyright, child safety, and operating disclosures for Seoul Keys.",
 };
 
 const effectiveDate = "July 23, 2026";
@@ -12,9 +12,9 @@ export default function LegalCenter() {
   return (
     <main className="legal-shell">
       <header className="legal-header">
-        <Link className="brand" href="/" aria-label="Back to Hangeul Pop">
-          <span className="brand-mark" aria-hidden="true">ㅎ</span>
-          <span>Hangeul Pop</span>
+        <Link className="brand" href="/" aria-label="Back to Seoul Keys">
+          <span className="brand-mark" aria-hidden="true">ㅅ</span>
+          <span>Seoul Keys</span>
         </Link>
         <Link className="button button-secondary" href="/">Back to learning</Link>
       </header>
@@ -48,16 +48,18 @@ export default function LegalCenter() {
             <p className="legal-kicker">PLAIN-LANGUAGE SUMMARY</p>
             <h2>What the site does today</h2>
             <p>
-              Hangeul Pop is currently a private educational preview. Signed-in learners receive a personal progress
-              page and visit rewards. The service does not offer payments, uploads, public profiles, analytics, or
-              advertising. Typing entries stay in the active browser session; summarized progress is saved to the
-              learner’s account.
+              Seoul Keys is currently a private educational preview. Signed-in learners receive a personal progress
+              page and visit rewards. The service does not offer payments, uploads, public profiles, or advertising.
+              It does use product analytics (Cloudflare Web Analytics and Microsoft Clarity) to understand how the
+              lessons are used and where learners get stuck. Typing entries stay in the active browser session;
+              summarized progress is saved to the learner’s account.
             </p>
             <div className="data-snapshot-grid">
               <div><span>Account identity</span><b>Email and display name</b></div>
               <div><span>Typed answers</span><b>Not sent to our server</b></div>
               <div><span>Learning progress</span><b>Saved to personal page</b></div>
-              <div><span>Ads & analytics</span><b>Not active</b></div>
+              <div><span>Advertising</span><b>Not active</b></div>
+              <div><span>Product analytics</span><b>Cloudflare + Microsoft Clarity</b></div>
               <div><span>Korean speech</span><b>Pre-generated female/male audio</b></div>
               <div><span>Licensed media</span><b>Not published yet</b></div>
             </div>
@@ -67,7 +69,7 @@ export default function LegalCenter() {
             <p className="legal-kicker">개인정보처리방침 · PRIVACY POLICY</p>
             <h2>Privacy by minimization</h2>
             <p>
-              Hangeul Pop uses the authenticated account email and display name to provide a personal learning page.
+              Seoul Keys uses the authenticated account email and display name to provide a personal learning page.
               It does not sell personal information, build advertising profiles, or ask learners for phone numbers,
               precise locations, contacts, photos, or payment details.
             </p>
@@ -78,8 +80,8 @@ export default function LegalCenter() {
               <div role="row"><span role="cell">Lesson number, completed sentences, practice time, accuracy, XP, visit streak, benefit balance, and earned badges</span><span role="cell">Provide progress sync, the personal dashboard, and repeat-visit benefits. Retained with the learning account.</span></div>
               <div role="row"><span role="cell">Interface language, keyboard layout, pronunciation and sound settings</span><span role="cell">Saved in browser storage until the learner clears site data.</span></div>
               <div role="row"><span role="cell">Daily lesson number and completion state</span><span role="cell">Saved on the device to resume the current day’s lesson; replaced as the lesson changes.</span></div>
-              <div role="row"><span role="cell">Text typed into practice fields</span><span role="cell">Used in memory to score the exercise. The preview does not submit or persist it on an Hangeul Pop server.</span></div>
-              <div role="row"><span role="cell">Technical access and security logs</span><span role="cell">The hosting infrastructure may process standard request data such as IP address, user agent, time, and requested page to deliver and protect the site. Hangeul Pop does not use these logs for advertising profiles.</span></div>
+              <div role="row"><span role="cell">Text typed into practice fields</span><span role="cell">Used in memory to score the exercise. The preview does not submit or persist it on a Seoul Keys server.</span></div>
+              <div role="row"><span role="cell">Technical access and security logs</span><span role="cell">The hosting infrastructure may process standard request data such as IP address, user agent, time, and requested page to deliver and protect the site. Seoul Keys does not use these logs for advertising profiles.</span></div>
             </div>
             <h3>Korean pronunciation</h3>
             <p>
@@ -105,9 +107,9 @@ export default function LegalCenter() {
 
           <section id="terms" className="legal-section">
             <p className="legal-kicker">이용약관 · TERMS OF USE</p>
-            <h2>Use Hangeul Pop to learn and practice</h2>
+            <h2>Use Seoul Keys to learn and practice</h2>
             <ol>
-              <li><b>Educational service.</b> Hangeul Pop provides typing and language practice, not professional translation, immigration, legal, medical, or emergency advice.</li>
+              <li><b>Educational service.</b> Seoul Keys provides typing and language practice, not professional translation, immigration, legal, medical, or emergency advice.</li>
               <li><b>Permitted use.</b> Learners may use the service for personal and classroom learning. Automated scraping, security attacks, interference, impersonation, unlawful use, and unauthorized redistribution of protected content are prohibited.</li>
               <li><b>Availability.</b> Lessons may change, pause, or be removed for maintenance, safety, licensing, or technical reasons.</li>
               <li><b>Learning results.</b> Scores and translations are instructional aids. Accuracy and fluency outcomes are not guaranteed.</li>
@@ -119,10 +121,31 @@ export default function LegalCenter() {
 
           <section id="cookies" className="legal-section">
             <p className="legal-kicker">쿠키·광고 정책 · COOKIES & ADS</p>
-            <h2>No advertising or analytics cookies are active</h2>
+            <h2>No advertising cookies — product analytics only</h2>
             <p>
               The preview uses browser local storage for essential preferences and daily lesson continuity. It does
-              not currently load Google AdSense, behavioral advertising, social pixels, or audience analytics.
+              not load Google AdSense, behavioral advertising, or social pixels.
+            </p>
+            <p>
+              It does use two product-analytics tools so we can improve the lessons:
+            </p>
+            <ul>
+              <li>
+                <b>Cloudflare Web Analytics</b> — privacy-first page and visit counts. No cookies, no cross-site
+                tracking.
+              </li>
+              <li>
+                <b>Microsoft Clarity</b> — aggregated interaction data, heatmaps, and session replays that show where
+                learners hesitate or get stuck. Clarity sets its own cookies and is governed by the{" "}
+                <a href="https://privacy.microsoft.com/privacystatement" target="_blank" rel="noopener noreferrer">
+                  Microsoft Privacy Statement
+                </a>. Text typed into practice fields is not sent to our server, and account passwords are never
+                entered on this site.
+              </li>
+            </ul>
+            <p>
+              You can block these at any time with your browser’s tracking protection or an ad/tracker blocker; the
+              lessons and games continue to work normally.
             </p>
             <h3>Before advertising is enabled</h3>
             <ul>
@@ -139,7 +162,7 @@ export default function LegalCenter() {
             <h2>Original lessons first; licensed media only with permission</h2>
             <p>
               The interface, original practice sentences, course structure, and original game presentation are
-              Hangeul Pop materials unless otherwise stated. Korean language facts and ordinary short expressions
+              Seoul Keys materials unless otherwise stated. Korean language facts and ordinary short expressions
               may not be proprietary, but a particular song lyric, screenplay, subtitle, recording, image, logo,
               character, or branded title can be protected by its owner.
             </p>
@@ -167,7 +190,7 @@ export default function LegalCenter() {
             <p className="legal-kicker">접근성 · ACCESSIBILITY</p>
             <h2>Learning should remain operable</h2>
             <p>
-              Hangeul Pop supports keyboard navigation, visible focus states, semantic labels, responsive layouts,
+              Seoul Keys supports keyboard navigation, visible focus states, semantic labels, responsive layouts,
               reduced reliance on color alone, and independent audio controls. Learners can turn both pronunciation
               and completion sounds off. Accessibility issues should be included in the future contact and reporting
               channel with the device, browser, page, and problem description.

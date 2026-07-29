@@ -29,6 +29,25 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
+    // 1. Static asset bypass for SEO and verification files (sitemap, robots, naver, etc.)
+    if (
+      url.pathname === "/sitemap.xml" ||
+      url.pathname === "/robots.txt" ||
+      url.pathname.startsWith("/naver") ||
+      url.pathname.endsWith(".html") ||
+      url.pathname.endsWith(".xml") ||
+      url.pathname.endsWith(".txt")
+    ) {
+      try {
+        const assetRes = await env.ASSETS.fetch(request);
+        if (assetRes.status !== 404) {
+          return assetRes;
+        }
+      } catch {
+        // Fallback to app router handler
+      }
+    }
+
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
       return handleImageOptimization(request, {

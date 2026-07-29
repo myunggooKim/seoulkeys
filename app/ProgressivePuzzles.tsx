@@ -1,6 +1,9 @@
 "use client";
 
-import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ThemeWord } from "./content-themes";
+import type { Locale } from "./locale-detection";
+import { tr } from "./ui-i18n";
 
 type MissingPuzzle = {
   word: string;
@@ -9,6 +12,12 @@ type MissingPuzzle = {
   meaningEn: string;
   options: string[];
 };
+
+function numberChoiceIndex(event: { key: string; code: string }) {
+  const physicalKey = /^(?:Digit|Numpad)([1-3])$/.exec(event.code)?.[1];
+  const number = physicalKey ?? (/^[1-3]$/.test(event.key) ? event.key : "");
+  return number ? Number(number) - 1 : null;
+}
 
 function validateMissingPuzzle(puzzle: MissingPuzzle) {
   const expected = Array.from(puzzle.word)[puzzle.missingIndex];
@@ -67,6 +76,167 @@ const missingPuzzleLevels: MissingPuzzle[][] = [
   options.splice(desiredAnswerPosition, 0, expected);
   return validateMissingPuzzle({ ...puzzle, options });
 }));
+
+// ---------------------------------------------------------------------------
+// Endless missing-letter generation
+// ---------------------------------------------------------------------------
+// The curated levels above are the warm-up. Past them the game generates fresh
+// puzzles forever from a large word bank, with plausible "confusable" distractors
+// built by swapping the vowel (or final consonant) of the correct syllable —
+// so it never falls back into repeating the same final level.
+
+const HANGUL_BASE = 0xac00;
+const HANGUL_LAST = 0xd7a3;
+
+function syllableParts(character: string): { initial: number; medial: number; final: number } | null {
+  const code = character.codePointAt(0);
+  if (code === undefined || code < HANGUL_BASE || code > HANGUL_LAST) return null;
+  const offset = code - HANGUL_BASE;
+  return { initial: Math.floor(offset / 588), medial: Math.floor((offset % 588) / 28), final: offset % 28 };
+}
+
+function composeSyllable(initial: number, medial: number, final: number): string {
+  return String.fromCodePoint(HANGUL_BASE + initial * 588 + medial * 28 + final);
+}
+
+function shuffle<T>(items: T[]): T[] {
+  const copy = [...items];
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swap = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[swap]] = [copy[swap], copy[index]];
+  }
+  return copy;
+}
+
+// Two confusable wrong syllables for the given correct one.
+function generateDistractors(expected: string): string[] | null {
+  const parts = syllableParts(expected);
+  if (!parts) return null;
+  const candidates = new Set<string>();
+  // Same consonant + final, different vowel — the most natural confusion.
+  const vowelOrder = [0, 4, 8, 13, 18, 20, 1, 5, 2, 6, 9, 14];
+  for (const medial of vowelOrder) {
+    if (medial === parts.medial) continue;
+    const candidate = composeSyllable(parts.initial, medial, parts.final);
+    if (candidate !== expected) candidates.add(candidate);
+    if (candidates.size >= 6) break;
+  }
+  // One final-consonant swap for extra variety.
+  const finalOrder = parts.final === 0 ? [4, 21, 8, 16, 1] : [0, 4, 21];
+  for (const final of finalOrder) {
+    if (final === parts.final) continue;
+    const candidate = composeSyllable(parts.initial, parts.medial, final);
+    if (candidate !== expected) candidates.add(candidate);
+  }
+  const pool = shuffle([...candidates]);
+  return pool.length >= 2 ? pool.slice(0, 2) : null;
+}
+
+type WordEntry = { word: string; meaningKo: string; meaningEn: string };
+
+// General-purpose bank that keeps the endless rounds varied. Themed banks can be
+// appended to this list as the concept tracks grow.
+const generativeWordBank: WordEntry[] = [
+  { word: "하늘", meaningKo: "머리 위로 펼쳐진 공간", meaningEn: "the sky" },
+  { word: "바람", meaningKo: "흐르는 공기", meaningEn: "the wind" },
+  { word: "구름", meaningKo: "하늘에 뜬 물방울 덩어리", meaningEn: "a cloud" },
+  { word: "노을", meaningKo: "해질 때 붉게 물든 하늘", meaningEn: "a sunset glow" },
+  { word: "바다", meaningKo: "넓고 푸른 물", meaningEn: "the sea" },
+  { word: "강물", meaningKo: "흐르는 큰 물줄기", meaningEn: "river water" },
+  { word: "나무", meaningKo: "가지와 잎이 있는 식물", meaningEn: "a tree" },
+  { word: "꽃잎", meaningKo: "꽃을 이루는 한 장", meaningEn: "a petal" },
+  { word: "가족", meaningKo: "함께 사는 식구", meaningEn: "family" },
+  { word: "친구", meaningKo: "가깝게 지내는 사람", meaningEn: "a friend" },
+  { word: "선물", meaningKo: "마음을 담아 주는 것", meaningEn: "a gift" },
+  { word: "행복", meaningKo: "기쁘고 만족스러운 마음", meaningEn: "happiness" },
+  { word: "사랑", meaningKo: "아끼고 좋아하는 마음", meaningEn: "love" },
+  { word: "추억", meaningKo: "지난 일의 기억", meaningEn: "a memory" },
+  { word: "노래", meaningKo: "가락에 맞춰 부르는 것", meaningEn: "a song" },
+  { word: "춤사위", meaningKo: "춤의 몸짓", meaningEn: "a dance move" },
+  { word: "커피", meaningKo: "볶은 원두로 내린 음료", meaningEn: "coffee" },
+  { word: "김밥", meaningKo: "밥과 재료를 김으로 만 음식", meaningEn: "gimbap" },
+  { word: "라면", meaningKo: "끓여 먹는 즉석 국수", meaningEn: "ramen" },
+  { word: "시장", meaningKo: "물건을 사고파는 곳", meaningEn: "a market" },
+  { word: "거리", meaningKo: "사람이 다니는 길", meaningEn: "a street" },
+  { word: "공원", meaningKo: "쉬고 노는 넓은 터", meaningEn: "a park" },
+  { word: "학교", meaningKo: "배우는 곳", meaningEn: "a school" },
+  { word: "병원", meaningKo: "아픈 사람을 치료하는 곳", meaningEn: "a hospital" },
+  { word: "은행", meaningKo: "돈을 맡기고 찾는 곳", meaningEn: "a bank" },
+  { word: "우산", meaningKo: "비를 막는 도구", meaningEn: "an umbrella" },
+  { word: "지갑", meaningKo: "돈을 넣는 작은 주머니", meaningEn: "a wallet" },
+  { word: "안개", meaningKo: "낮게 낀 뿌연 공기", meaningEn: "fog" },
+  { word: "무지개", meaningKo: "비 온 뒤 뜨는 일곱 빛", meaningEn: "a rainbow" },
+  { word: "햇살", meaningKo: "내리쬐는 햇빛", meaningEn: "sunlight" },
+  { word: "계절", meaningKo: "봄여름가을겨울의 때", meaningEn: "a season" },
+  { word: "여행", meaningKo: "다른 곳을 다녀오는 일", meaningEn: "travel" },
+  { word: "지도", meaningKo: "길을 그려 놓은 그림", meaningEn: "a map" },
+  { word: "사진", meaningKo: "모습을 담은 그림", meaningEn: "a photo" },
+  { word: "편지", meaningKo: "글로 전하는 소식", meaningEn: "a letter" },
+  { word: "약속", meaningKo: "지키기로 한 다짐", meaningEn: "a promise" },
+  { word: "용기", meaningKo: "두려움을 이기는 마음", meaningEn: "courage" },
+  { word: "희망", meaningKo: "바라고 기대하는 마음", meaningEn: "hope" },
+  { word: "미소", meaningKo: "가볍게 짓는 웃음", meaningEn: "a smile" },
+  { word: "눈물", meaningKo: "눈에서 흐르는 물", meaningEn: "tears" },
+  { word: "마음", meaningKo: "생각과 느낌이 있는 곳", meaningEn: "the heart" },
+  { word: "목소리", meaningKo: "입에서 나는 소리", meaningEn: "a voice" },
+  { word: "이야기", meaningKo: "주고받는 말이나 사연", meaningEn: "a story" },
+  { word: "저녁노을", meaningKo: "저녁의 붉은 하늘", meaningEn: "an evening glow" },
+  { word: "밤하늘", meaningKo: "밤의 하늘", meaningEn: "the night sky" },
+  { word: "별자리", meaningKo: "별을 이은 모양", meaningEn: "a constellation" },
+  { word: "골목길", meaningKo: "좁은 동네 길", meaningEn: "an alley" },
+  { word: "기차역", meaningKo: "기차를 타고 내리는 곳", meaningEn: "a train station" },
+  { word: "버스정류장", meaningKo: "버스를 기다리는 곳", meaningEn: "a bus stop" },
+  { word: "도서관", meaningKo: "책을 읽고 빌리는 곳", meaningEn: "a library" },
+  { word: "박물관", meaningKo: "유물을 전시하는 곳", meaningEn: "a museum" },
+  { word: "미술관", meaningKo: "그림을 전시하는 곳", meaningEn: "an art gallery" },
+  { word: "산책로", meaningKo: "걷기 좋은 길", meaningEn: "a walking path" },
+];
+
+function buildGeneratedPuzzle(entry: WordEntry): MissingPuzzle | null {
+  const characters = Array.from(entry.word);
+  const validIndices = characters
+    .map((character, index) => ({ character, index }))
+    .filter(({ character }) => syllableParts(character))
+    .map(({ index }) => index);
+  if (!validIndices.length) return null;
+  // Prefer blanking a non-first syllable so the word still has an anchor.
+  const preferred = validIndices.length > 1 ? validIndices.filter((index) => index !== 0) : validIndices;
+  for (const missingIndex of shuffle(preferred.length ? preferred : validIndices)) {
+    const expected = characters[missingIndex];
+    const distractors = generateDistractors(expected);
+    if (distractors && distractors.length === 2) {
+      return {
+        word: entry.word,
+        missingIndex,
+        meaningKo: entry.meaningKo,
+        meaningEn: entry.meaningEn,
+        options: shuffle([expected, ...distractors]),
+      };
+    }
+  }
+  return null;
+}
+
+// A fresh 6-puzzle level drawn from the (shuffled) bank, difficulty rising with
+// the level number by preferring longer words.
+function buildGeneratedLevel(levelNumber: number, bank: WordEntry[]): MissingPuzzle[] {
+  const minLength = Math.min(4, 2 + Math.floor(levelNumber / 3));
+  const longEnough = bank.filter((entry) => Array.from(entry.word).length >= minLength);
+  const source = shuffle(longEnough.length >= 6 ? longEnough : bank);
+  const puzzles: MissingPuzzle[] = [];
+  for (const entry of source) {
+    const puzzle = buildGeneratedPuzzle(entry);
+    if (puzzle) puzzles.push(puzzle);
+    if (puzzles.length >= 6) break;
+  }
+  // Guarantee a full level even if generation was unlucky.
+  while (puzzles.length < 6 && source.length) {
+    const puzzle = buildGeneratedPuzzle(source[puzzles.length % source.length]);
+    if (puzzle) puzzles.push(puzzle);
+    else break;
+  }
+  return puzzles.length ? puzzles : missingPuzzleLevels[missingPuzzleLevels.length - 1];
+}
 
 export type Direction = "across" | "down";
 
@@ -160,7 +330,40 @@ const crosswordThemes: Array<{ id: string; titleKo: string; titleEn: string; wor
       { answer: "요즘", clueKo: "바로 얼마 전부터 지금까지", clueEn: "These days" },
     ],
   },
+  {
+    id: "business-network",
+    titleKo: "한국 오피스",
+    titleEn: "A Korean office",
+    words: [
+      { answer: "회사", clueKo: "일하는 조직", clueEn: "A company" },
+      { answer: "사무실", clueKo: "사무를 보는 방", clueEn: "An office room" },
+      { answer: "회의실", clueKo: "모여서 의논하는 방", clueEn: "A meeting room" },
+      { answer: "의견", clueKo: "어떤 일에 대한 생각", clueEn: "An opinion" },
+      { answer: "견적서", clueKo: "값을 미리 계산해 적은 문서", clueEn: "A price quote" },
+      { answer: "계약서", clueKo: "약속을 적은 문서", clueEn: "A contract" },
+      { answer: "약속", clueKo: "만나기로 정한 것", clueEn: "An appointment" },
+      { answer: "담당자", clueKo: "그 일을 맡은 사람", clueEn: "The person in charge" },
+      { answer: "당일", clueKo: "바로 그날", clueEn: "That same day" },
+      { answer: "일정", clueKo: "해야 할 일의 시간표", clueEn: "A schedule" },
+      { answer: "정보", clueKo: "알고 있으면 도움이 되는 내용", clueEn: "Information" },
+      { answer: "보고서", clueKo: "결과를 정리한 글", clueEn: "A report" },
+      { answer: "서류", clueKo: "일에 쓰는 문서", clueEn: "Documents" },
+      { answer: "부서", clueKo: "회사를 나눈 조직 단위", clueEn: "A department" },
+      { answer: "장부", clueKo: "돈의 드나듦을 적는 공책", clueEn: "An account book" },
+      { answer: "사장님", clueKo: "회사를 이끄는 사람", clueEn: "The company boss" },
+    ],
+  },
 ];
+
+// Each learning concept maps to a curated, syllable-chained crossword pool so the
+// crossword matches the studied theme while still producing dense, solvable boards
+// (the flat vocabulary banks don't share enough syllables to cross well).
+const crosswordThemeByConcept: Record<string, string> = {
+  travel: "travel-network",
+  business: "business-network",
+  friends: "culture-network",
+  reading: "food-network",
+};
 
 export function cellKey(row: number, col: number) {
   return `${row}-${col}`;
@@ -224,26 +427,42 @@ function createCrossword(theme: typeof crosswordThemes[number], size = 15): Cros
   const firstCol = Math.floor((size - Array.from(first.answer).length) / 2);
   place(first, Math.floor(size / 2), firstCol, "across");
 
-  for (const seed of theme.words.slice(1)) {
-    const letters = Array.from(seed.answer);
-    let best: { row: number; col: number; direction: Direction; score: number } | null = null;
-    for (let index = 0; index < letters.length; index += 1) {
-      for (const [key, cell] of cells) {
-        if (cell.solution !== letters[index]) continue;
-        const [cellRow, cellCol] = key.split("-").map(Number);
-        for (const direction of ["across", "down"] as Direction[]) {
-          if (cell.directions.includes(direction)) continue;
-          const row = cellRow - (direction === "down" ? index : 0);
-          const col = cellCol - (direction === "across" ? index : 0);
-          const crossings = canPlace(seed.answer, row, col, direction);
-          if (crossings === false || crossings < 1) continue;
-          const centerDistance = Math.abs(row - size / 2) + Math.abs(col - size / 2);
-          const score = crossings * 100 - centerDistance;
-          if (!best || score > best.score) best = { row, col, direction, score };
+  // Place remaining words in repeated passes: a word skipped early (nothing to
+  // cross yet) is retried after later words land, so board density no longer
+  // depends on word order. This lets us safely rotate the seed for variety
+  // without producing sparse 2–3 word boards.
+  const remaining = theme.words.slice(1);
+  let placedSomething = true;
+  while (placedSomething && remaining.length) {
+    placedSomething = false;
+    for (let position = 0; position < remaining.length;) {
+      const seed = remaining[position];
+      const letters = Array.from(seed.answer);
+      let best: { row: number; col: number; direction: Direction; score: number } | null = null;
+      for (let index = 0; index < letters.length; index += 1) {
+        for (const [key, cell] of cells) {
+          if (cell.solution !== letters[index]) continue;
+          const [cellRow, cellCol] = key.split("-").map(Number);
+          for (const direction of ["across", "down"] as Direction[]) {
+            if (cell.directions.includes(direction)) continue;
+            const row = cellRow - (direction === "down" ? index : 0);
+            const col = cellCol - (direction === "across" ? index : 0);
+            const crossings = canPlace(seed.answer, row, col, direction);
+            if (crossings === false || crossings < 1) continue;
+            const centerDistance = Math.abs(row - size / 2) + Math.abs(col - size / 2);
+            const score = crossings * 100 - centerDistance;
+            if (!best || score > best.score) best = { row, col, direction, score };
+          }
         }
       }
+      if (best) {
+        place(seed, best.row, best.col, best.direction);
+        remaining.splice(position, 1);
+        placedSomething = true;
+      } else {
+        position += 1;
+      }
     }
-    if (best) place(seed, best.row, best.col, best.direction);
   }
 
   const positions = entries.flatMap(entryCells);
@@ -261,6 +480,48 @@ function createCrossword(theme: typeof crosswordThemes[number], size = 15): Cros
 }
 
 export const crosswordPuzzles = crosswordThemes.map((theme) => createCrossword(theme));
+
+// Endless, varied boards: rotate the theme's word list per board so each visit
+// (even to the same theme) yields a different seed word and layout, and give
+// every board a unique id prefix so entry ids never collide across boards.
+// Build every rotation of a word pool, then choose among the densest ones. This
+// keeps each board well-connected while still cycling through different seed
+// words/layouts so the game never repeats the same board.
+function bestBoardFromPool(
+  words: WordSeed[],
+  id: string,
+  titleKo: string,
+  titleEn: string,
+  cycle: number,
+): CrosswordPuzzle {
+  const usable = words.filter((seed) => Array.from(seed.answer).every((char) => syllableParts(char)));
+  const pool = usable.length >= 4 ? usable : words;
+  const candidates = Array.from({ length: pool.length }, (_, rotation) => {
+    const rotated = [...pool.slice(rotation), ...pool.slice(0, rotation)];
+    const board = createCrossword({ id: `${id}-r${rotation}`, titleKo, titleEn, words: rotated });
+    return { board, placed: board.entries.length };
+  }).sort((a, b) => b.placed - a.placed);
+  const best = candidates[0]?.placed ?? 0;
+  const dense = candidates.filter((candidate) => candidate.placed >= Math.max(best - 1, Math.ceil(best * 0.8)));
+  return dense.length ? dense[cycle % dense.length].board : candidates[0].board;
+}
+
+export function makeCrosswordBoard(boardIndex: number): CrosswordPuzzle {
+  const theme = crosswordThemes[boardIndex % crosswordThemes.length];
+  const cycle = Math.floor(boardIndex / crosswordThemes.length);
+  const chosen = bestBoardFromPool(theme.words, theme.id, theme.titleKo, theme.titleEn, cycle);
+  return { ...chosen, id: `${theme.id}-b${boardIndex}` };
+}
+
+// A crossword board for the selected learning concept, using that concept's
+// curated syllable-chained pool so the crossword matches the studied theme.
+export function makeThemedCrosswordBoard(boardIndex: number, conceptId: string): CrosswordPuzzle {
+  const poolId = crosswordThemeByConcept[conceptId];
+  const theme = crosswordThemes.find((candidate) => candidate.id === poolId)
+    ?? crosswordThemes[boardIndex % crosswordThemes.length];
+  const chosen = bestBoardFromPool(theme.words, theme.id, theme.titleKo, theme.titleEn, boardIndex);
+  return { ...chosen, id: `${theme.id}-c${boardIndex}` };
+}
 
 export function buildCrossword(puzzle: CrosswordPuzzle) {
   const cells = new Map<string, BuiltCell>();
@@ -285,9 +546,17 @@ export function buildCrossword(puzzle: CrosswordPuzzle) {
   return { cells, numberByStart, numberByEntry };
 }
 
-export function MissingLetterGame({ koreanUi, soundEnabled, onSuccessSound, onKeySound }: {
-  koreanUi: boolean; soundEnabled: boolean; onSuccessSound: () => void; onKeySound: (code: string) => void;
+export function MissingLetterGame({ koreanUi, locale, soundEnabled, onSuccessSound, onKeySound, words }: {
+  koreanUi: boolean; locale: Locale; soundEnabled: boolean; onSuccessSound: () => void; onKeySound: (code: string) => void;
+  // Optional themed word bank used to generate endless puzzles.
+  words?: ThemeWord[];
 }) {
+  // Generation bank: themed words when a concept is selected, else the general bank.
+  const activeGenBank = useMemo(
+    () => words && words.length ? words : generativeWordBank,
+    [words],
+  );
+  const genBankRef = useRef<WordEntry[]>(activeGenBank);
   const [levelIndex, setLevelIndex] = useState(0);
   const [puzzleIndex, setPuzzleIndex] = useState(0);
   const [answer, setAnswer] = useState("");
@@ -297,12 +566,18 @@ export function MissingLetterGame({ koreanUi, soundEnabled, onSuccessSound, onKe
   const [attempts, setAttempts] = useState(0);
   const [locked, setLocked] = useState(false);
   const [levelUp, setLevelUp] = useState(false);
-  const [masterRound, setMasterRound] = useState(1);
-  const [message, setMessage] = useState(koreanUi ? "빠진 한 글자를 입력하고 Enter를 누르세요." : "Type the missing syllable and press Enter.");
+  // Every level is generated from the active (themed) bank, so the whole game
+  // reflects the chosen concept from the very first word and never runs out.
+  const [generatedLevels, setGeneratedLevels] = useState<MissingPuzzle[][]>(
+    () => [buildGeneratedLevel(0, words && words.length ? words : generativeWordBank)],
+  );
+  const [message, setMessage] = useState(tr(locale, "Type the missing syllable and press Enter.", "빠진 한 글자를 입력하고 Enter를 누르세요."));
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<number | null>(null);
   const puzzleStartedAt = useRef<number | null>(null);
-  const level = missingPuzzleLevels[levelIndex];
+  const didMountRef = useRef(false);
+  const allLevels = generatedLevels;
+  const level = allLevels[levelIndex] ?? allLevels[0];
   const puzzle = level[puzzleIndex % level.length];
   const characters = Array.from(puzzle.word);
   const expected = characters[puzzle.missingIndex];
@@ -322,6 +597,19 @@ export function MissingLetterGame({ koreanUi, soundEnabled, onSuccessSound, onKe
     if (timerRef.current) window.clearTimeout(timerRef.current);
   }, []);
 
+  // When the learner switches concept, restart with a fresh themed first level.
+  useEffect(() => {
+    genBankRef.current = activeGenBank;
+    if (!didMountRef.current) { didMountRef.current = true; return; }
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    setGeneratedLevels([buildGeneratedLevel(0, activeGenBank)]);
+    setLevelIndex(0);
+    setPuzzleIndex(0);
+    setAnswer("");
+    setLocked(false);
+    setLevelUp(false);
+  }, [activeGenBank]);
+
   function choose(value: string) {
     if (locked) return;
     setAnswer(value);
@@ -334,7 +622,7 @@ export function MissingLetterGame({ koreanUi, soundEnabled, onSuccessSound, onKe
     setAttempts((current) => current + 1);
     if (normalized !== expected) {
       setStreak(0);
-      setMessage(koreanUi ? "글자는 그대로 있어요. Backspace로 고치고 다시 Enter!" : "Your answer stays. Correct it with Backspace and press Enter again.");
+      setMessage(tr(locale, "Your answer stays. Correct it with Backspace and press Enter again.", "글자는 그대로 있어요. Backspace로 고치고 다시 Enter!"));
       focusInput();
       return;
     }
@@ -343,7 +631,6 @@ export function MissingLetterGame({ koreanUi, soundEnabled, onSuccessSound, onKe
     const speedBonus = Math.max(0, Math.round(120 - seconds * 8));
     const gained = 100 + levelIndex * 50 + streak * 10 + speedBonus;
     const isLevelEnd = puzzleIndex === level.length - 1;
-    const isFinalLevel = levelIndex === missingPuzzleLevels.length - 1;
     setLocked(true);
     setCorrect((current) => current + 1);
     setStreak((current) => current + 1);
@@ -353,40 +640,51 @@ export function MissingLetterGame({ koreanUi, soundEnabled, onSuccessSound, onKe
     if (isLevelEnd) setLevelUp(true);
 
     timerRef.current = window.setTimeout(() => {
-      const nextLevel = isLevelEnd ? Math.min(levelIndex + 1, missingPuzzleLevels.length - 1) : levelIndex;
-      const nextMasterRound = isLevelEnd && isFinalLevel ? masterRound + 1 : masterRound;
-      if (isLevelEnd && isFinalLevel) setMasterRound(nextMasterRound);
-      setLevelIndex(nextLevel);
-      setPuzzleIndex(isLevelEnd ? 0 : puzzleIndex + 1);
+      if (isLevelEnd) {
+        const nextLevel = levelIndex + 1;
+        // Make sure the next level exists — generate a fresh one on demand so
+        // there is always something new after the curated levels.
+        setGeneratedLevels((previous) => (
+          nextLevel >= previous.length
+            ? [...previous, buildGeneratedLevel(nextLevel, genBankRef.current)]
+            : previous
+        ));
+        setLevelIndex(nextLevel);
+        setPuzzleIndex(0);
+        setMessage(koreanUi ? `${nextLevel + 1}단계 시작! 새로운 낱말이 계속 이어집니다.` : `Level ${nextLevel + 1}! Fresh words keep coming.`);
+      } else {
+        setPuzzleIndex(puzzleIndex + 1);
+        setMessage(tr(locale, "The next word is ready. Type now.", "다음 낱말이 준비됐어요. 바로 입력하세요."));
+      }
       setAnswer("");
       setLocked(false);
       setLevelUp(false);
-      setMessage(isLevelEnd
-        ? isFinalLevel
-          ? koreanUi ? `마스터 ${nextMasterRound}회차 시작! 고급 표현을 더 빠르게 완성하세요.` : `Master round ${nextMasterRound}! Complete the advanced phrases faster.`
-          : koreanUi ? `${nextLevel + 1}단계 시작! 더 긴 낱말에 도전합니다.` : `Level ${nextLevel + 1}! Longer words are ready.`
-        : koreanUi ? "다음 낱말이 준비됐어요. 바로 입력하세요." : "The next word is ready. Type now.");
       window.setTimeout(focusInput, 0);
     }, isLevelEnd ? 1450 : 650);
   }
 
   return (
-    <div className={`missing-demo progressive-puzzle level-${levelIndex + 1}`} onKeyDownCapture={(event) => {
-      if (/^[1-3]$/.test(event.key) && !locked) {
+    <div className={`missing-demo progressive-puzzle level-${(levelIndex % 5) + 1}`} onKeyDownCapture={(event) => {
+      const choiceIndex = numberChoiceIndex(event);
+      if (choiceIndex !== null && !locked) {
         event.preventDefault();
-        choose(puzzle.options[Number(event.key) - 1]);
+        choose(puzzle.options[choiceIndex]);
       }
     }}>
       <div className="puzzle-head">
-        <p className="demo-label">{koreanUi ? `빠진 글자 · ${levelIndex + 1}단계` : `MISSING BEAT · LEVEL ${levelIndex + 1}`}</p>
-        <div><span>{koreanUi ? "정확도" : "ACC"} <b>{accuracy}%</b></span><span>{koreanUi ? "연속" : "STREAK"} <b>×{streak}</b></span><span><b>{score}</b> {koreanUi ? "점" : "PTS"}</span></div>
+        <p className="demo-label">{koreanUi ? `빠진 글자 · ${levelIndex + 1}단계` : `${tr(locale, "MISSING BEAT")} · ${tr(locale, "LEVEL")} ${levelIndex + 1}`}</p>
+        <div><span>{tr(locale, "ACC", "정확도")} <b>{accuracy}%</b></span><span>{tr(locale, "STREAK", "연속")} <b>×{streak}</b></span><span><b>{score}</b> {tr(locale, "PTS", "점")}</span></div>
       </div>
       <div className="missing-level-track">
-        {missingPuzzleLevels.map((_, index) => <span className={index < levelIndex ? "done" : index === levelIndex ? "current" : ""} key={index}>{index < levelIndex ? "✓" : index + 1}</span>)}
-        <i style={{ width: `${((levelIndex + (puzzleIndex + (locked ? 1 : 0)) / level.length) / missingPuzzleLevels.length) * 84}%` }} />
+        {Array.from({ length: 5 }, (_, offset) => {
+          const windowStart = Math.max(0, levelIndex - 2);
+          const index = windowStart + offset;
+          return <span className={index < levelIndex ? "done" : index === levelIndex ? "current" : ""} key={index}>{index < levelIndex ? "✓" : index + 1}</span>;
+        })}
+        <i style={{ width: `${((puzzleIndex + (locked ? 1 : 0)) / level.length) * 100}%` }} />
       </div>
       <div className="missing-prompt">
-        <small>{koreanUi ? `문제 ${puzzleIndex + 1}/${level.length}` : `WORD ${puzzleIndex + 1}/${level.length}`}</small>
+        <small>{`${tr(locale, "WORD", "문제")} ${puzzleIndex + 1}/${level.length}`}</small>
         <h3>{koreanUi ? puzzle.meaningKo : puzzle.meaningEn}</h3>
       </div>
       <div className="missing-word" lang="ko">
@@ -394,7 +692,7 @@ export function MissingLetterGame({ koreanUi, soundEnabled, onSuccessSound, onKe
           ? <span className={locked ? "correct" : ""} key={index}>{answer || "?"}</span>
           : <b key={index}>{character}</b>)}
       </div>
-      <label className="missing-input-label" htmlFor="missing-letter-input">{koreanUi ? "빠진 글자" : "Missing syllable"}</label>
+      <label className="missing-input-label" htmlFor="missing-letter-input">{tr(locale, "Missing syllable", "빠진 글자")}</label>
       <input
         id="missing-letter-input"
         className={answer && answer !== expected ? "pending" : ""}
@@ -411,335 +709,32 @@ export function MissingLetterGame({ koreanUi, soundEnabled, onSuccessSound, onKe
             checkAnswer();
           }
         }}
-        onBlur={() => { if (!locked) window.setTimeout(focusInput, 0); }}
+        onBlur={(event) => {
+          // Release focus if the user moved to another control; only re-grab
+          // when focus was lost to nowhere so clicking away isn't trapped.
+          if (event.relatedTarget) return;
+          if (!locked) window.setTimeout(focusInput, 0);
+        }}
         autoComplete="off"
         spellCheck={false}
       />
-      <div className="number-finger-guide" role="note" aria-label={koreanUi ? "숫자 1, 2, 3 손가락 안내" : "Finger guide for number keys 1, 2, and 3"}>
-        <p>{koreanUi ? "왼손을 숫자열에 준비하세요" : "Keep your left hand ready on the number row"}</p>
+      <div className="number-finger-guide" role="note" aria-label={tr(locale, "Finger guide for number keys 1, 2, and 3", "숫자 1, 2, 3 손가락 안내")}>
+        <p>{tr(locale, "Keep your left hand ready on the number row", "왼손을 숫자열에 준비하세요")}</p>
         <div>
-          <span><i className="finger-tip pinky" /><kbd>1</kbd><b>{koreanUi ? "새끼" : "Pinky"}</b></span>
-          <span><i className="finger-tip ring" /><kbd>2</kbd><b>{koreanUi ? "약지" : "Ring"}</b></span>
-          <span><i className="finger-tip middle" /><kbd>3</kbd><b>{koreanUi ? "가운데" : "Middle"}</b></span>
+          <span><i className="finger-tip pinky" /><kbd>1</kbd><b>{tr(locale, "Pinky", "새끼")}</b></span>
+          <span><i className="finger-tip ring" /><kbd>2</kbd><b>{tr(locale, "Ring", "약지")}</b></span>
+          <span><i className="finger-tip middle" /><kbd>3</kbd><b>{tr(locale, "Middle", "가운데")}</b></span>
         </div>
-        <small>{koreanUi ? "마우스 없이 1·2·3으로 고르고 Enter로 확인" : "Choose with 1·2·3 and press Enter—no mouse needed"}</small>
+        <small>{tr(locale, "Choose with 1·2·3 and press Enter—no mouse needed", "마우스 없이 1·2·3으로 고르고 Enter로 확인")}</small>
       </div>
-      <div className="answer-options" aria-label={koreanUi ? "빠진 글자 후보" : "Missing syllable choices"}>
+      <div className="answer-options" aria-label={tr(locale, "Missing syllable choices", "빠진 글자 후보")}>
         {puzzle.options.map((option, index) => (
           <button type="button" disabled={locked} className={answer === option ? "chosen" : ""} onClick={() => choose(option)} key={option}><kbd>{index + 1}</kbd>{option}</button>
         ))}
       </div>
       <p className={`form-message ${locked ? "success" : ""}`} aria-live="polite">{message}</p>
-      <div className="game-key-help"><span><kbd>1–3</kbd>{koreanUi ? "후보 선택" : "choose"}</span><span><kbd>Enter</kbd>{koreanUi ? "정답 확인" : "check"}</span><span><kbd>⌫</kbd>{koreanUi ? "고치기" : "correct"}</span></div>
-      {levelUp && <div className="missing-level-up" role="status"><span>{koreanUi ? "단계" : "LEVEL"}</span><b>{koreanUi ? `${levelIndex + 1}단계 완료!` : `${levelIndex + 1} CLEAR!`}</b><small>{koreanUi ? "다음 단계가 열립니다" : "Next level unlocked"}</small></div>}
-    </div>
-  );
-}
-
-export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySound }: {
-  koreanUi: boolean; soundEnabled: boolean; onSuccessSound: () => void; onKeySound: (code: string) => void;
-}) {
-  const [puzzleIndex, setPuzzleIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [activeEntryId, setActiveEntryId] = useState(crosswordPuzzles[0].entries[0].id);
-  const [selectedCell, setSelectedCell] = useState<string | null>(() => {
-    const first = entryCells(crosswordPuzzles[0].entries[0])[0];
-    return cellKey(first.row, first.col);
-  });
-  const [wrongCells, setWrongCells] = useState<Set<string>>(new Set());
-  const [status, setStatus] = useState<"playing" | "incomplete" | "wrong" | "solved">("playing");
-  const [score, setScore] = useState(0);
-  const [seconds, setSeconds] = useState(0);
-  const [hints, setHints] = useState(0);
-  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
-  const puzzle = crosswordPuzzles[puzzleIndex % crosswordPuzzles.length];
-  const board = useMemo(() => buildCrossword(puzzle), [puzzle]);
-  const activeEntry = puzzle.entries.find((entry) => entry.id === activeEntryId) ?? puzzle.entries[0];
-  const activeCellKeys = new Set(entryCells(activeEntry).map(({ row, col }) => cellKey(row, col)));
-  const totalCells = board.cells.size;
-  const correctCells = [...board.cells].filter(([key, cell]) => answers[key] === cell.solution).length;
-
-  function focusCell(key: string) {
-    window.requestAnimationFrame(() => inputRefs.current[key]?.focus({ preventScroll: true }));
-  }
-
-  useEffect(() => {
-    const first = entryCells(puzzle.entries[0])[0];
-    const key = cellKey(first.row, first.col);
-    window.setTimeout(() => focusCell(key), 0);
-  // Puzzle changes reset focus through nextPuzzle.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (status === "solved") return;
-    const timer = window.setInterval(() => setSeconds((current) => current + 1), 1000);
-    return () => window.clearInterval(timer);
-  }, [status]);
-
-  function activateCell(key: string, cycleDirection = false) {
-    const cell = board.cells.get(key);
-    if (!cell) return;
-    setSelectedCell(key);
-    if (!cell.entryIds.includes(activeEntryId)) {
-      setActiveEntryId(cell.entryIds[0]);
-    } else if (cycleDirection && cell.entryIds.length > 1) {
-      const currentIndex = cell.entryIds.indexOf(activeEntryId);
-      setActiveEntryId(cell.entryIds[(currentIndex + 1) % cell.entryIds.length]);
-    }
-  }
-
-  function selectEntry(entry: CrosswordEntry) {
-    setActiveEntryId(entry.id);
-    const firstEmpty = entryCells(entry).find(({ row, col }) => !answers[cellKey(row, col)]) ?? entryCells(entry)[0];
-    const key = cellKey(firstEmpty.row, firstEmpty.col);
-    setSelectedCell(key);
-    focusCell(key);
-  }
-
-  function moveInEntry(fromKey: string, step: number) {
-    const keys = entryCells(activeEntry).map(({ row, col }) => cellKey(row, col));
-    const currentIndex = keys.indexOf(fromKey);
-    const nextKey = keys[Math.max(0, Math.min(keys.length - 1, currentIndex + step))];
-    if (nextKey) {
-      setSelectedCell(nextKey);
-      focusCell(nextKey);
-    }
-  }
-
-  function moveGeometrically(fromKey: string, rowDelta: number, colDelta: number) {
-    const [row, col] = fromKey.split("-").map(Number);
-    let nextRow = row + rowDelta;
-    let nextCol = col + colDelta;
-    while (nextRow >= 0 && nextRow < puzzle.size && nextCol >= 0 && nextCol < puzzle.size) {
-      const nextKey = cellKey(nextRow, nextCol);
-      if (board.cells.has(nextKey)) {
-        activateCell(nextKey);
-        focusCell(nextKey);
-        return;
-      }
-      nextRow += rowDelta;
-      nextCol += colDelta;
-    }
-  }
-
-  function updateCell(key: string, rawValue: string, shouldAdvance: boolean) {
-    if (status === "solved") return;
-    const value = Array.from(rawValue).slice(-1)[0] ?? "";
-    setAnswers((current) => ({ ...current, [key]: value }));
-    setWrongCells((current) => {
-      const next = new Set(current);
-      next.delete(key);
-      return next;
-    });
-    setStatus("playing");
-    if (value && shouldAdvance) moveInEntry(key, 1);
-  }
-
-  function nextEntry(step: number) {
-    const index = puzzle.entries.findIndex((entry) => entry.id === activeEntry.id);
-    const next = puzzle.entries[(index + step + puzzle.entries.length) % puzzle.entries.length];
-    selectEntry(next);
-  }
-
-  function toggleDirection() {
-    if (!selectedCell) return;
-    const cell = board.cells.get(selectedCell);
-    if (!cell || cell.entryIds.length < 2) return;
-    const currentIndex = cell.entryIds.indexOf(activeEntry.id);
-    const nextId = cell.entryIds[(currentIndex + 1) % cell.entryIds.length];
-    const next = puzzle.entries.find((entry) => entry.id === nextId);
-    if (next) setActiveEntryId(next.id);
-  }
-
-  function revealCell() {
-    if (!selectedCell || status === "solved") return;
-    const cell = board.cells.get(selectedCell);
-    if (!cell) return;
-    setAnswers((current) => ({ ...current, [selectedCell]: cell.solution }));
-    setWrongCells((current) => {
-      const next = new Set(current);
-      next.delete(selectedCell);
-      return next;
-    });
-    setHints((current) => current + 1);
-    setScore((current) => Math.max(0, current - 75));
-    moveInEntry(selectedCell, 1);
-  }
-
-  function checkPuzzle() {
-    if (status === "solved") {
-      nextPuzzle();
-      return;
-    }
-    const emptyKey = [...board.cells.keys()].find((key) => !answers[key]);
-    if (emptyKey) {
-      setStatus("incomplete");
-      setSelectedCell(emptyKey);
-      focusCell(emptyKey);
-      return;
-    }
-    const mistakes = new Set([...board.cells].filter(([key, cell]) => answers[key] !== cell.solution).map(([key]) => key));
-    setWrongCells(mistakes);
-    if (mistakes.size) {
-      setStatus("wrong");
-      const firstMistake = [...mistakes][0];
-      setSelectedCell(firstMistake);
-      focusCell(firstMistake);
-      return;
-    }
-    setStatus("solved");
-    setScore((current) => current + Math.max(300, 1200 - seconds * 2 - hints * 75));
-    if (soundEnabled) onSuccessSound();
-  }
-
-  function nextPuzzle() {
-    const nextIndex = (puzzleIndex + 1) % crosswordPuzzles.length;
-    const next = crosswordPuzzles[nextIndex];
-    const first = entryCells(next.entries[0])[0];
-    const firstKey = cellKey(first.row, first.col);
-    setPuzzleIndex(nextIndex);
-    setAnswers({});
-    setActiveEntryId(next.entries[0].id);
-    setSelectedCell(firstKey);
-    setWrongCells(new Set());
-    setStatus("playing");
-    setSeconds(0);
-    setHints(0);
-    window.setTimeout(() => focusCell(firstKey), 0);
-  }
-
-  function handleCellKeys(event: KeyboardEvent<HTMLInputElement>, key: string) {
-    if (soundEnabled && !event.repeat && (event.key.length === 1 || event.key === "Backspace")) onKeySound(event.code);
-    if (event.key === "Enter") {
-      event.preventDefault();
-      checkPuzzle();
-    } else if (event.key === "Tab") {
-      event.preventDefault();
-      nextEntry(event.shiftKey ? -1 : 1);
-    } else if (event.key === " ") {
-      event.preventDefault();
-      toggleDirection();
-    } else if (event.key.toLowerCase() === "h") {
-      event.preventDefault();
-      revealCell();
-    } else if (event.key === "Backspace" && !answers[key]) {
-      event.preventDefault();
-      moveInEntry(key, -1);
-    } else if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      moveGeometrically(key, 0, -1);
-    } else if (event.key === "ArrowRight") {
-      event.preventDefault();
-      moveGeometrically(key, 0, 1);
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      moveGeometrically(key, -1, 0);
-    } else if (event.key === "ArrowDown") {
-      event.preventDefault();
-      moveGeometrically(key, 1, 0);
-    }
-  }
-
-  const statusMessage = status === "solved"
-    ? koreanUi ? "완성! Enter를 누르면 다음 퍼즐이 바로 시작됩니다." : "Solved! Press Enter to launch the next board."
-    : status === "wrong"
-      ? koreanUi ? "빨간 칸만 고치면 됩니다. 답은 지워지지 않았어요." : "Correct only the red cells. Your other answers stay."
-      : status === "incomplete"
-        ? koreanUi ? "빈칸으로 이동했습니다. 계속 입력하세요." : "Focus moved to the first empty cell. Keep typing."
-        : koreanUi ? "한 음절씩 입력 · Enter로 검사 · Tab으로 다음 낱말" : "Type syllables · Enter checks · Tab moves to the next clue";
-
-  return (
-    <div className={`crossword-game-wrap ${status}`}>
-      <div className="crossword-board-column">
-        <div className="crossword-board-heading">
-          <span>{koreanUi ? `퍼즐 ${puzzleIndex + 1}/${crosswordPuzzles.length}` : `BOARD ${puzzleIndex + 1}/${crosswordPuzzles.length}`}</span>
-          <div><small>{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}</small><b>{correctCells}/{totalCells}</b></div>
-        </div>
-        <div
-          className="crossword-grid"
-          role="grid"
-          aria-label={koreanUi ? `${puzzle.titleKo} 가로세로 퀴즈` : `${puzzle.titleEn} crossword`}
-          style={{ gridTemplateColumns: `repeat(${puzzle.size}, 1fr)` }}
-        >
-          {Array.from({ length: puzzle.size * puzzle.size }, (_, index) => {
-            const row = Math.floor(index / puzzle.size);
-            const col = index % puzzle.size;
-            const key = cellKey(row, col);
-            const cell = board.cells.get(key);
-            if (!cell) return <span className="crossword-block" aria-hidden="true" key={key} />;
-            const number = board.numberByStart.get(key);
-            return (
-              <label
-                className={`crossword-cell ${activeCellKeys.has(key) ? "active-word" : ""} ${selectedCell === key ? "selected" : ""} ${wrongCells.has(key) ? "wrong" : ""} ${status === "solved" ? "correct" : ""}`}
-                role="gridcell"
-                key={key}
-              >
-                {number && <small>{number}</small>}
-                <input
-                  ref={(node) => { inputRefs.current[key] = node; }}
-                  lang="ko"
-                  value={answers[key] ?? ""}
-                  disabled={status === "solved"}
-                  aria-label={`${koreanUi ? "가로세로 칸" : "Crossword cell"} ${row + 1}, ${col + 1}`}
-                  onFocus={() => activateCell(key)}
-                  onClick={() => activateCell(key, selectedCell === key)}
-                  onChange={(event) => updateCell(key, event.target.value, !event.nativeEvent.isComposing)}
-                  onCompositionEnd={(event) => updateCell(key, event.currentTarget.value, true)}
-                  onKeyDown={(event) => handleCellKeys(event, key)}
-                />
-              </label>
-            );
-          })}
-          {status === "solved" && <div className="crossword-complete-stamp" aria-hidden="true"><span>PUZZLE</span><b>CLEAR!</b></div>}
-        </div>
-        <div className="crossword-direction-legend">
-          <span><i className="across-arrow" aria-hidden="true">→</i>{koreanUi ? "가로" : "Across"}</span>
-          <span><i className="down-arrow" aria-hidden="true">↓</i>{koreanUi ? "세로" : "Down"}</span>
-          <span>{koreanUi ? "힌트" : "Hints"} <b>{hints}</b></span>
-        </div>
-      </div>
-
-      <div className="demo-copy crossword-copy">
-        <div className="puzzle-head"><p className="demo-label">CROSSWORD CIRCUIT · {puzzle.entries.length} WORDS</p><b>{score} PTS</b></div>
-        <h3>{koreanUi ? puzzle.titleKo : puzzle.titleEn}</h3>
-        <p className={`crossword-status ${status}`} aria-live="polite">{statusMessage}</p>
-
-        <div className="active-clue-banner">
-          <span>{board.numberByEntry.get(activeEntry.id)} {activeEntry.direction === "across" ? "→" : "↓"}</span>
-          <div><small>{koreanUi ? "현재 낱말" : "ACTIVE CLUE"}</small><b>{koreanUi ? activeEntry.clueKo : activeEntry.clueEn}</b></div>
-          <em>{Array.from(activeEntry.answer).length}{koreanUi ? "칸" : " cells"}</em>
-        </div>
-
-        <div className="crossword-clues">
-          {(["across", "down"] as Direction[]).map((direction) => (
-            <section key={direction}>
-              <h4>{direction === "across" ? "→" : "↓"} {koreanUi ? direction === "across" ? "가로 낱말" : "세로 낱말" : direction === "across" ? "Across" : "Down"}</h4>
-              {puzzle.entries.filter((entry) => entry.direction === direction).map((entry) => {
-                const solved = entryCells(entry).every(({ row, col, solution }) => answers[cellKey(row, col)] === solution);
-                return (
-                  <button type="button" className={`${activeEntry.id === entry.id ? "active" : ""} ${solved ? "solved" : ""}`} onClick={() => selectEntry(entry)} key={entry.id}>
-                    <b>{solved ? "✓" : board.numberByEntry.get(entry.id)}</b>
-                    <span>{koreanUi ? entry.clueKo : entry.clueEn}</span>
-                    <small>{Array.from(entry.answer).length}</small>
-                  </button>
-                );
-              })}
-            </section>
-          ))}
-        </div>
-
-        <div className="crossword-actions">
-          <button className="button button-primary" type="button" onClick={checkPuzzle}>{status === "solved" ? koreanUi ? "다음 퍼즐" : "Next board" : koreanUi ? "정답 확인" : "Check board"} <kbd>Enter</kbd></button>
-          <button className="crossword-clear" type="button" onClick={revealCell}>{koreanUi ? "현재 칸 힌트" : "Reveal cell"} <kbd>H</kbd></button>
-        </div>
-        <div className="game-key-help crossword-key-help">
-          <span><kbd>Tab</kbd>{koreanUi ? "다음 낱말" : "next clue"}</span>
-          <span><kbd>Space</kbd>{koreanUi ? "가로↔세로" : "toggle direction"}</span>
-          <span><kbd>↑↓←→</kbd>{koreanUi ? "칸 이동" : "move"}</span>
-        </div>
-        <div className="puzzle-progress" aria-label={koreanUi ? "퍼즐 완성도" : "Puzzle progress"}><span style={{ width: `${(correctCells / totalCells) * 100}%` }} /></div>
-      </div>
+      <div className="game-key-help"><span><kbd>1–3</kbd>{tr(locale, "choose", "후보 선택")}</span><span><kbd>Enter</kbd>{tr(locale, "check", "정답 확인")}</span><span><kbd>⌫</kbd>{tr(locale, "correct", "고치기")}</span></div>
+      {levelUp && <div className="missing-level-up" role="status"><span>{tr(locale, "LEVEL", "단계")}</span><b>{koreanUi ? `${levelIndex + 1}단계 완료!` : `${levelIndex + 1} CLEAR!`}</b><small>{tr(locale, "Next level unlocked", "다음 단계가 열립니다")}</small></div>}
     </div>
   );
 }

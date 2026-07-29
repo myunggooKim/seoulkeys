@@ -4,19 +4,26 @@ import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useS
 import {
   buildCrossword,
   cellKey,
-  crosswordPuzzles,
   entryCells,
+  makeCrosswordBoard,
+  makeThemedCrosswordBoard,
   type CrosswordEntry,
+  type CrosswordPuzzle,
   type Direction,
 } from "./ProgressivePuzzles";
+import type { Locale } from "./locale-detection";
+import { tr } from "./ui-i18n";
 
 type CrosswordStatus = "playing" | "incomplete" | "wrong" | "correct" | "solved";
 
 type CrosswordGameProps = {
   koreanUi: boolean;
+  locale: Locale;
   soundEnabled: boolean;
   onSuccessSound: () => void;
   onKeySound: (code: string) => void;
+  // Selected learning concept — boards use that concept's curated pool.
+  themeId?: string;
 };
 
 function audioContextConstructor() {
@@ -24,9 +31,16 @@ function audioContextConstructor() {
     ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
 }
 
-export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySound }: CrosswordGameProps) {
+export function CrosswordGame({ koreanUi, locale, soundEnabled, onSuccessSound, onKeySound, themeId }: CrosswordGameProps) {
+  // Build a board for the selected concept, falling back to the built-in pools.
+  const buildBoard = useCallback((index: number): CrosswordPuzzle => (
+    themeId ? makeThemedCrosswordBoard(index, themeId) : makeCrosswordBoard(index)
+  ), [themeId]);
+
   const [puzzleIndex, setPuzzleIndex] = useState(0);
-  const [activeEntryId, setActiveEntryId] = useState(crosswordPuzzles[0].entries[0].id);
+  // Boards are generated on demand and kept, so play never runs out of puzzles.
+  const [boards, setBoards] = useState<CrosswordPuzzle[]>(() => [buildBoard(0)]);
+  const [activeEntryId, setActiveEntryId] = useState(() => boards[0].entries[0].id);
   const [entryDrafts, setEntryDrafts] = useState<Record<string, string>>({});
   const [solvedEntries, setSolvedEntries] = useState<Set<string>>(new Set());
   const [wrongCells, setWrongCells] = useState<Set<string>>(new Set());
@@ -39,7 +53,7 @@ export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySou
   const advanceTimerRef = useRef<number | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
-  const puzzle = crosswordPuzzles[puzzleIndex % crosswordPuzzles.length];
+  const puzzle = boards[puzzleIndex] ?? boards[0];
   const board = useMemo(() => buildCrossword(puzzle), [puzzle]);
   const activeEntry = puzzle.entries.find((entry) => entry.id === activeEntryId) ?? puzzle.entries[0];
   const activeCells = entryCells(activeEntry);
@@ -73,6 +87,9 @@ export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySou
 
   const playCircuitCue = useCallback((kind: "confirm" | "error" | "pulse") => {
     if (!soundEnabled) return;
+    // Never start audio while the page is hidden/closing — this prevents the
+    // periodic pulse from resurrecting a closed AudioContext in the background.
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
     const AudioContextConstructor = audioContextConstructor();
     if (!AudioContextConstructor) return;
     const context = audioContextRef.current ?? new AudioContextConstructor();
@@ -105,6 +122,23 @@ export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySou
     focusAnswer();
   }, [focusAnswer, puzzleIndex]);
 
+  // Rebuild from a fresh themed board when the learner switches concept.
+  const themeMountRef = useRef(false);
+  useEffect(() => {
+    if (!themeMountRef.current) { themeMountRef.current = true; return; }
+    const fresh = buildBoard(0);
+    setBoards([fresh]);
+    setPuzzleIndex(0);
+    setActiveEntryId(fresh.entries[0].id);
+    setEntryDrafts({});
+    setSolvedEntries(new Set());
+    setWrongCells(new Set());
+    setStatus("playing");
+    setSeconds(0);
+    setHints(0);
+    window.setTimeout(focusAnswer, 0);
+  }, [themeId, buildBoard, focusAnswer]);
+
   useEffect(() => {
     if (status === "solved" || solvedEntries.has(activeEntryId)) return;
     focusAnswer();
@@ -128,6 +162,29 @@ export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySou
   useEffect(() => () => {
     if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
     if (audioContextRef.current) void audioContextRef.current.close();
+  }, []);
+
+  // Hard audio teardown on page hide/close. React unmount cleanup is NOT
+  // guaranteed to run when the tab/window is closed (browsers keep a
+  // background process alive), so an open AudioContext + timers could keep
+  // producing sound. pagehide/visibilitychange are the reliable signals.
+  useEffect(() => {
+    const teardown = () => {
+      if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
+      if (audioContextRef.current) {
+        void audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") teardown();
+    };
+    window.addEventListener("pagehide", teardown);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", teardown);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   function normalizeDraft(value: string) {
@@ -221,8 +278,9 @@ export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySou
   }
 
   function nextPuzzle() {
-    const nextIndex = (puzzleIndex + 1) % crosswordPuzzles.length;
-    const next = crosswordPuzzles[nextIndex];
+    const nextIndex = puzzleIndex + 1;
+    const next = boards[nextIndex] ?? buildBoard(nextIndex);
+    setBoards((previous) => (nextIndex >= previous.length ? [...previous, next] : previous));
     setPuzzleIndex(nextIndex);
     setActiveEntryId(next.entries[0].id);
     setEntryDrafts({});
@@ -254,14 +312,14 @@ export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySou
   }
 
   const statusMessage = status === "solved"
-    ? koreanUi ? "퍼즐 완성! Enter를 누르면 다음 판이 바로 시작됩니다." : "Puzzle clear! Press Enter to launch the next board."
+    ? tr(locale, "Puzzle clear! Press Enter to launch the next board.", "퍼즐 완성! Enter를 누르면 다음 판이 바로 시작됩니다.")
     : status === "correct"
-      ? koreanUi ? "정답입니다. 다음 낱말로 이동합니다." : "Correct. Moving to the next clue."
+      ? tr(locale, "Correct. Moving to the next clue.", "정답입니다. 다음 낱말로 이동합니다.")
       : status === "wrong"
-        ? koreanUi ? "오답입니다. 입력한 단어는 남아 있어요. 고쳐서 다시 Enter!" : "Not quite. Your word stays—correct it and press Enter again."
+        ? tr(locale, "Not quite. Your word stays—correct it and press Enter again.", "오답입니다. 입력한 단어는 남아 있어요. 고쳐서 다시 Enter!")
         : status === "incomplete"
           ? koreanUi ? `총 ${Array.from(activeEntry.answer).length}글자를 모두 입력한 뒤 Enter를 누르세요.` : `Type all ${Array.from(activeEntry.answer).length} syllables, then press Enter.`
-          : koreanUi ? "정답 단어 전체를 입력하면 칸이 자동으로 채워집니다. Enter로 판정하세요." : "Type the whole answer to fill the grid automatically. Press Enter to check.";
+          : tr(locale, "Type the whole answer to fill the grid automatically. Press Enter to check.", "정답 단어 전체를 입력하면 칸이 자동으로 채워집니다. Enter로 판정하세요.");
 
   return (
     <div
@@ -277,13 +335,13 @@ export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySou
     >
       <div className="crossword-board-column">
         <div className="crossword-board-heading">
-          <span>{koreanUi ? `퍼즐 ${puzzleIndex + 1}/${crosswordPuzzles.length}` : `BOARD ${puzzleIndex + 1}/${crosswordPuzzles.length}`}</span>
+          <span>{`${tr(locale, "BOARD", "퍼즐")} ${puzzleIndex + 1}`}</span>
           <div><small>{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}</small><b>{completedWords}/{puzzle.entries.length}</b></div>
         </div>
         <div
           className="crossword-grid"
           role="grid"
-          aria-label={koreanUi ? `${puzzle.titleKo} 가로세로 퀴즈` : `${puzzle.titleEn} crossword`}
+          aria-label={`${tr(locale, puzzle.titleEn, puzzle.titleKo)} ${tr(locale, "Korean Crossword", "가로세로 퀴즈")}`}
           style={{ gridTemplateColumns: `repeat(${puzzle.size}, 1fr)` }}
         >
           {Array.from({ length: puzzle.size * puzzle.size }, (_, index) => {
@@ -301,7 +359,7 @@ export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySou
                 tabIndex={-1}
                 className={`crossword-cell ${activeCellKeys.has(key) ? "active-word" : ""} ${wrongCells.has(key) ? "wrong" : ""} ${cellSolved ? "correct" : ""} ${value ? "filled" : ""}`}
                 role="gridcell"
-                aria-label={`${koreanUi ? "가로세로 칸" : "Crossword cell"} ${row + 1}, ${col + 1}${value ? `: ${value}` : ""}`}
+                aria-label={`${tr(locale, "Crossword cell", "가로세로 칸")} ${row + 1}, ${col + 1}${value ? `: ${value}` : ""}`}
                 onClick={() => {
                   const entryId = cell.entryIds.find((id) => !solvedEntries.has(id)) ?? cell.entryIds[0];
                   const entry = puzzle.entries.find((item) => item.id === entryId);
@@ -317,25 +375,25 @@ export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySou
           {status === "solved" && <div className="crossword-complete-stamp" aria-hidden="true"><span>PUZZLE</span><b>CLEAR!</b></div>}
         </div>
         <div className="crossword-direction-legend">
-          <span><i className="across-arrow" aria-hidden="true">→</i>{koreanUi ? "가로" : "Across"}</span>
-          <span><i className="down-arrow" aria-hidden="true">↓</i>{koreanUi ? "세로" : "Down"}</span>
-          <span>{koreanUi ? "완료" : "Solved"} <b>{completedWords}/{puzzle.entries.length}</b></span>
+          <span><i className="across-arrow" aria-hidden="true">→</i>{tr(locale, "Across", "가로")}</span>
+          <span><i className="down-arrow" aria-hidden="true">↓</i>{tr(locale, "Down", "세로")}</span>
+          <span>{tr(locale, "Solved", "완료")} <b>{completedWords}/{puzzle.entries.length}</b></span>
         </div>
       </div>
 
       <div className="demo-copy crossword-copy">
-        <div className="puzzle-head"><p className="demo-label">{koreanUi ? "가로세로 퀴즈 · 낱말 입력 방식" : "CROSSWORD CIRCUIT · WHOLE-WORD MODE"}</p><b>{score} {koreanUi ? "점" : "PTS"}</b></div>
-        <h3>{koreanUi ? puzzle.titleKo : puzzle.titleEn}</h3>
+        <div className="puzzle-head"><p className="demo-label">{tr(locale, "CROSSWORD CIRCUIT · WHOLE-WORD MODE", "가로세로 퀴즈 · 낱말 입력 방식")}</p><b>{score} {tr(locale, "PTS", "점")}</b></div>
+        <h3>{tr(locale, puzzle.titleEn, puzzle.titleKo)}</h3>
         <p className={`crossword-status ${status}`} aria-live="polite">{statusMessage}</p>
 
         <div className="active-clue-banner">
           <span>{board.numberByEntry.get(activeEntry.id)} {activeEntry.direction === "across" ? "→" : "↓"}</span>
-          <div><small>{koreanUi ? "현재 낱말" : "ACTIVE CLUE"}</small><b>{koreanUi ? activeEntry.clueKo : activeEntry.clueEn}</b></div>
-          <em>{Array.from(activeEntry.answer).length}{koreanUi ? "글자" : " letters"}</em>
+          <div><small>{tr(locale, "ACTIVE CLUE", "현재 낱말")}</small><b>{tr(locale, activeEntry.clueEn, activeEntry.clueKo)}</b></div>
+          <em>{Array.from(activeEntry.answer).length}{tr(locale, " letters", "글자")}</em>
         </div>
 
         <form className={`crossword-word-entry ${status}`} onSubmit={submit}>
-          <label htmlFor="crossword-word-input">{koreanUi ? "정답 단어 전체 입력" : "Type the whole answer"}</label>
+          <label htmlFor="crossword-word-input">{tr(locale, "Type the whole answer", "정답 단어 전체 입력")}</label>
           <div>
             <input
               id="crossword-word-input"
@@ -346,16 +404,19 @@ export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySou
               maxLength={Array.from(activeEntry.answer).length}
               onChange={(event) => updateActiveDraft(event.target.value)}
               onKeyDown={handleInputKeys}
-              onBlur={() => {
+              onBlur={(event) => {
+                // Release focus when the user moves to another control; only
+                // re-grab when focus was lost to nowhere (clicking empty space).
+                if (event.relatedTarget) return;
                 if (status !== "solved") window.setTimeout(focusAnswer, 0);
               }}
               autoComplete="off"
               spellCheck={false}
-              placeholder={koreanUi ? `${Array.from(activeEntry.answer).length}글자 단어` : `${Array.from(activeEntry.answer).length}-letter word`}
+              placeholder={tr(locale, "{n}-letter word", `${Array.from(activeEntry.answer).length}글자 단어`).replace("{n}", String(Array.from(activeEntry.answer).length))}
               aria-describedby="crossword-entry-progress"
             />
             <span id="crossword-entry-progress">{Array.from(activeDraft).length}/{Array.from(activeEntry.answer).length}</span>
-            <button className="button button-primary" type="submit">{status === "solved" ? koreanUi ? "다음 판" : "Next" : koreanUi ? "판정" : "Check"} <kbd>Enter</kbd></button>
+            <button className="button button-primary" type="submit">{status === "solved" ? tr(locale, "Next", "다음 판") : tr(locale, "Check", "판정")} <kbd>Enter</kbd></button>
           </div>
           <div className="crossword-live-cells" aria-hidden="true">
             {Array.from(activeEntry.answer).map((_, index) => <i className={Array.from(activeDraft)[index] ? "filled" : ""} key={index} />)}
@@ -365,13 +426,13 @@ export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySou
         <div className="crossword-clues">
           {(["across", "down"] as Direction[]).map((direction) => (
             <section key={direction}>
-              <h4>{direction === "across" ? "→" : "↓"} {koreanUi ? direction === "across" ? "가로 낱말" : "세로 낱말" : direction === "across" ? "Across" : "Down"}</h4>
+              <h4>{direction === "across" ? "→" : "↓"} {direction === "across" ? tr(locale, "Across word", "가로 낱말") : tr(locale, "Down word", "세로 낱말")}</h4>
               {puzzle.entries.filter((entry) => entry.direction === direction).map((entry) => {
                 const solved = solvedEntries.has(entry.id);
                 return (
                   <button type="button" className={`${activeEntry.id === entry.id ? "active" : ""} ${solved ? "solved" : ""}`} onClick={() => selectEntry(entry)} key={entry.id}>
                     <b>{solved ? "✓" : board.numberByEntry.get(entry.id)}</b>
-                    <span>{koreanUi ? entry.clueKo : entry.clueEn}</span>
+                    <span>{tr(locale, entry.clueEn, entry.clueKo)}</span>
                     <small>{Array.from(entry.answer).length}</small>
                   </button>
                 );
@@ -381,14 +442,14 @@ export function CrosswordGame({ koreanUi, soundEnabled, onSuccessSound, onKeySou
         </div>
 
         <div className="crossword-actions">
-          <button className="crossword-clear" type="button" onClick={revealSyllable}>{koreanUi ? "한 글자 힌트" : "Reveal a syllable"} <kbd>Alt+H</kbd></button>
+          <button className="crossword-clear" type="button" onClick={revealSyllable}>{tr(locale, "Reveal a syllable", "한 글자 힌트")} <kbd>Alt+H</kbd></button>
         </div>
         <div className="game-key-help crossword-key-help">
-          <span><kbd>Enter</kbd>{koreanUi ? "단어 판정" : "check word"}</span>
-          <span><kbd>Tab</kbd>{koreanUi ? "다음 낱말" : "next clue"}</span>
-          <span><kbd>Alt+H</kbd>{koreanUi ? "한 글자 힌트" : "hint"}</span>
+          <span><kbd>Enter</kbd>{tr(locale, "check word", "단어 판정")}</span>
+          <span><kbd>Tab</kbd>{tr(locale, "next clue", "다음 낱말")}</span>
+          <span><kbd>Alt+H</kbd>{tr(locale, "hint", "한 글자 힌트")}</span>
         </div>
-        <div className="puzzle-progress" aria-label={koreanUi ? "퍼즐 완성도" : "Puzzle progress"}><span style={{ width: `${(correctCells / totalCells) * 100}%` }} /></div>
+        <div className="puzzle-progress" aria-label={tr(locale, "Puzzle progress", "퍼즐 완성도")}><span style={{ width: `${(correctCells / totalCells) * 100}%` }} /></div>
       </div>
     </div>
   );

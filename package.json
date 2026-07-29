@@ -9,8 +9,11 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "npm run build && node --experimental-strip-types --test tests/*.test.mjs",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+    "typecheck": "tsc --noEmit",
+    "audio:manifest": "tsx scripts/build-korean-audio-manifest.mts",
+    "audio:drills": "npm run audio:manifest && .\\.venv-tts\\Scripts\\python.exe scripts\\generate_static_korean_audio.py --prefix drill --force",
+    "test": "npm run typecheck && npm run build && tsx --test tests/*.test.mjs",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern scratchpad --ignore-pattern public/uiaudit.js",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
@@ -32,6 +35,7 @@
     "eslint-config-next": "16.2.6",
     "react-server-dom-webpack": "19.2.6",
     "tailwindcss": "4.2.1",
+    "tsx": "^4.22.1",
     "typescript": "5.9.3",
     "vinext": "0.0.50",
     "vite": "8.0.13",

@@ -4,13 +4,49 @@ import test from "node:test";
 
 test("ships the staged Korean typing curriculum before sentence practice", async () => {
   const curriculum = await readFile(new URL("../app/practice-curriculum.ts", import.meta.url), "utf8");
+  const { practiceCurriculum, progressiveWordGroups } = await import("../app/practice-curriculum.ts");
+  const { comparableJamo } = await import("../app/hangul-keyboard.ts");
   assert.match(curriculum, /practiceStageOrder.*\["home", "syllable", "batchim", "double", "word", "sentence"\]/);
-  assert.match(curriculum, /text: "ㅁㄴㅁㄴ ㅁㄴㅁㄴ"/);
-  assert.match(curriculum, /text: "ㅓㅏㅓㅏ ㅓㅏㅓㅏ"/);
-  assert.match(curriculum, /text: "만 난 안 란"/);
-  assert.match(curriculum, /text: "까 따 빠 싸 짜"/);
+  // Beginner progression is made of one real word per Enter-confirmed task:
+  // home row first, then upper/lower rows, finals, doubles, and full words.
+  assert.match(curriculum, /words: \["하마", "나라", "머리", "오리"/);
+  assert.match(curriculum, /words: \["바다", "사자", "가게", "제비"/);
+  assert.match(curriculum, /words: \["나무", "우유", "구두", "치마"/);
+  assert.match(curriculum, /words: \["산", "달", "밤", "공"/);
+  assert.match(curriculum, /words: \["까치", "토끼", "아빠", "쓰다"/);
+  assert.match(curriculum, /speak: true/);
+  assert.doesNotMatch(curriculum, /text: "[^"]+ [^"]+".*kind: "(home|syllable|batchim|double|word)"/);
   assert.match(curriculum, /\.\.\.sentencePracticeItems\.map/);
-  assert.ok(curriculum.indexOf('id: "home-left-1"') < curriculum.indexOf("...sentencePracticeItems.map"));
+  assert.ok(curriculum.indexOf('idPrefix: "home-core"') < curriculum.indexOf("...sentencePracticeItems.map"));
+
+  const wordItems = practiceCurriculum.filter((item) => item.kind !== "sentence");
+  assert.ok(wordItems.length >= 75, "beginner stages should provide sustained one-word practice");
+  for (const item of wordItems) {
+    assert.equal(item.text.trim().split(/\s+/).length, 1, `${item.id} must contain exactly one word`);
+    assert.equal(item.speak, true, `${item.id} needs prerecorded pronunciation`);
+  }
+  assert.deepEqual(progressiveWordGroups.map((group) => group.idPrefix), [
+    "home-core",
+    "syllable-upper",
+    "syllable-lower",
+    "batchim-sonorant",
+    "batchim-obstruent",
+    "double-core",
+    "word-core",
+  ]);
+
+  const cumulativeKeySets = [
+    new Set(Array.from("ㅁㄴㅇㄹㅎㅗㅓㅏㅣ")),
+    new Set(Array.from("ㅁㄴㅇㄹㅎㅗㅓㅏㅣㅂㅈㄷㄱㅅㅛㅕㅑㅐㅔ")),
+    new Set(Array.from("ㅁㄴㅇㄹㅎㅗㅓㅏㅣㅂㅈㄷㄱㅅㅛㅕㅑㅐㅔㅋㅌㅊㅍㅠㅜㅡ")),
+  ];
+  for (let groupIndex = 0; groupIndex < cumulativeKeySets.length; groupIndex += 1) {
+    const allowed = cumulativeKeySets[groupIndex];
+    for (const word of progressiveWordGroups[groupIndex].words) {
+      const unsupported = comparableJamo(word).filter((jamo) => !allowed.has(jamo));
+      assert.deepEqual(unsupported, [], `${word} introduces a key before its progressive group`);
+    }
+  }
 });
 
 test("connects animated anatomical hands, pausable practice, Enter evaluation, sound, and recorded speech", async () => {
@@ -34,10 +70,13 @@ test("connects animated anatomical hands, pausable practice, Enter evaluation, s
   assert.match(page, /연습 타이머 일시정지/);
   assert.match(page, /event\.key !== "Enter"/);
   assert.match(page, /evaluateLessonAttempt/);
-  assert.match(page, /currentPracticeItem\.kind === "sentence"\s*\|\| !sentenceComplete/);
-  assert.match(page, /window\.setTimeout\(submitPracticeAttempt, 180\)/);
-  assert.match(page, /\|\| sentenceComplete\s*\|\| lessonAccepted\s*\|\| advanceQueued/);
-  assert.match(page, /다음 과제가 자동으로 이어집니다/);
+  assert.doesNotMatch(page, /window\.setTimeout\(submitPracticeAttempt, 180\)/);
+  assert.doesNotMatch(page, /window\.setTimeout\(resetCurrentPractice, 1050\)/);
+  assert.match(page, /단어 입력 완료 · Enter ↵를 눌러 정확도를 검사하세요/);
+  assert.match(page, /previewCurrentPronunciation/);
+  assert.match(page, /aria-keyshortcuts="Alt\+P"/);
+  assert.match(page, /active-row/);
+  assert.match(page, /basicHomeRowCodes = new Set\(\[[^\]]*"KeyG"/);
   assert.match(page, /currentPracticeItem\.minAccuracy/);
   assert.match(page, /confirmAndAdvance\(\s*\(\) => advanceLesson\(evaluation\.accuracy, attemptCpm\)/);
   assert.match(page, /masteryPrompt/);
@@ -54,7 +93,11 @@ test("connects animated anatomical hands, pausable practice, Enter evaluation, s
   assert.match(page, /Restore the learning position, never the previous page's running timer state/);
   assert.doesNotMatch(page, /setElapsedSeconds\(serverProgress\.typingSeconds\)/);
   assert.doesNotMatch(page, /setLessonStarted\(serverProgress\.completedSentences/);
-  assert.match(page, /audio-control-cluster/);
+  // The four audio controls now live behind one header button instead of
+  // sitting open in the topbar, where they took 403px of a 1352px row.
+  assert.match(page, /sound-menu-trigger/);
+  assert.match(page, /sound-menu-panel/);
+  assert.doesNotMatch(page, /audio-control-cluster/);
   assert.match(page, /playTypewriterReturnSound/);
   assert.match(page, /staticSpeechAudioByText/);
   assert.match(page, /type PracticeTrack = "guided" \| "words" \| "sentences"/);
@@ -72,13 +115,19 @@ test("connects animated anatomical hands, pausable practice, Enter evaluation, s
   assert.match(css, /@keyframes real-finger-demonstrate/);
   assert.match(css, /@keyframes real-finger-press/);
   assert.match(css, /\.practice-card\.is-paused \.hand-press-layer/);
+  assert.match(css, /\.word-pronunciation-button/);
+  assert.match(css, /\.keyboard-map \{[\s\S]*?isolation: isolate;/);
+  assert.match(css, /\.practice-card \.keyboard-row kbd\.active \{\s*z-index: 31 !important;/);
+  assert.match(css, /\.practice-card \.keyboard-row\.active-row \{\s*z-index: 30 !important;/);
   assert.match(css, /\.practice-pause-banner \{\s*position: absolute;/);
   assert.match(css, /@keyframes pause-badge-in/);
   assert.doesNotMatch(page, /fingertip-marker|finger-trace/);
   assert.doesNotMatch(css, /\.fingertip-marker|\.finger-trace/);
   assert.doesNotMatch(css, /\.typing-hand/);
-  assert.match(css, /\.audio-control-cluster/);
-  assert.match(css, /\.hero-copy h1 \{\s*overflow: hidden;\s*max-height: 310px;/);
+  assert.match(css, /\.sound-menu-panel/);
+  // The headline must NOT be clipped. `overflow: hidden` + a fixed max-height
+  // here is what cut off the practice pane, so this asserts the fix, not the bug.
+  assert.match(css, /\.hero-copy h1 \{\s*overflow: visible;\s*max-height: none;/);
   assert.match(css, /\.hero\.practice-preparing \.practice-stage/);
   assert.match(css, /\.practice-focus-mode \.hero-copy \{\s*position: static;\s*display: flex;/);
   assert.doesNotMatch(css, /\.practice-focus-mode \.hero-copy \{\s*display: none;/);
@@ -120,7 +169,7 @@ test("ships Enter-confirmed falling words, advancing missing letters, and a real
   assert.match(falling, /recentWordsRef/);
   assert.match(falling, /fresh\.length \? fresh : unlocked/);
   assert.match(falling, /damage-\$\{misses\}/);
-  assert.match(falling, /CITY DESTROYED · MISSION FAILED/);
+  assert.match(falling, /Mission Failed — City Destroyed/);
   assert.match(falling, /createStereoPanner/);
   assert.match(falling, /state\.danger > 0\.68/);
   assert.match(falling, /threatPressure/);
@@ -133,12 +182,14 @@ test("ships Enter-confirmed falling words, advancing missing letters, and a real
   assert.doesNotMatch(falling, /onChange=\{\(event\) => captureWord/);
   assert.match(puzzles, /desiredAnswerPosition = \(levelIndex \* level\.length \+ puzzleIndex\) % 3/);
   assert.match(puzzles, /options\.splice\(desiredAnswerPosition, 0, expected\)/);
-  assert.match(puzzles, /Math\.min\(levelIndex \+ 1, missingPuzzleLevels\.length - 1\)/);
-  assert.match(puzzles, /setMasterRound/);
+  assert.match(puzzles, /buildGeneratedLevel/);
+  assert.match(puzzles, /buildGeneratedPuzzle/);
   assert.match(puzzles, /1450/);
   assert.match(puzzles, /missing-letter-input/);
   assert.match(puzzles, /missing-level-up/);
   assert.match(puzzles, /number-finger-guide/);
+  assert.match(puzzles, /\^\(\?:Digit\|Numpad\)\(\[1-3\]\)\$/);
+  assert.match(puzzles, /const choiceIndex = numberChoiceIndex\(event\)/);
   assert.match(puzzles, /왼손을 숫자열에 준비하세요/);
   assert.match(puzzles, /새끼/);
   assert.match(puzzles, /약지/);
@@ -151,6 +202,14 @@ test("ships Enter-confirmed falling words, advancing missing letters, and a real
   assert.match(puzzles, /word: "떡볶이", missingIndex: 1/);
   assert.match(puzzles, /word: "괜찮아요", missingIndex: 1/);
   assert.match(puzzles, /word: "감사합니다", missingIndex: 2/);
+  const activityPreview = await readFile(new URL("../app/ActivityPreview.tsx", import.meta.url), "utf8");
+  assert.match(activityPreview, />강<\/text>/);
+  assert.match(activityPreview, />지<\/text>/);
+  assert.doesNotMatch(activityPreview, />사<\/text>[\s\S]*>과<\/text>/);
+  assert.match(activityPreview, /crosswordPreviewCells/);
+  assert.match(activityPreview, /\["한", "국", "어", "공", "부"\]/);
+  assert.match(activityPreview, />3→<\/text>/);
+  assert.match(activityPreview, />한국어공부<\/text>/);
   assert.match(puzzles, /\.map\(\(level, levelIndex\) => level\.map\(\(puzzle, puzzleIndex\)/);
   assert.match(crossword, /id="crossword-word-input"/);
   assert.match(crossword, /function checkActiveWord/);
@@ -211,22 +270,79 @@ test("detects visitor locale before saving an explicit language preference", asy
   assert.doesNotMatch(page, /localStorage\.setItem\("hangeul-pop-locale", locale\)/);
 });
 
-test("ships both female and male prerecorded Korean audio", async () => {
+// A count assertion used to stand here, and it passed while ten lessons and
+// eleven travel phrases had no recording at all: the app derived MP3 URLs from
+// array indexes, the synthesizer kept its own shorter copy of the sentences, and
+// nothing compared the two. A missing file is not visibly broken — the player
+// reads the 404 as "no recording" and drops to the device voice, which is why
+// pronunciation quietly turned low-quality partway through a session. So the
+// manifest both sides read is what gets checked.
+test("ships both female and male prerecorded Korean audio for every mapped line", async () => {
   const audioDirectory = new URL("../public/audio/ko/", import.meta.url);
-  const files = (await readdir(audioDirectory)).filter((name) => name.endsWith(".mp3"));
-  assert.equal(files.length, 28);
-  for (const stem of ["lesson-01", "lesson-05", "travel-korea-01", "travel-welcome-03", "scene-03"]) {
+  const manifest = JSON.parse(
+    await readFile(new URL("../scripts/korean-audio-lines.json", import.meta.url), "utf8"),
+  );
+  assert.ok(manifest.length > 40, "manifest should cover every practice sentence");
+
+  const expected = new Set();
+  for (const [slug] of manifest) {
     for (const gender of ["female", "male"]) {
-      const fileUrl = new URL(`${stem}-${gender}.mp3`, audioDirectory);
-      assert.ok((await stat(fileUrl)).size > 1_000, `${stem}-${gender} must contain audio`);
+      const name = `${slug}-${gender}.mp3`;
+      expected.add(name);
+      assert.ok(
+        (await stat(new URL(name, audioDirectory))).size > 1_000,
+        `${name} must contain audio`,
+      );
     }
   }
+
+  const files = (await readdir(audioDirectory)).filter((name) => name.endsWith(".mp3"));
+  assert.equal(files.length, expected.size);
+  for (const name of files) {
+    assert.ok(expected.has(name), `${name} is not referenced by the manifest`);
+  }
+});
+
+// The manifest is generated from the app's own sentences; if it drifts, a
+// recording says something different from the text on screen. That happened to
+// two lines before this check existed.
+test("prerecorded audio manifest matches the sentences the app practises", async () => {
+  const manifest = JSON.parse(
+    await readFile(new URL("../scripts/korean-audio-lines.json", import.meta.url), "utf8"),
+  );
+  const { practiceCurriculum } = await import("../app/practice-curriculum.ts");
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(page, /import koreanAudioLines from "\.\.\/scripts\/korean-audio-lines\.json"/);
+  assert.match(page, /koreanAudioLines\.map\(\(\[slug, text\]\) =>/);
+  const slugs = new Set(manifest.map(([slug]) => slug));
+  assert.equal(slugs.size, manifest.length, "slugs must be unique");
+  for (const [slug, text] of manifest) {
+    assert.match(slug, /^(lesson|travel-korea|travel-welcome|scene|concept|drill)-\d{2}$/);
+    assert.ok(text.trim().length > 0, `${slug} must have text`);
+  }
+
+  // The bug this guards against: the manifest was generated from the three
+  // hardcoded arrays the old audio map happened to use, while the practice card
+  // is driven by the selected learning concept. 47 of the 50 concept sentences
+  // had no recording, so picking any concept meant the device voice from the
+  // first sentence on — and the count-based test above still passed.
+  const themes = await readFile(new URL("../app/content-themes.ts", import.meta.url), "utf8");
+  const conceptSentences = [...new Set([...themes.matchAll(/korean:\s*"([^"]+)"/g)].map((m) => m[1]))];
+  const recorded = new Set(manifest.map(([, text]) => text));
+  const unvoiced = conceptSentences.filter((text) => !recorded.has(text));
+  assert.deepEqual(unvoiced, [], "every learning-concept sentence needs a recording");
+  const unvoicedPractice = practiceCurriculum
+    .filter((item) => item.speak && !recorded.has(item.text))
+    .map((item) => item.text);
+  assert.deepEqual(unvoicedPractice, [], "every spoken practice word and sentence needs a recording");
 });
 
 test("keeps header controls out of the progress navigation at laptop widths", async () => {
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(css, /grid-template-columns: auto minmax\(0, 1fr\) auto/);
-  assert.match(css, /@media \(max-width: 1360px\)[\s\S]*?\.audio-control-cluster \.speech-toggle-copy[\s\S]*?display: none/);
+  // The 1360px caption-hiding hack is gone: the captions moved into the panel,
+  // where there is room for the longest of the 33 languages.
+  assert.match(css, /\.sound-menu-panel[\s\S]*?min-width: 280px/);
   assert.match(css, /@media \(max-width: 1120px\)[\s\S]*?\.nav-links a:not\(\[href="\/my"\]\)[\s\S]*?display: none/);
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.nav-links[\s\S]*?display: none/);
 });

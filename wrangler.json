@@ -1,0 +1,18 @@
+{
+  "name": "hangeul-pop",
+  "compatibility_date": "2026-05-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "worker/index.ts",
+  "workers_dev": true,
+  "routes": [
+    { "pattern": "seoulkeys.com", "custom_domain": true },
+    { "pattern": "www.seoulkeys.com", "custom_domain": true }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "hangeul-pop-db",
+      "database_id": "c909b802-d6b6-4de1-8879-84984010ce95"
+    }
+  ]
+}

@@ -1,5 +1,6 @@
-import { getChatGPTUser } from "../../chatgpt-auth";
+import { getAppUser } from "../../google-auth";
 import { getLearningProfile, saveLearningProgress, type ProgressUpdate } from "../../../db/learning";
+import { practiceCurriculum } from "../../practice-curriculum";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,7 @@ function safeNumber(value: unknown, fallback = 0) {
 }
 
 export async function GET() {
-  const user = await getChatGPTUser();
+  const user = await getAppUser();
   if (!user) return Response.json({ error: "Authentication required" }, { status: 401 });
 
   try {
@@ -20,7 +21,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const user = await getChatGPTUser();
+  const user = await getAppUser();
   if (!user) return Response.json({ error: "Authentication required" }, { status: 401 });
 
   try {
@@ -28,7 +29,9 @@ export async function POST(request: Request) {
     const update: ProgressUpdate = {
       currentLesson: safeNumber(payload.currentLesson),
       completedSentences: safeNumber(payload.completedSentences),
-      totalSentences: Math.max(1, safeNumber(payload.totalSentences, 5)),
+      // The browser cannot choose the XP denominator. The deployed curriculum
+      // is the server-side source of truth.
+      totalSentences: practiceCurriculum.length,
       typingSeconds: safeNumber(payload.typingSeconds),
       accuracy: safeNumber(payload.accuracy, 100),
       lessonFinished: Boolean(payload.lessonFinished),
