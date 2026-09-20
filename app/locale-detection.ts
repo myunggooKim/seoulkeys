@@ -9,12 +9,14 @@ export const localeStorageKey = "hangeul-pop-locale";
 export const localeSourceStorageKey = "hangeul-pop-locale-source";
 export const manualLocaleSource = "manual-v1";
 
-const supportedLocales = new Set<Locale>([
+export const supportedLocaleCodes: readonly Locale[] = [
   "en", "ko", "es", "pt-BR", "ja", "zh-Hans", "zh-Hant",
   "fr", "de", "it", "pl", "nl", "ru", "tr", "ar", "fa", "ur",
   "fil", "th", "id", "ms", "vi", "my", "km", "lo", "hi", "bn",
   "ta", "ne", "si", "kk", "uz", "mn",
-]);
+];
+
+const supportedLocales = new Set<Locale>(supportedLocaleCodes);
 
 const localeByBrowserCode: Record<string, Locale> = {
   en: "en", ko: "ko", es: "es", pt: "pt-BR", ja: "ja", zh: "zh-Hans",
@@ -169,4 +171,7 @@ export function readManualLocalePreference(storage: { getItem(key: string): stri
 export function saveManualLocalePreference(storage: { setItem(key: string, value: string): void }, locale: Locale) {
   storage.setItem(localeStorageKey, locale);
   storage.setItem(localeSourceStorageKey, manualLocaleSource);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("seoulkeys-locale-change"));
+  }
 }

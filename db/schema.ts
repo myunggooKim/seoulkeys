@@ -92,6 +92,9 @@ export const learningProgress = sqliteTable("learning_progress", {
   totalSentences: integer("total_sentences").notNull().default(5),
   typingSeconds: integer("typing_seconds").notNull().default(0),
   accuracy: integer("accuracy").notNull().default(100),
+  /* Characters actually typed, accumulated across sessions. Counted rather than
+     estimated from elapsed time, because it is shown to visitors. */
+  typedChars: integer("typed_chars").notNull().default(0),
   lessonFinished: integer("lesson_finished", { mode: "boolean" }).notNull().default(false),
   awardedXp: integer("awarded_xp").notNull().default(0),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -130,4 +133,60 @@ export const adminAuditLog = sqliteTable("admin_audit_log", {
   contentId: integer("content_id"),
   detail: text("detail").notNull().default(""),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+/**
+ * Who is on the site right now.
+ *
+ * A row per open tab, refreshed by a heartbeat while the tab is visible; the
+ * "live" count is simply the rows seen within the last few minutes. Stale rows
+ * are deleted on write, so the table stays roughly the size of the current
+ * audience rather than growing for ever.
+ *
+ * `visitor_id` is a random value the tab generates for itself. It is never tied
+ * to an account and never leaves the session, so this counts presence without
+ * tracking anybody.
+ */
+export const presence = sqliteTable("presence", {
+  visitorId: text("visitor_id").primaryKey(),
+  country: text("country").notNull().default(""),
+  seenAt: integer("seen_at").notNull(),
+});
+
+/**
+ * Everyone who has ever opened the site, whether or not they signed up.
+ *
+ * `presence` above is deliberately short-lived and answers "who is here now".
+ * This is the permanent counterpart behind the reach board: one row per browser
+ * session id, so "people who used it for at least a minute" is
+ * `last_seen - first_seen >= 60` and "countries" is the distinct set. No account
+ * is involved and the id never leaves the visitor's own session.
+ */
+export const visitors = sqliteTable("visitors", {
+  visitorId: text("visitor_id").primaryKey(),
+  country: text("country").notNull().default(""),
+  firstSeen: integer("first_seen").notNull(),
+  lastSeen: integer("last_seen").notNull(),
+  beats: integer("beats").notNull().default(1),
+});
+
+/** Totals from before this table existed, added to the live counts so the board
+ *  does not restart at zero. Seeded by hand from the analytics that recorded
+ *  them; see the owner's note in the pulse route. */
+export const visitorBaseline = sqliteTable("visitor_baseline", {
+  metric: text("metric").primaryKey(),
+  value: integer("value").notNull().default(0),
+});
+
+/** Constant-cost counters behind the public reach board. D1 triggers keep this
+ * row in sync with visitors and the distinct country table. */
+export const communityStats = sqliteTable("community_stats", {
+  id: integer("id").primaryKey(),
+  totalVisits: integer("total_visits").notNull().default(0),
+  countryCount: integer("country_count").notNull().default(0),
+  updatedAt: integer("updated_at").notNull().default(sql`(unixepoch())`),
+});
+
+export const communityCountries = sqliteTable("community_countries", {
+  country: text("country").primaryKey(),
 });

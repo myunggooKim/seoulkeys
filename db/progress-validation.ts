@@ -4,6 +4,7 @@ export type ProgressUpdate = {
   totalSentences: number;
   typingSeconds: number;
   accuracy: number;
+  typedChars: number;
   lessonFinished: boolean;
 };
 
@@ -13,12 +14,17 @@ export type StoredProgress = {
   totalSentences: number;
   typingSeconds: number;
   accuracy: number;
+  typedChars: number;
   lessonFinished: boolean;
   awardedXp: number;
 };
 
 const MAX_CURRICULUM_STEPS = 200;
 const MAX_TYPING_SECONDS_PER_SYNC = 6 * 60 * 60;
+/* The character total is shown publicly on the home page, which makes it worth
+   forging. It only ever moves forward, and by no more than a fast typist could
+   manage between two saves. */
+const MAX_TYPED_CHARS_PER_SYNC = 5_000;
 
 function clampInteger(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, Math.round(value)));
@@ -57,6 +63,13 @@ export function validateProgressUpdate(current: StoredProgress, update: Progress
       ),
     ),
     accuracy: clampInteger(update.accuracy, 0, 100),
+    typedChars: Math.max(
+      current.typedChars,
+      Math.min(
+        Math.max(0, Math.round(update.typedChars)),
+        current.typedChars + MAX_TYPED_CHARS_PER_SYNC,
+      ),
+    ),
     lessonFinished,
     targetXp,
     xpDelta: Math.max(0, targetXp - current.awardedXp),

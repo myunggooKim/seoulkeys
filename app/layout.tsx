@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import "./globals.css";
 
 const title = "Seoul Keys — Learn Korean typing through play";
-const description = "Practice Hangul home keys, words, puzzles, long-form typing, and licensed K-POP challenges in short daily sessions.";
+const description = "Learn Hangul and Korean typing through clear guides, short daily practice, original dialogue, words, and games.";
+
+// Canonical URLs are pinned to the production origin rather than derived from the
+// request host. metadataBase follows x-forwarded-host, so a hit on the workers.dev
+// deployment URL would otherwise declare *itself* canonical and compete with
+// seoulkeys.com for the same content.
+export const SITE_ORIGIN = "https://seoulkeys.com";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const requestHeaders = await headers();
-  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
-  const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
-  const metadataBase = new URL(`${protocol}://${host}`);
+  // Canonical metadata must not vary by Host. Keeping this static also lets
+  // public editorial routes be cached instead of making every page dynamic.
+  const metadataBase = new URL(SITE_ORIGIN);
 
   const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || process.env.GOOGLE_SITE_VERIFICATION || "";
   const yandexVerification = process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || process.env.YANDEX_VERIFICATION || "";
@@ -20,11 +24,18 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase,
     title,
     description,
+    // Language is resolved entirely in the browser (localStorage → browser locale →
+    // geo), so ?lang=ko and ?lang=ja serve byte-identical English HTML. Without a
+    // canonical, Search Console filed all ten sitemap-declared variants as
+    // "duplicate, no user-selected canonical". Child routes override this.
+    alternates: { canonical: `${SITE_ORIGIN}/` },
     applicationName: "Seoul Keys",
-    authors: [{ name: "Seoul Keys Team" }],
+    authors: [{ name: "Seoul Keys", url: "/about" }],
+    creator: "Seoul Keys",
+    publisher: "Seoul Keys",
     keywords: [
       "Korean typing", "Learn Hangul", "Korean keyboard", "한글 타자 연습",
-      "한글 교육", "K-POP typing", "Korean language learning", "Hangul practice"
+      "한글 교육", "Korean typing guide", "Korean language learning", "Hangul practice"
     ],
     robots: {
       index: true,
@@ -49,8 +60,12 @@ export async function generateMetadata(): Promise<Metadata> {
     icons: {
       icon: [
         { url: "/favicon.svg", type: "image/svg+xml" },
+        // Chrome will not offer to install without a raster icon of at least
+        // 192px, whatever the SVG says, and iOS ignores SVG for the home screen.
+        { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+        { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
       ],
-      apple: [{ url: "/favicon.svg" }],
+      apple: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
     },
     openGraph: {
       title,
@@ -73,26 +88,64 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "EducationalApplication",
-    "name": "Seoul Keys",
-    "operatingSystem": "All",
-    "applicationCategory": "EducationalApplication",
-    "description": description,
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    },
-    "inLanguage": ["en", "ko", "es", "ja", "zh-Hans", "fr", "de"]
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${SITE_ORIGIN}/#organization`,
+        "name": "Seoul Keys",
+        "url": SITE_ORIGIN,
+        "description": "An independent Korean typing and Hangul education project.",
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "customer support",
+          "url": `${SITE_ORIGIN}/contact`,
+        },
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${SITE_ORIGIN}/#website`,
+        "name": "Seoul Keys",
+        "url": SITE_ORIGIN,
+        "description": description,
+        "publisher": { "@id": `${SITE_ORIGIN}/#organization` },
+        "inLanguage": "en",
+      },
+    ],
   };
 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Resolve the theme before first paint. Without this every page fell
-            back to "dark" inside a useEffect, so first-time visitors were forced
-            into dark regardless of their system setting and saved-light users
-            saw a dark flash on every navigation. */}
+        {/* App screens resolve locale, account state and progress before their
+            first frame. Public guides are already complete server-rendered
+            documents, so they must paint immediately instead of waiting for the
+            application's hydration guard. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(){
+                var root = document.documentElement;
+                var path = window.location.pathname;
+                var appRoots = ["/", "/my", "/teacher", "/join", "/legal"];
+                var needsAppBoot = appRoots.some(function(route) {
+                  return path === route || (route !== "/" && path.indexOf(route + "/") === 0);
+                });
+                if (!needsAppBoot) {
+                  root.setAttribute("data-app-ready", "server");
+                  return;
+                }
+                root.setAttribute("data-app-booting", "true");
+                window.setTimeout(function(){
+                  if (!root.hasAttribute("data-app-booting")) return;
+                  root.removeAttribute("data-app-booting");
+                  root.setAttribute("data-app-ready", "fallback");
+                }, 4000);
+              })();
+            `,
+          }}
+        />
+        {/* Resolve the theme before first paint. A returning visitor keeps their
+            explicit choice; a first-time visitor always starts in light mode. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -101,10 +154,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                   var saved = localStorage.getItem("seoulkeys-theme");
                   var theme = (saved === "dark" || saved === "light")
                     ? saved
-                    : (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+                    : "light";
                   document.documentElement.setAttribute("data-theme", theme);
                 }catch(e){
-                  document.documentElement.setAttribute("data-theme","dark");
+                  document.documentElement.setAttribute("data-theme","light");
                 }
               })();
             `,
@@ -120,8 +173,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@400;500;700;900&display=swap"
         />
+        {/* One serif face, used for exactly one thing: a member's own name written
+            in Hangul. Nanum Myeongjo is the closest web-available face to the
+            brush-written 궁서 look, and a name deserves to be set like calligraphy
+            rather than in the interface font. It shares the request above with
+            Noto Sans KR; the browser downloads each font only when CSS uses it. */}
         <meta name="theme-color" content="#0d1117" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

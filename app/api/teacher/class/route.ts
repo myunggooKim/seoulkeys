@@ -48,7 +48,14 @@ export async function GET() {
         })
       );
 
-      const [summary] = await db.select().from(classSummary).where(eq(classSummary.classId, c.id));
+      /* `class_summary.avg_accuracy` is written once, as 100, when the class is
+         created and nothing ever updates it — so the `??` below never reached its
+         fallback and every class reported a 100% average for ever. Computed from
+         the students' own progress instead; the summary row stays for the delete
+         cascade but is no longer a source of truth. */
+      const avgAccuracy = studentReports.length
+        ? Math.round(studentReports.reduce((total, s) => total + s.accuracy, 0) / studentReports.length)
+        : 0;
 
       return {
         id: c.id,
@@ -57,7 +64,7 @@ export async function GET() {
         inviteUrl: `https://seoulkeys.com/join?code=${c.inviteCode}`,
         createdAt: c.createdAt,
         totalStudents: studentsInClass.length,
-        avgAccuracy: summary?.avgAccuracy ?? (studentsInClass.length ? Math.round(studentReports.reduce((acc, s) => acc + s.accuracy, 0) / studentsInClass.length) : 100),
+        avgAccuracy,
         students: studentReports,
       };
     })

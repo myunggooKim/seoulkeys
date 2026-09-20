@@ -34,6 +34,7 @@ export async function POST(request: Request) {
       totalSentences: practiceCurriculum.length,
       typingSeconds: safeNumber(payload.typingSeconds),
       accuracy: safeNumber(payload.accuracy, 100),
+      typedChars: safeNumber(payload.typedChars),
       lessonFinished: Boolean(payload.lessonFinished),
     };
     const profile = await saveLearningProgress(user.email, user.displayName, update);

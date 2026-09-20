@@ -1,0 +1,39 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "hangeul-pop-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "hangeul-pop-prod",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vinext",
+        "start",
+        "--port",
+        "4321"
+      ],
+      "port": 4321
+    },
+    {
+      "name": "hangeul-pop-auth",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "wrangler",
+        "dev",
+        "--config",
+        "dist/server/wrangler.json",
+        "--port",
+        "4322",
+        "--local"
+      ],
+      "port": 4322
+    }
+  ]
+}

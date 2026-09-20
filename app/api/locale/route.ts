@@ -4,7 +4,6 @@ const countryHeaderNames = [
   "cf-ipcountry",
   "x-vercel-ip-country",
   "x-country-code",
-  "x-openai-country",
 ];
 
 export async function GET(request: Request) {

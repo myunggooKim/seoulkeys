@@ -1,0 +1,191 @@
+.table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  border-spacing: 0;
+  border-collapse: collapse;
+  color: var(--ink);
+  background: var(--paper);
+  font-size: 12px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  text-align: start;
+}
+
+.table th,
+.table td {
+  box-sizing: border-box;
+  padding: 10px 9px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
+  vertical-align: top;
+  text-align: start;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  font-weight: 500;
+}
+
+.table thead th {
+  padding-block: 9px;
+  background: color-mix(in srgb, var(--lime) 18%, var(--paper));
+  border-block: 1px solid color-mix(in srgb, var(--ink) 24%, transparent);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.table tbody tr:hover {
+  background: color-mix(in srgb, var(--lime) 8%, var(--paper));
+}
+
+.accountColumn { width: 26%; }
+.progressColumn { width: 15%; }
+.practiceColumn { width: 12%; }
+.visitsColumn { width: 17%; }
+.classColumn { width: 14%; }
+.datesColumn { width: 16%; }
+
+.account,
+.stack {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.account strong,
+.stack strong,
+.stack b {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.email {
+  color: color-mix(in srgb, var(--ink) 76%, var(--paper));
+  font-size: 11px;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+.accountMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 9px;
+  align-items: center;
+  margin-top: 1px;
+  font-size: 11px;
+}
+
+.table .country {
+  min-width: 0;
+  max-width: 100%;
+  gap: 5px;
+  white-space: normal;
+}
+
+.table .country img {
+  width: 16px;
+  height: 12px;
+}
+
+.stack > span,
+.stack small,
+.joined {
+  font-size: 11px;
+}
+
+.joined {
+  display: block;
+  margin-top: 3px;
+  color: color-mix(in srgb, var(--ink) 76%, var(--paper));
+}
+
+.idle {
+  opacity: .64;
+}
+
+.mobileTable {
+  display: none;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 800px) {
+  .table th,
+  .table td {
+    padding-inline: 6px;
+  }
+}
+
+@media (max-width: 640px) {
+  .desktopTable { display: none; }
+  .mobileTable { display: table; }
+  .mobileTable .accountColumn { width: 44%; }
+  .mobileTable .progressColumn { width: 26%; }
+  .mobileTable .datesColumn { width: 30%; }
+
+  .mobileMainRow td:last-child strong {
+    font-size: 11px;
+  }
+
+  .mobileMainRow th,
+  .mobileMainRow td {
+    padding-bottom: 4px;
+    border-bottom: 0;
+  }
+
+  .detailsRow td {
+    padding: 0 6px 7px;
+  }
+
+  .details summary {
+    width: fit-content;
+    max-width: 100%;
+    padding: 5px 2px;
+    color: var(--ink);
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .details summary:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  .details[open] summary {
+    margin-bottom: 3px;
+  }
+
+  .details dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 14px;
+    margin: 0;
+    padding: 9px 6px;
+    border-top: 1px dashed color-mix(in srgb, var(--ink) 20%, transparent);
+  }
+
+  .details dl > div { min-width: 0; }
+
+  .details dt {
+    margin-bottom: 3px;
+    font-size: 10px;
+    font-weight: 800;
+    color: color-mix(in srgb, var(--ink) 72%, var(--paper));
+  }
+
+  .details dd {
+    margin: 0;
+    font-size: 11px;
+  }
+}

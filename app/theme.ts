@@ -4,9 +4,8 @@ export const themeStorageKey = "seoulkeys-theme";
 
 /**
  * The theme is already resolved and written to <html data-theme> by the blocking
- * script in app/layout.tsx, so read that instead of guessing again. Falling back
- * to a hard-coded "dark" here is what forced every first-time visitor into dark
- * regardless of their system preference.
+ * script in app/layout.tsx, so read that instead of guessing again. First-time
+ * visitors always start in light mode; only an explicit saved choice overrides it.
  */
 export function readResolvedTheme(): ThemeMode {
   if (typeof document === "undefined") return "dark";
@@ -17,9 +16,9 @@ export function readResolvedTheme(): ThemeMode {
     const saved = window.localStorage.getItem(themeStorageKey);
     if (saved === "dark" || saved === "light") return saved;
   } catch {
-    // Private-mode storage denial: fall through to the system preference.
+    // Private-mode storage denial: fall through to the light default.
   }
-  return window.matchMedia?.("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  return "light";
 }
 
 export function applyTheme(theme: ThemeMode) {

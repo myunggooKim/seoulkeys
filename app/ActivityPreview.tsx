@@ -170,6 +170,21 @@ function DramaLines() {
   );
 }
 
+/* Proverbs: an open book with one highlighted line and quotation marks. */
+function Proverbs() {
+  return (
+    <Frame>
+      <path d="M15 17c17-4 30 1 45 9v29c-15-8-28-12-45-8z" fill={paper} stroke={stroke} strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M105 17c-17-4-30 1-45 9v29c15-8 28-12 45-8z" fill={paper} stroke={stroke} strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M60 26v29" stroke={stroke} strokeWidth="1.5" />
+      <path d="M24 31h25M24 37h20M71 31h25M71 37h18" stroke={stroke} strokeWidth="1.4" strokeLinecap="round" opacity=".55" />
+      <path d="M24 43h27" stroke="var(--pink)" strokeWidth="3.3" strokeLinecap="round" />
+      <text x="43" y="24" fontSize="15" fontWeight="950" fill="var(--purple)">“</text>
+      <text x="68" y="25" fontSize="15" fontWeight="950" fill="var(--cyan)">”</text>
+    </Frame>
+  );
+}
+
 const byActivity: Record<string, () => React.ReactElement> = {
   home: HomeRow,
   tetris: WordRain,
@@ -178,6 +193,7 @@ const byActivity: Record<string, () => React.ReactElement> = {
   travel: Travel,
   kpop: KpopLyrics,
   screen: DramaLines,
+  proverb: Proverbs,
 };
 
 export function ActivityPreview({ activity }: Props) {

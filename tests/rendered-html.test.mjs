@@ -2,6 +2,48 @@ import assert from "node:assert/strict";
 import { readFile, readdir, stat } from "node:fs/promises";
 import test from "node:test";
 
+test("starts new visitors in light mode and preserves an explicit saved theme", async () => {
+  const [layout, theme] = await Promise.all([
+    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/theme.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(layout, /localStorage\.getItem\("seoulkeys-theme"\)/);
+  assert.match(layout, /\? saved\s*: "light"/);
+  assert.match(layout, /setAttribute\("data-theme","light"\)/);
+  assert.doesNotMatch(layout, /prefers-color-scheme/);
+  assert.match(theme, /localStorage\.setItem\(themeStorageKey, theme\)/);
+  assert.match(theme, /return "light"/);
+  assert.doesNotMatch(theme, /prefers-color-scheme/);
+});
+
+test("reveals the home page only after its localized first frame is stable", async () => {
+  const [layout, page, css, localeHook, runtimeI18n] = await Promise.all([
+    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/use-locale-translations.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/runtime-i18n.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(layout, /setAttribute\("data-app-booting", "true"\)/);
+  assert.match(layout, /removeAttribute\("data-app-booting"\)/);
+  assert.match(layout, /var appRoots = \["\/", "\/my", "\/teacher", "\/join", "\/legal"\]/);
+  assert.match(css, /html\[data-app-booting\] body\s*\{[^}]*visibility:\s*hidden/s);
+  assert.match(page, /const \[localeResolved, setLocaleResolved\] = useState\(false\)/);
+  assert.match(page, /const translationsReady = useLocaleTranslations\(locale\)/);
+  assert.match(page, /document\.fonts\?\.ready/);
+  assert.match(page, /root\.setAttribute\("data-app-ready", "true"\)/);
+  assert.match(page, /if \(active\) setSignedIn\(false\)/);
+  assert.match(localeHook, /if \(active\) setLoadedLocale\(locale\)/);
+  assert.match(runtimeI18n, /signal: controller\.signal/);
+});
+
+test("reveals the legal page as soon as its translated document is stable", async () => {
+  const bridge = await readFile(new URL("../app/legal/LegalTranslationBridge.tsx", import.meta.url), "utf8");
+  assert.match(bridge, /removeAttribute\("data-app-booting"\)/);
+  assert.match(bridge, /setAttribute\("data-app-ready", "legal"\)/);
+});
+
 test("ships the staged Korean typing curriculum before sentence practice", async () => {
   const curriculum = await readFile(new URL("../app/practice-curriculum.ts", import.meta.url), "utf8");
   const { practiceCurriculum, progressiveWordGroups } = await import("../app/practice-curriculum.ts");
@@ -166,8 +208,8 @@ test("ships Enter-confirmed falling words, advancing missing letters, and a real
   assert.doesNotMatch(falling, /if \(paused \|\| gameOver \|\| briefing \|\| waveClear\) return/);
   assert.doesNotMatch(falling, /disabled=\{briefing \|\| paused \|\| gameOver \|\| Boolean\(waveClear\)\}/);
   assert.match(falling, /Alt\+M/);
-  assert.match(falling, /recentWordsRef/);
-  assert.match(falling, /fresh\.length \? fresh : unlocked/);
+  assert.match(falling, /drawFromContentDeck/);
+  assert.match(falling, /activeWordKeysRef/);
   assert.match(falling, /damage-\$\{misses\}/);
   assert.match(falling, /Mission Failed — City Destroyed/);
   assert.match(falling, /createStereoPanner/);
@@ -282,7 +324,7 @@ test("ships both female and male prerecorded Korean audio for every mapped line"
   const manifest = JSON.parse(
     await readFile(new URL("../scripts/korean-audio-lines.json", import.meta.url), "utf8"),
   );
-  assert.ok(manifest.length > 40, "manifest should cover every practice sentence");
+  assert.ok(manifest.length >= 900, "manifest should cover the expanded vocabulary and sentence library");
 
   const expected = new Set();
   for (const [slug] of manifest) {
@@ -317,7 +359,7 @@ test("prerecorded audio manifest matches the sentences the app practises", async
   const slugs = new Set(manifest.map(([slug]) => slug));
   assert.equal(slugs.size, manifest.length, "slugs must be unique");
   for (const [slug, text] of manifest) {
-    assert.match(slug, /^(lesson|travel-korea|travel-welcome|scene|concept|drill)-\d{2}$/);
+    assert.match(slug, /^(lesson|travel-korea|travel-welcome|scene|concept|drill|word|concept-extra|travel-extra|proverb)-\d{2,3}$/);
     assert.ok(text.trim().length > 0, `${slug} must have text`);
   }
 
@@ -335,6 +377,20 @@ test("prerecorded audio manifest matches the sentences the app practises", async
     .filter((item) => item.speak && !recorded.has(item.text))
     .map((item) => item.text);
   assert.deepEqual(unvoicedPractice, [], "every spoken practice word and sentence needs a recording");
+});
+
+test("keeps the selected interface language on class join and teacher pages", async () => {
+  const [joinPage, teacherPage, localeHook] = await Promise.all([
+    readFile(new URL("../app/join/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/teacher/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/use-active-locale.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(joinPage, /useActiveLocale\(\)/);
+  assert.match(joinPage, /<GoogleSignIn locale=\{locale\}/);
+  assert.match(teacherPage, /useActiveLocale\(\)/);
+  assert.match(localeHook, /readManualLocalePreference/);
+  assert.match(localeHook, /resolveVisitorLocale/);
 });
 
 test("keeps header controls out of the progress navigation at laptop widths", async () => {

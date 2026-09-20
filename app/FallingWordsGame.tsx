@@ -2,6 +2,7 @@
 
 import { type CSSProperties, FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ThemeWord } from "./content-themes";
+import { createContentDeck, drawFromContentDeck } from "./content-deck";
 import type { Locale } from "./locale-detection";
 import { tr } from "./ui-i18n";
 
@@ -116,7 +117,7 @@ function noiseHit(context: AudioContext, output: AudioNode, start: number, durat
   source.stop(start + duration);
 }
 
-export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSound, onKeySound, suspended = false, themeWords }: {
+export function FallingWordsGame({ locale, soundEnabled, onSuccessSound, onKeySound, suspended = false, themeWords }: {
   koreanUi: boolean;
   locale: Locale;
   soundEnabled: boolean;
@@ -126,11 +127,13 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
   themeWords?: ThemeWord[];
 }) {
   const activeBank = useMemo(() => (themeWords && themeWords.length
-    ? themeWords.map((entry) => ({ korean: entry.word, meaning: koreanUi ? entry.meaningKo : entry.meaningEn, difficulty: entry.difficulty ?? 1 }))
-    : wordBank), [koreanUi, themeWords]);
+    ? themeWords.map((entry) => ({ korean: entry.word, meaning: tr(locale, entry.meaningEn, entry.meaningKo), difficulty: entry.difficulty ?? 1 }))
+    : wordBank.map((entry) => ({ ...entry, meaning: tr(locale, entry.meaning) }))), [locale, themeWords]);
   const bankRef = useRef(activeBank);
+  const wordDeckRef = useRef(createContentDeck<(typeof activeBank)[number]>());
   useEffect(() => {
     bankRef.current = activeBank;
+    wordDeckRef.current = createContentDeck();
   }, [activeBank]);
   const nextId = useRef(4);
   const composingRef = useRef(false);
@@ -152,12 +155,16 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
     threatCount: 3,
   });
   const localAudioEnabledRef = useRef(true);
-  const recentWordsRef = useRef(["사랑", "음악", "여행"]);
+  const activeWordKeysRef = useRef(new Set(["사랑", "음악", "여행"]));
   const [words, setWords] = useState<FallingWord[]>([
-    { id: 1, korean: "사랑", meaning: "love", x: lanePositions[1], y: 5, speed: 0.23, lane: 1 },
-    { id: 2, korean: "음악", meaning: "music", x: lanePositions[3], y: -8, speed: 0.25, lane: 3 },
-    { id: 3, korean: "여행", meaning: "travel", x: lanePositions[5], y: 0, speed: 0.21, lane: 5 },
+    { id: 1, korean: "사랑", meaning: tr(locale, "love", "사랑"), x: lanePositions[1], y: 5, speed: 0.23, lane: 1 },
+    { id: 2, korean: "음악", meaning: tr(locale, "music", "음악"), x: lanePositions[3], y: -8, speed: 0.25, lane: 3 },
+    { id: 3, korean: "여행", meaning: tr(locale, "travel", "여행"), x: lanePositions[5], y: 0, speed: 0.21, lane: 5 },
   ]);
+  const activeMeanings = useMemo(
+    () => new Map(activeBank.map((entry) => [entry.korean, entry.meaning])),
+    [activeBank],
+  );
   const [input, setInput] = useState("");
   const [inputEpoch, setInputEpoch] = useState(0);
   const [inputError, setInputError] = useState(false);
@@ -174,6 +181,9 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
   const [briefing, setBriefing] = useState(true);
   const [waveClear, setWaveClear] = useState<number | null>(null);
   const [localAudioEnabled, setLocalAudioEnabled] = useState(true);
+  useEffect(() => {
+    activeWordKeysRef.current = new Set(words.map((word) => word.korean));
+  }, [words]);
   const [shock, setShock] = useState(false);
   const [message, setMessage] = useState(tr(locale, "Press Enter to begin the Hangul City defense mission.", "Enter를 눌러 한글시티 방어 임무를 시작하세요."));
   const [splash, setSplash] = useState(false);
@@ -321,10 +331,12 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
     const bank = bankRef.current;
     const unlockedRaw = bank.filter((item) => item.difficulty <= unlockedDifficulty);
     const unlocked = unlockedRaw.length ? unlockedRaw : bank;
-    const fresh = unlocked.filter((item) => !recentWordsRef.current.includes(item.korean));
-    const pool = fresh.length ? fresh : unlocked;
-    const item = pool[Math.floor(Math.random() * pool.length)];
-    recentWordsRef.current = [...recentWordsRef.current, item.korean].slice(-Math.min(18, Math.max(10, unlocked.length - 4)));
+    const item = drawFromContentDeck(
+      wordDeckRef.current,
+      unlocked,
+      (entry) => entry.korean,
+      activeWordKeysRef.current,
+    );
     const lane = (slot + Math.floor(Math.random() * lanePositions.length)) % lanePositions.length;
     return {
       id: nextId.current++,
@@ -340,7 +352,7 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
   const resetGame = useCallback(() => {
     nextId.current = 1;
     missesRef.current = 0;
-    recentWordsRef.current = [];
+    wordDeckRef.current = createContentDeck();
     setWords([spawnWord(0, 1), spawnWord(2, 1), spawnWord(4, 1)]);
     setInput("");
     setInputEpoch((current) => current + 1);
@@ -423,7 +435,7 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
               setMessage(tr(locale, "The city shield collapsed. Inspect your record or restart.", "도시 방어막이 무너졌습니다. 최종 기록을 확인하세요."));
               window.setTimeout(() => rootRef.current?.focus({ preventScroll: true }), 0);
             } else {
-              setMessage(koreanUi ? `방어막 피격! 에너지 코어 ${MAX_LIVES - nextMisses}개 · 도시를 지켜주세요.` : `Shield hit! ${MAX_LIVES - nextMisses} energy cores remain. Defend the city.`);
+              setMessage(`${tr(locale, "Shield hit!", "방어막 피격!")} ${MAX_LIVES - nextMisses} ${tr(locale, "energy cores remain. Defend the city.", "개의 에너지 코어가 남았습니다. 도시를 지켜주세요.")}`);
             }
           }, 0);
         }
@@ -435,7 +447,7 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
       });
     }, 50);
     return () => window.clearInterval(timer);
-  }, [briefing, desiredWords, gameOver, koreanUi, level, locale, paused, playGameEffect, spawnWord, suspended]);
+  }, [briefing, desiredWords, gameOver, level, locale, paused, playGameEffect, spawnWord, suspended]);
 
   useEffect(() => () => {
     if (burstTimerRef.current) window.clearTimeout(burstTimerRef.current);
@@ -459,7 +471,7 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
 
   function startMission() {
     setBriefing(false);
-    recentWordsRef.current = [];
+    wordDeckRef.current = createContentDeck();
     setWords([spawnWord(0, 1), spawnWord(2, 1), spawnWord(4, 1)]);
     setMessage(tr(locale, "Mission live! Type each corrupted word exactly and press Enter to blast it.", "임무 시작! 오염된 단어를 정확히 입력하고 Enter로 격파하세요."));
     playGameEffect("start");
@@ -512,20 +524,20 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
     setInput("");
     setInputError(false);
     setInputEpoch((current) => current + 1);
-    setMessage(koreanUi ? `오염 단어 격파! +${gained} 에너지 · 다음 표적을 조준하세요.` : `Corrupted word destroyed! +${gained} energy · Lock the next target.`);
+    setMessage(`${tr(locale, "Corrupted word destroyed!", "오염 단어 격파!")} +${gained} ${tr(locale, "energy · Lock the next target.", "에너지 · 다음 표적을 조준하세요.")}`);
     setCaptureBurst({ id: matched.id, x: matched.x, y: Math.max(8, matched.y), text: `+${gained}`, combo: nextCombo, word: matched.korean });
     if (burstTimerRef.current) window.clearTimeout(burstTimerRef.current);
     burstTimerRef.current = window.setTimeout(() => setCaptureBurst(null), 1050);
     playGameEffect("blast", nextCombo, (matched.x / 50) - 1);
     if (clearedWave) {
       setWaveClear(level);
-      setMessage(koreanUi ? `웨이브 ${level} 방어 성공! 한글시티 전력이 상승합니다.` : `Wave ${level} secured! Hangul City power is rising.`);
+      setMessage(`${tr(locale, "Wave", "웨이브")} ${level} ${tr(locale, "secured! Hangul City power is rising.", "방어 성공! 한글시티 전력이 상승합니다.")}`);
       window.setTimeout(() => playGameEffect("wave"), 170);
       if (soundEnabled && localAudioEnabledRef.current) onSuccessSound();
       if (waveTimerRef.current) window.clearTimeout(waveTimerRef.current);
       waveTimerRef.current = window.setTimeout(() => {
         setWaveClear(null);
-        setMessage(koreanUi ? `웨이브 ${Math.min(8, level + 1)} 진입 · 낙하 속도가 빨라집니다.` : `Entering wave ${Math.min(8, level + 1)} · Descent speed increased.`);
+        setMessage(`${tr(locale, "Entering wave", "웨이브")} ${Math.min(8, level + 1)} · ${tr(locale, "Descent speed increased.", "진입 · 낙하 속도가 빨라집니다.")}`);
         window.setTimeout(focusInput, 0);
       }, 1450);
     }
@@ -587,20 +599,20 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
           two-column grid and a third child would have broken the layout. */}
       <div className="word-rain-arena">
       <div className="word-rain-hud">
-        <div className="word-rain-level"><small>WAVE</small><b>{level.toString().padStart(2, "0")}</b><em>RANK {rank}</em></div>
+        <div className="word-rain-level"><small>{tr(locale, "WAVE", "웨이브")}</small><b>{level.toString().padStart(2, "0")}</b><em>{tr(locale, "RANK", "등급")} {rank}</em></div>
         <div className="mission-hud">
           <small>{tr(locale, "CITY DEFENSE", "도시 방어 임무")}</small>
           <b>{tr(locale, "DECODE CORRUPTED WORDS", "오염 단어 해독")}</b>
           <span>{caught % CAUGHT_PER_LEVEL} / {CAUGHT_PER_LEVEL}</span>
         </div>
         <div className="word-rain-lives" aria-label={`${shield}% shield`}>
-          <small>SHIELD</small>
+          <small>{tr(locale, "SHIELD", "방어막")}</small>
           <b>{shield}%</b>
           <span className="shield-meter"><i style={{ width: `${shield}%` }} /></span>
         </div>
         <div className={`threat-alert ${criticalThreats ? "active" : ""}`} role="status" aria-live="polite">
           <i aria-hidden="true" />
-          <span>{criticalThreats ? koreanUi ? `충돌 경보 ${criticalThreats}` : `IMPACT ALERT ${criticalThreats}` : tr(locale, "AIRSPACE CLEAR", "영공 안정")}</span>
+          <span>{criticalThreats ? `${tr(locale, "IMPACT ALERT", "충돌 경보")} ${criticalThreats}` : tr(locale, "AIRSPACE CLEAR", "영공 안정")}</span>
         </div>
       </div>
       <div className="word-rain-board" aria-label={tr(locale, "Falling word defense game for Neon Hangul City", "네온 한글시티를 방어하는 낙하 단어 게임")}>
@@ -619,7 +631,7 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
             <span className="missile-plume" aria-hidden="true"><i /><i /><i /></span>
             <span className="missile-fins" aria-hidden="true" />
             <span className="target-brackets" aria-hidden="true" />
-            <b>{word.korean}</b><small>{word.meaning}</small>
+            <b>{word.korean}</b><small>{activeMeanings.get(word.korean) ?? word.meaning}</small>
           </span>
         ))}
         {captureBurst && (
@@ -630,7 +642,7 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
             <span className="missile-shards">
               {Array.from(captureBurst.word).map((character, index) => <i style={{ "--shard-index": index } as CSSProperties} key={`${character}-${index}`}>{character}</i>)}
             </span>
-            <strong>BREAK!</strong>
+            <strong>{tr(locale, "BREAK!", "격파!")}</strong>
             <b>{captureBurst.text}</b>
             {captureBurst.combo >= 3 && <em>{captureBurst.combo} COMBO</em>}
           </span>
@@ -659,7 +671,7 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
 
         {waveClear && (
           <div className="wave-clear-curtain" role="status">
-            <small>DEFENSE COMPLETE</small>
+            <small>{tr(locale, "DEFENSE COMPLETE", "방어 완료")}</small>
             <b>WAVE {waveClear.toString().padStart(2, "0")} CLEAR</b>
             <span>{tr(locale, "CITY POWER +1 · SCANNING NEXT WAVE", "도시 전력 +1 · 다음 파도 분석 중")}</span>
           </div>
@@ -667,7 +679,7 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
 
         {paused && (
           <div className="game-curtain" role="status">
-            <small>MISSION PAUSED</small>
+            <small>{tr(locale, "MISSION PAUSED", "임무 일시정지")}</small>
             <b>{tr(locale, "TIME FREEZE", "시간 정지")}</b>
             <span><kbd>Enter</kbd>{tr(locale, "resume mission", "임무 계속")}</span>
           </div>
@@ -678,25 +690,25 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
           <div className="game-curtain game-over-modal-curtain" role="status" style={{ background: "rgba(13, 17, 23, 0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", textAlign: "center", zIndex: 100 }}>
             <div style={{ maxWidth: "480px", width: "100%", background: "var(--paper)", border: "3px solid #ff4d8d", borderRadius: "20px", padding: "28px", boxShadow: "0 12px 32px rgba(255, 77, 141, 0.3)", color: "var(--ink)" }}>
               <span style={{ fontSize: "40px" }}>💥</span>
-              <small style={{ display: "block", color: "#ff4d8d", fontWeight: "bold", letterSpacing: "0.15em", marginTop: "8px" }}>CITY SHIELD COLLAPSED</small>
+              <small style={{ display: "block", color: "#ff4d8d", fontWeight: "bold", letterSpacing: "0.15em", marginTop: "8px" }}>{tr(locale, "CITY SHIELD COLLAPSED", "도시 방어막 붕괴")}</small>
               <h2 style={{ fontSize: "24px", margin: "8px 0", color: "var(--ink)", fontWeight: "900" }}>{tr(locale, "Mission Failed — City Destroyed", "방어 실패 — 임무 완수 리포트")}</h2>
 
               {/* Detailed Performance Metrics */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", background: "var(--ivory)", border: "2px solid var(--line)", borderRadius: "14px", padding: "16px", margin: "16px 0", textAlign: "center" }}>
                 <div>
-                  <small style={{ color: "var(--ink)", opacity: 0.7, fontSize: "12px" }}>최종 전력 점수</small>
+                  <small style={{ color: "var(--ink)", opacity: 0.7, fontSize: "12px" }}>{tr(locale, "Final power score", "최종 전력 점수")}</small>
                   <div style={{ fontSize: "22px", fontWeight: "900", color: "#58a6ff" }}>{score.toLocaleString()}</div>
                 </div>
                 <div>
-                  <small style={{ color: "var(--ink)", opacity: 0.7, fontSize: "12px" }}>격파 오염 단어</small>
-                  <div style={{ fontSize: "22px", fontWeight: "900", color: "#2da44e" }}>{caught}개</div>
+                  <small style={{ color: "var(--ink)", opacity: 0.7, fontSize: "12px" }}>{tr(locale, "Words destroyed", "격파 오염 단어")}</small>
+                  <div style={{ fontSize: "22px", fontWeight: "900", color: "#2da44e" }}>{caught}</div>
                 </div>
                 <div>
-                  <small style={{ color: "var(--ink)", opacity: 0.7, fontSize: "12px" }}>도달한 웨이브</small>
+                  <small style={{ color: "var(--ink)", opacity: 0.7, fontSize: "12px" }}>{tr(locale, "Wave reached", "도달한 웨이브")}</small>
                   <div style={{ fontSize: "18px", fontWeight: "800", color: "var(--ink)" }}>WAVE {level}</div>
                 </div>
                 <div>
-                  <small style={{ color: "var(--ink)", opacity: 0.7, fontSize: "12px" }}>최고 연속 격파 / 등급</small>
+                  <small style={{ color: "var(--ink)", opacity: 0.7, fontSize: "12px" }}>{tr(locale, "Best chain / rank", "최고 연속 격파 / 등급")}</small>
                   <div style={{ fontSize: "18px", fontWeight: "800", color: "#a371f7" }}>{maxCombo} Combo (RANK {rank})</div>
                 </div>
               </div>
@@ -704,23 +716,23 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
               {/* Share & Brag Actions */}
               <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
                 <button type="button" className="button button-primary" onClick={copyResultReport} style={{ flex: 1, fontSize: "13px", padding: "10px", justifyContent: "center" }}>
-                  📋 {copiedResult ? "기록 복사 완료!" : "내 성적 복사하기"}
+                  📋 {copiedResult ? tr(locale, "Result copied!", "기록 복사 완료!") : tr(locale, "Copy my result", "내 성적 복사하기")}
                 </button>
                 <button type="button" className="button button-secondary" onClick={shareToTwitter} style={{ fontSize: "13px", padding: "10px 14px" }}>
-                  🐤 X 자랑하기
+                  🐤 {tr(locale, "Share on X", "X 자랑하기")}
                 </button>
               </div>
 
               {/* Confirmation Gate before restarting */}
               {showRestartConfirm ? (
                 <div style={{ background: "rgba(255, 77, 141, 0.15)", border: "2px solid #ff4d8d", borderRadius: "12px", padding: "14px" }}>
-                  <p style={{ margin: "0 0 10px", fontWeight: "bold", fontSize: "14px", color: "var(--ink)" }}>⚠️ 처음부터 다시 도전하시겠습니까?</p>
+                  <p style={{ margin: "0 0 10px", fontWeight: "bold", fontSize: "14px", color: "var(--ink)" }}>⚠️ {tr(locale, "Start over from the beginning?", "처음부터 다시 도전하시겠습니까?")}</p>
                   <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
                     <button type="button" className="button button-primary" onClick={resetGame} style={{ background: "#ff4d8d", borderColor: "#ff4d8d", color: "#fff", padding: "8px 16px" }}>
-                      🚀 예, 처음부터 시작!
+                      🚀 {tr(locale, "Yes, restart", "예, 처음부터 시작!")}
                     </button>
                     <button type="button" className="button button-secondary" onClick={() => setShowRestartConfirm(false)} style={{ padding: "8px 16px" }}>
-                      기록 계속 보기
+                      {tr(locale, "Keep viewing results", "기록 계속 보기")}
                     </button>
                   </div>
                 </div>
@@ -738,7 +750,7 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
                   }}
                   style={{ width: "100%", justifyContent: "center", padding: "12px", fontSize: "15px", fontWeight: "bold" }}
                 >
-                  🔄 다시 도전하기 (확인창 열기)
+                  🔄 {tr(locale, "Try again", "다시 도전하기")}
                 </button>
               )}
             </div>
@@ -756,7 +768,7 @@ export function FallingWordsGame({ koreanUi, locale, soundEnabled, onSuccessSoun
             onClick={toggleGameAudio}
             aria-pressed={soundEnabled && localAudioEnabled}
           >
-            <b>♪</b> {soundEnabled && localAudioEnabled ? "BGM + FX ON" : "AUDIO OFF"} <kbd>Alt+M</kbd>
+            <b>♪</b> {soundEnabled && localAudioEnabled ? tr(locale, "BGM + FX ON", "배경음·효과음 켜짐") : tr(locale, "AUDIO OFF", "소리 꺼짐")} <kbd>Alt+M</kbd>
           </button>
         </div>
         <div className="game-scorebar">

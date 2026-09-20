@@ -8,9 +8,13 @@ import AdminConsole from "./AdminConsole";
 
 export const dynamic = "force-dynamic";
 
+// robots.txt disallows /admin, but a disallowed URL can still be indexed from an
+// external link — only a robots meta tag actually keeps it out of the results.
 export const metadata: Metadata = {
   title: "Content studio — Seoul Keys",
   description: "Manage Korean learning passages and their publication rights.",
+  alternates: { canonical: "https://seoulkeys.com/admin" },
+  robots: { index: false, follow: false },
 };
 
 export default async function AdminPage() {

@@ -28,6 +28,9 @@
   --shadow: 7px 7px 0 var(--shadow-ink);
   --surface-2: #f2f1e8;
   --glow: transparent;
+  --site-content-max: 1200px;
+  --site-inline-space: clamp(64px, 10vw, 160px);
+  --admin-content-max: 1180px;
 
   /* Height of everything stacked above the hero: the header plus the notice bar.
      Five separate `calc(100svh - Npx)` rules each hardcoded their own guess at
@@ -42,6 +45,15 @@
      on phones. This value is the desktop single-line case, used until the
      measurement lands and if scripting is unavailable. */
   --chrome-h: 133px;
+}
+
+/* The server bootstrap is intentionally English because the user's saved
+   browser-only preference is not available there. Do not expose that temporary
+   tree: the app removes this attribute only after locale, translations, theme,
+   account chrome, and fonts have settled. The attribute itself is created by a
+   head script, so a no-JavaScript visit is never hidden. */
+html[data-app-booting] body {
+  visibility: hidden;
 }
 
 html[data-theme="light"] {
@@ -574,6 +586,12 @@ button {
 
 .site-shell {
   min-height: 100vh;
+  box-sizing: border-box;
+  /* Keep gutters on the page, not its children: focus mode must not erase them. */
+  padding-left: 16px;
+  padding-right: 16px;
+  padding-left: calc(var(--site-inline-space) / 2);
+  padding-right: calc(var(--site-inline-space) / 2);
   overflow-x: clip;
   overflow-y: visible;
   background:
@@ -604,8 +622,9 @@ button {
 .activity-section,
 .learning-path,
 .free-note,
-footer {
-  width: min(1480px, calc(100% - 48px));
+.site-shell > footer {
+  width: 100%;
+  max-width: var(--site-content-max);
   margin-inline: auto;
 }
 
@@ -1438,9 +1457,22 @@ footer {
   position: relative;
   z-index: 1;
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 20px;
+  gap: 12px 16px;
+}
+
+.practice-card-heading {
+  flex: 1 1 340px;
+  min-width: 0;
+}
+
+.practice-card-header-right {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  margin-inline-start: auto;
 }
 
 .card-kicker {
@@ -1458,14 +1490,25 @@ footer {
 .streak {
   position: relative;
   z-index: 2;
-  flex: none;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2px 8px;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 8px 13px;
   border: 2px solid var(--edge);
   border-radius: 999px;
   background: var(--lime);
   font-size: 11px;
   font-weight: 900;
+  line-height: 1.4;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
+
+.streak-metric { white-space: nowrap; }
 
 .typing-panel {
   position: relative;
@@ -3951,7 +3994,7 @@ footer {
   line-height: 1.7;
 }
 
-footer {
+.site-shell > footer {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
@@ -3960,14 +4003,14 @@ footer {
   border-block-start: 1px solid rgba(21, 21, 21, 0.18);
 }
 
-footer > p {
+.site-shell > footer > p {
   margin: 0;
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;
 }
 
-footer > div {
+.site-shell > footer > div {
   display: flex;
   flex-wrap: wrap;
   justify-self: end;
@@ -4339,7 +4382,7 @@ footer > div {
 .account-note p { max-width: 620px; margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
 
 .admin-shell {
-  width: min(1380px, calc(100% - 48px));
+  width: min(var(--admin-content-max), calc(100% - 48px));
   margin-inline: auto;
   padding-block-end: 80px;
 }
@@ -4371,7 +4414,7 @@ footer > div {
 
 .admin-hero h1 {
   margin: 0;
-  font-size: clamp(44px, 6vw, 78px);
+  font-size: clamp(38px, 5vw, 64px);
   letter-spacing: -.07em;
   line-height: .95;
 }
@@ -4646,8 +4689,9 @@ footer > div {
   .activity-section,
   .learning-path,
   .free-note,
-  footer {
-    width: min(100% - 28px, 1480px);
+  .site-shell > footer {
+    width: 100%;
+    max-width: var(--site-content-max);
   }
 
   .topbar {
@@ -4690,10 +4734,6 @@ footer > div {
     border-radius: 28px var(--card-corner-tr) 28px 14px;
   }
 
-  .practice-card-header {
-    padding-inline-end: 58px;
-  }
-
   .curriculum-progress {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -4704,12 +4744,6 @@ footer > div {
 
   .practice-guidance-column {
     min-height: 390px;
-  }
-
-  .streak {
-    position: absolute;
-    inset-block-start: 64px;
-    inset-inline-end: 0;
   }
 
   .activity-grid {
@@ -4751,11 +4785,11 @@ footer > div {
     flex-direction: column;
   }
 
-  footer {
+  .site-shell > footer {
     grid-template-columns: 1fr;
   }
 
-  footer > div {
+  .site-shell > footer > div {
     justify-self: start;
   }
 
@@ -4848,9 +4882,11 @@ footer > div {
   }
 
   .header-tools {
+    flex: 1 1 100% !important;
+    width: 100%;
     max-width: calc(100vw - 76px);
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: flex-start !important;
   }
 
   .audio-control-cluster {
@@ -4896,8 +4932,7 @@ footer > div {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .practice-card::before,
-  .streak {
+  .practice-card::before {
     display: none;
   }
 
@@ -7513,7 +7548,12 @@ html:not([lang="ko"]):not([lang="ja"]):not([lang="zh-Hans"]):not([lang="zh-Hant"
 .code-command-box code {
   font-family: monospace;
   font-size: 12px;
-  word-break: break-all;
+  /* Scrolls rather than wraps. `break-all` used to split "-Force" into "-" and
+     "Force", turning a command that can be retyped into one that cannot; there
+     is a copy button beside it, so scrolling costs nothing. */
+  white-space: pre;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
 }
 
 .copy-cmd-btn {
@@ -7532,11 +7572,20 @@ html:not([lang="ko"]):not([lang="ja"]):not([lang="zh-Hans"]):not([lang="zh-Hant"
 
 .modal-footer {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 12px 16px;
   margin-block-start: 20px;
   padding-block-start: 14px;
   border-top: 1px dashed #cbd5e1;
+}
+
+/* The button keeps its own width and its label stays on one line; the tip takes
+   what is left and wraps between shortcuts, never inside one. */
+.modal-footer .button {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 /* Complete RTL (Urdu, Arabic, Persian, Hebrew) Layout & Typography Polish */
@@ -7603,8 +7652,24 @@ html:not([lang="ko"]):not([lang="ja"]):not([lang="zh-Hans"]):not([lang="zh-Hant"
 }
 
 .shortcut-tip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  flex: 1 1 240px;
+  min-width: 0;
   font-size: 11px;
   color: #64748b;
+}
+
+/* One shortcut and its platform label are a single unit — "Ctrl + Space" and
+   "(맥)" belong together, and the separator is not something to strand on a
+   line of its own. */
+.shortcut-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
 }
 
 @keyframes modal-fade-in {
@@ -8681,7 +8746,8 @@ html:not([lang="ko"]):not([lang="ja"]):not([lang="zh-Hans"]):not([lang="zh-Hant"
    Deliberately quiet: a hairline rule and small type, so it reads as a footnote
    about the maker's other work rather than as an ad slot. */
 .sister-promo {
-  width: min(1180px, 100% - 32px);
+  width: 100%;
+  max-width: var(--site-content-max);
   margin: 0 auto 24px;
   padding-block-start: 20px;
   border-block-start: 1px solid var(--line);
@@ -9461,70 +9527,37 @@ html[lang="th"] .practice-card h2.practice-instruction {
   max-width: none !important;
 }
 
+/* At the 320px floor even the three Korean labels and their padding are wider
+   than the practice card. Stack the choices only at that extreme instead of
+   clipping the last button; wider phones keep the compact single row. */
+@media (max-width: 340px) {
+  .practice-choice-row .practice-track-picker {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex-wrap: wrap !important;
+  }
+
+  .practice-choice-row .practice-track-picker > span,
+  .practice-choice-row .practice-track-picker button {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
 /* ==========================================================================
    PERFECT GLOBAL FIX: 33 LANGUAGES SINGLE-ROW TOPBAR & FIXED HERO DIRECTION
    ========================================================================== */
 
 /* ==========================================================================
-   PERFECT GLOBAL FIX: 33 LANGUAGES RESPONSIVE CONTAINERS & MEDIA QUERIES
-   ========================================================================== */
-
-/* DESKTOP & LARGE SCREENS (901px+) */
-@media (min-width: 901px) {
-  header,
-  .topbar,
-  html[dir="rtl"] header,
-  html[dir="rtl"] .topbar,
-  body[dir="rtl"] .topbar {
-    direction: ltr !important;
-    display: flex !important;
-    flex-direction: row !important;
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    column-gap: clamp(8px, 1.5vw, 24px) !important;
-    row-gap: 0 !important;
-    width: 100% !important;
-    max-width: 1280px !important;
-    margin-inline: auto !important;
-    box-sizing: border-box !important;
-    padding-inline: 24px !important;
-    /* `overflow: hidden` used to live here. It did not make the header fit — it
-       just clipped whatever did not, so in 11 languages the nav links were cut
-       off mid-word and the brand sat under them. Overflow has to be solved by
-       letting the row wrap (see the 901px block below), never by hiding it. */
-  }
-
-  .hero,
-  html[dir="rtl"] .hero,
-  body[dir="rtl"] .hero {
-    direction: ltr !important;
-    display: grid !important;
-    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr) !important;
-    align-items: center !important;
-    gap: clamp(20px, 3vw, 48px) !important;
-    min-height: calc(100svh - var(--chrome-h)) !important;
-    padding-block: 14px 22px !important;
-    padding-inline: 24px !important;
-    /* Same reason, and this one previously sheared the bottom off the practice
-       card on short viewports instead of letting the page scroll. */
-    overflow: visible !important;
-    width: 100% !important;
-    max-width: 1280px !important;
-    margin-inline: auto !important;
-    box-sizing: border-box !important;
-  }
-}
-
-/* TABLET & MOBILE SCREENS (900px & BELOW) */
-/* ==========================================================================
-   PERFECT MASTER SYSTEM: ADSENSE SIDE MARGINS & ISOLATED NOTICE BAR
+   CONSISTENT PUBLIC FRAME & ISOLATED NOTICE BAR
    ========================================================================== */
 
 /* 1. TOP NOTICE BAR (COMPLETELY ISOLATED, NEVER INVADES HERO OR PRACTICE STAGE) */
 .desktop-notice-bar {
   width: 100% !important;
-  max-width: 1400px !important;
+  max-width: var(--site-content-max) !important;
   margin: 12px auto 0 !important;
   padding: 6px 16px !important;
   text-align: center !important;
@@ -9564,12 +9597,11 @@ html[lang="th"] .practice-card h2.practice-instruction {
   color: var(--ink) !important;
 }
 
-/* 2. DESKTOP 1:2 GOLDEN RATIO & ADSENSE SIDE SPACING (901px+) */
+/* 2. DESKTOP 1:2 RATIO INSIDE THE SAME CENTRED FRAME (901px+) */
 @media (min-width: 901px) {
-  header,
-  .topbar,
-  html[dir="rtl"] header,
-  html[dir="rtl"] .topbar {
+  .site-shell > .topbar,
+  html[dir="rtl"] .site-shell > .topbar,
+  body[dir="rtl"] .site-shell > .topbar {
     direction: ltr !important;
     display: flex !important;
     flex-direction: row !important;
@@ -9579,17 +9611,19 @@ html[lang="th"] .practice-card h2.practice-instruction {
     flex-wrap: nowrap !important;
     align-items: center !important;
     justify-content: space-between !important;
+    column-gap: clamp(8px, 1.5vw, 24px) !important;
+    row-gap: 0 !important;
     width: 100% !important;
-    max-width: 1400px !important; /* Expanded wide container for generous practice space & AdSense side margins */
+    max-width: var(--site-content-max) !important;
     margin-inline: auto !important;
     box-sizing: border-box !important;
-    padding-inline: 24px !important;
+    padding-inline: 0 !important;
     overflow: visible !important;
   }
 
   /* ---- Header shrink order -------------------------------------------------
-     Measured at the 1400px container (1352px usable): brand 149 + Spanish nav
-     371 + tools 832 = 1352 with nothing left for the gaps, so something has to
+     The shared public frame is capped at 1200px: brand + translated navigation
+     + tools can exceed that width before gaps are counted, so something has to
      give. The brand and the nav links must not: a clipped logo or a half-shown
      menu item is exactly the overlap this is meant to remove. The tools group
      gives way instead, and inside it the audio cluster (403px — by far the
@@ -9609,6 +9643,14 @@ html[lang="th"] .practice-card h2.practice-instruction {
     justify-content: flex-end !important;
   }
 
+  /* The frame stays 1200px even on a wide monitor, so a viewport breakpoint
+     cannot decide whether these captions fit. Keep the switches themselves and
+     their accessible labels, but render the redundant visible copy icon-only in
+     the public header at every desktop width. */
+  .site-shell > .topbar .audio-control-cluster .speech-toggle-copy {
+    display: none !important;
+  }
+
   .header-tools > .language-picker {
     flex: 0 1 auto !important;
     min-width: 0 !important;
@@ -9625,9 +9667,10 @@ html[lang="th"] .practice-card h2.practice-instruction {
     gap: clamp(24px, 3vw, 56px) !important;
     min-height: calc(100svh - var(--chrome-h)) !important;
     padding-block: 16px 24px !important;
-    padding-inline: 24px !important;
+    padding-inline: 0 !important;
+    overflow: visible !important;
     width: 100% !important;
-    max-width: 1400px !important; /* Expanded wide container for generous practice space & AdSense side margins */
+    max-width: var(--site-content-max) !important;
     margin-inline: auto !important;
     box-sizing: border-box !important;
   }
@@ -9651,10 +9694,11 @@ html[lang="th"] .practice-card h2.practice-instruction {
 
 /* 4. TABLET & MOBILE RESPONSIVE STACK (900px & BELOW) */
 @media (max-width: 900px) {
-  header,
-  .topbar,
-  html[dir="rtl"] header,
-  html[dir="rtl"] .topbar {
+  :root { --site-inline-space: 32px; }
+
+  .site-shell > .topbar,
+  html[dir="rtl"] .site-shell > .topbar,
+  body[dir="rtl"] .site-shell > .topbar {
     direction: ltr !important;
     display: flex !important;
     flex-wrap: wrap !important;
@@ -9663,7 +9707,7 @@ html[lang="th"] .practice-card h2.practice-instruction {
     gap: 8px !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    padding-inline: 16px !important;
+    padding-inline: 0 !important;
   }
 
   .hero,
@@ -9675,7 +9719,7 @@ html[lang="th"] .practice-card h2.practice-instruction {
     align-items: stretch !important;
     gap: 20px !important;
     width: 100% !important;
-    padding-inline: 16px !important;
+    padding-inline: 0 !important;
     box-sizing: border-box !important;
     min-height: auto !important;
   }
@@ -9693,7 +9737,7 @@ html[dir="rtl"] .hero.practice-focus-mode,
 body[dir="rtl"] .hero.practice-focus-mode {
   display: block !important;
   grid-template-columns: 1fr !important;
-  max-width: 1200px !important;
+  max-width: var(--site-content-max) !important;
   margin-inline: auto !important;
   width: 100% !important;
   min-height: auto !important;
@@ -9978,4 +10022,1535 @@ html[data-theme="dark"] .theme-chip.active b {
    in dark mode restores the contrast without changing the light theme. */
 html[data-theme="dark"] .curriculum-progress li.done {
   background: color-mix(in srgb, var(--lime) 76%, var(--paper));
+}
+
+/* ===========================================================================
+   Owner-only member activity (/admin/activity)
+   The same centred frame and card directory are shared with the owner console,
+   so account data never makes the page wider than the viewport.
+   ========================================================================== */
+.owner-activity {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+  box-sizing: border-box;
+  padding: clamp(16px, 3vw, 32px);
+  min-height: 100svh;
+  background: var(--ivory);
+  color: var(--ink);
+}
+
+.owner-activity-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.owner-activity-nav a { color: var(--ink); font-weight: 800; text-decoration: none; }
+
+.owner-activity-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.owner-activity-summary div {
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+}
+
+.owner-activity-summary b { font-size: 24px; font-weight: 900; line-height: 1.1; }
+.owner-activity-summary span { font-size: 12px; font-weight: 700; opacity: .75; }
+
+.owner-activity-flag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pink) 22%, var(--paper));
+  color: var(--danger-ink, #c2185b);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.owner-activity-empty,
+.owner-activity-note {
+  margin: 0;
+  font-size: 13px;
+  opacity: .8;
+}
+
+/* ==========================================================================
+   Notice row — the notice and the reach readout, half each
+   The readout used to own a line of its own, which spent a whole band of
+   vertical space to show two short numbers. Sharing the notice row costs
+   nothing and puts both above the fold.
+   ========================================================================== */
+.notice-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  max-width: var(--site-content-max);
+  margin: 12px auto 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* The notice bar carries its own !important width and margin from an older
+   generation of rules; inside the row it is simply the left half. */
+.notice-row > .desktop-notice-bar {
+  flex: 1 1 50% !important;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  min-width: 0 !important;
+}
+
+/* ==========================================================================
+   Live board — lit readout of how far the site has reached
+   Two running totals, countries and people, both counted rows in the database.
+   They only climb, which is what makes them safe to leave on a board.
+   ========================================================================== */
+.live-board {
+  flex: 1 1 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 6px 14px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: var(--surface-2);
+  box-sizing: border-box;
+  color: var(--ink);
+}
+
+.live-board-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.live-board-digits { display: inline-flex; gap: 3px; }
+
+/* One dark plate per digit, so the figures read as counted rather than written. */
+.live-board-digits b {
+  display: grid;
+  place-items: center;
+  min-width: 17px;
+  padding: 2px 3px;
+  border-radius: 4px;
+  background: #14161c;
+  color: #4ade80;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 7px rgb(74 222 128 / .5);
+}
+
+.live-board-label {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  opacity: .8;
+  white-space: nowrap;
+}
+
+/* The live cell is the one that falls as well as rises, so it is set apart from
+   the two running totals and reads first. */
+.live-board-cell.is-now {
+  padding-inline-end: 12px;
+  border-inline-end: 1px solid var(--line);
+}
+
+.live-board-cell.is-now .live-board-digits b { color: #7dd3fc; text-shadow: 0 0 7px rgb(125 211 252 / .5); }
+.live-board.is-busy .live-board-cell.is-now .live-board-digits b { color: #4ade80; text-shadow: 0 0 9px rgb(74 222 128 / .65); }
+
+/* The lamp: a slow blink, so the board reads as running. Green only when there
+   is genuinely someone else on; otherwise it is the viewer alone. */
+.live-board-lamp {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+  animation: live-board-blink 1.6s steps(1, end) infinite;
+}
+
+.live-board.is-busy .live-board-lamp { background: #2da44e; }
+
+@keyframes live-board-blink {
+  0%, 55% { opacity: 1; box-shadow: 0 0 6px rgb(45 164 78 / .8); }
+  56%, 100% { opacity: .3; box-shadow: none; }
+}
+
+/* Stacked on a phone: side by side would leave each half too narrow for the
+   notice sentence in the wordier languages. */
+@media (max-width: 860px) {
+  .notice-row { flex-direction: column; }
+  .notice-row > .desktop-notice-bar,
+  .live-board { flex: 1 1 auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-board-lamp { animation: none; }
+}
+
+/* ==========================================================================
+   Header on phones: wrap instead of spilling
+   At 375px the four tools need 393px inside a 299px row. The row was
+   `nowrap` with `justify-content: flex-end` and a `flex-shrink: 0` sound menu,
+   so the excess had nowhere to go but leftwards: the sound button started at
+   -35px and sat on top of the logo. Desktop keeps its single row — that is
+   deliberate and was tuned across all 33 languages — this only applies where
+   the row genuinely cannot fit.
+   ========================================================================== */
+@media (max-width: 900px) {
+  .site-shell > .topbar {
+    height: auto !important;
+    min-height: var(--control-h, 36px) !important;
+    flex-wrap: wrap !important;
+    row-gap: 8px !important;
+    padding-block: 10px !important;
+  }
+
+  .header-tools {
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    row-gap: 8px !important;
+  }
+
+  /* Nothing in the row may refuse to shrink, and nothing may start left of its
+     own container. */
+  .header-tools > * {
+    flex-shrink: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .header-tools > .sound-menu {
+    flex: 0 1 auto !important;
+  }
+}
+
+/* ==========================================================================
+   Install button
+   Only rendered once the browser has offered an install, so it is absent after
+   installing and on browsers that cannot. Sized as a secondary action: the
+   sign-up call to action below it stays the loudest thing on the hero.
+   ========================================================================== */
+.install-app-button {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 9px 16px;
+  border: 2px solid var(--edge);
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: 2px 2px 0 var(--shadow-ink);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.install-app-button:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
+}
+
+.install-app-button:disabled { opacity: .6; cursor: default; }
+
+.install-app-button small {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: .7;
+}
+
+@media (max-width: 560px) {
+  .install-app-button small { display: none; }
+}
+
+/* The countries represented, listed under the summary tiles so the owner can see
+   the spread without reading the table row by row. */
+.owner-activity-countries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin: 0;
+}
+
+.owner-activity-countries .owner-flag {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Flag images rather than emoji: Windows has no colour flag font, so the emoji
+   form degrades to the two-letter code this column exists to replace. */
+.owner-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.owner-flag img {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 16px;
+  border-radius: 2px;
+  /* A hairline keeps flags with white edges (Japan, Poland) from bleeding into
+     the page behind them. */
+  box-shadow: 0 0 0 1px rgb(0 0 0 / .18);
+  object-fit: cover;
+}
+
+.owner-flag-none { opacity: .5; }
+
+/* ==========================================================================
+   Owner console (/my for the owner)
+   Everyone else sees their streak here; the owner sees the site. It uses the
+   same stable frame as the other admin pages instead of following the full
+   viewport width.
+   ========================================================================== */
+.owner-console {
+  display: grid;
+  gap: 22px;
+  align-content: start;
+  width: min(var(--admin-content-max), 100%);
+  margin-inline: auto;
+  box-sizing: border-box;
+  padding: clamp(16px, 3vw, 32px);
+  min-height: 100svh;
+  background: var(--ivory);
+  color: var(--ink);
+}
+
+.owner-console-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.owner-console-who {
+  max-width: 100%;
+  font-size: 13px;
+  font-weight: 700;
+  opacity: .75;
+  overflow-wrap: anywhere;
+}
+
+.owner-console-head h1 { margin: 6px 0 4px; font-size: clamp(24px, 3vw, 34px); font-weight: 900; }
+.owner-console-head p { margin: 0; opacity: .8; font-size: 14px; }
+
+.owner-console-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.owner-console-stats div {
+  display: grid;
+  gap: 2px;
+  padding: 16px 18px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+}
+
+.owner-console-stats b { font-size: 26px; font-weight: 900; line-height: 1.1; }
+.owner-console-stats span { font-size: 12px; font-weight: 700; opacity: .75; }
+
+.owner-console h2 { margin: 0 0 10px; font-size: 15px; font-weight: 900; letter-spacing: .04em; }
+
+.owner-console-countries p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin: 0;
+}
+
+.owner-console-countries .owner-flag {
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.owner-console-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.owner-tool {
+  display: grid;
+  gap: 3px;
+  padding: 18px;
+  border: 2px solid var(--edge);
+  border-radius: 16px;
+  background: var(--paper);
+  box-shadow: 3px 3px 0 var(--shadow-ink);
+  color: var(--ink);
+  text-decoration: none;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.owner-tool:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--shadow-ink); }
+.owner-tool span { font-size: 22px; line-height: 1; }
+.owner-tool b { font-size: 15px; font-weight: 900; }
+.owner-tool small { font-size: 12px; opacity: .75; font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+  .owner-tool:hover { transform: none; }
+}
+
+/* ==========================================================================
+   /learn/hangul — the illustrated guide
+   Its own token set rather than the app's: this page is prose, and it wants
+   paper and ink rather than the lime-and-pink of the practice screen. Indigo
+   carries structure, vermilion marks articulation and nothing else, jade marks
+   vowels and nothing else — each colour does one job, so a reader can tell what
+   a highlight means without a legend.
+   ========================================================================== */
+.hangul-guide {
+  --hg-paper:       #F2F1EE;
+  --hg-surface:     #FFFFFF;
+  --hg-sunken:      #E7E6E1;
+  --hg-ink:         #1A1C1F;
+  --hg-mute:        #64686E;
+  --hg-line:        #D5D4CE;
+  --hg-indigo:      #2C4A7C;
+  --hg-indigo-soft: #E3E8F1;
+  --hg-vermilion:   #C1452F;
+  --hg-jade:        #3E6B5A;
+  --hg-measure: 34rem;
+
+  min-height: 100svh;
+  background: var(--hg-paper);
+  color: var(--hg-ink);
+  font-size: 17px;
+  line-height: 1.75;
+}
+
+html[data-theme="dark"] .hangul-guide {
+  --hg-paper:       #14161A;
+  --hg-surface:     #1C1F24;
+  --hg-sunken:      #101216;
+  --hg-ink:         #ECEAE4;
+  --hg-mute:        #9BA1A9;
+  --hg-line:        #2E333A;
+  --hg-indigo:      #8FB2E0;
+  --hg-indigo-soft: #1E2A3D;
+  --hg-vermilion:   #E8785F;
+  --hg-jade:        #79B49A;
+}
+
+.hg-wrap { max-width: 60rem; margin: 0 auto; padding: 0 clamp(1.25rem, 4vw, 3rem); }
+
+.hg-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-block: 18px;
+}
+
+.hg-nav a { color: var(--hg-ink); text-decoration: none; font-weight: 800; }
+.hg-nav .brand,
+.hg-practice { white-space: nowrap; }
+.hg-practice { color: var(--hg-indigo) !important; font-size: .95rem; }
+
+.hg-plate {
+  display: grid;
+  gap: clamp(2rem, 5vw, 3.5rem);
+  padding: clamp(2rem, 7vw, 5rem) 0 clamp(2.5rem, 6vw, 4rem);
+  border-bottom: 1px solid var(--hg-line);
+}
+
+.hg-eyebrow {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+  color: var(--hg-indigo);
+}
+
+.hangul-guide h1 {
+  margin: .6rem 0 0;
+  font-size: clamp(2.4rem, 7vw, 4.4rem);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -.02em;
+  text-wrap: balance;
+}
+
+.hg-standfirst { max-width: var(--hg-measure); margin: 1.25rem 0 0; color: var(--hg-mute); }
+
+.hg-section-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 1px;
+  border: 1px solid var(--hg-line);
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--hg-line);
+  scroll-margin-top: 1rem;
+}
+
+.hg-section-tabs button {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  padding: .85rem .9rem;
+  border: 0;
+  color: var(--hg-ink);
+  background: var(--hg-surface);
+  font-family: inherit;
+  font-size: .84rem;
+  font-weight: 800;
+  line-height: 1.3;
+  text-align: start;
+  cursor: pointer;
+}
+
+.hg-section-tabs button:hover,
+.hg-section-tabs button:focus-visible {
+  color: var(--hg-indigo);
+  background: var(--hg-indigo-soft);
+}
+
+.hg-section-tabs button.is-active {
+  color: var(--hg-indigo);
+  background: var(--hg-paper);
+  box-shadow: inset 0 -3px 0 var(--hg-indigo);
+}
+
+.hg-section-tabs b {
+  flex: 0 0 auto;
+  display: grid;
+  min-width: 1.9rem;
+  min-height: 1.9rem;
+  place-items: center;
+  padding: .2rem .4rem;
+  border: 1px solid var(--hg-line);
+  border-radius: 999px;
+  color: var(--hg-indigo);
+  background: var(--hg-paper);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .74rem;
+}
+
+.hg-section-tabs span { min-width: 0; text-wrap: balance; }
+
+.hg-strokes,
+.hg-organs,
+.hg-vowels {
+  display: grid;
+  gap: 1px;
+  background: var(--hg-line);
+  border: 1px solid var(--hg-line);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.hg-strokes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.hg-organs { grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); margin-top: 1.5rem; }
+.hg-vowels { grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); margin-top: 1.5rem; }
+
+.hg-stroke, .hg-vowel {
+  display: grid;
+  gap: .4rem;
+  justify-items: center;
+  padding: clamp(1.35rem, 4vw, 2.5rem) 1rem;
+  background: var(--hg-surface);
+  text-align: center;
+}
+
+.hg-stroke b { font-size: clamp(2.4rem, 8vw, 3.6rem); line-height: 1; color: var(--hg-jade); }
+.hg-stroke span { font-size: .95rem; font-weight: 700; }
+.hg-stroke small, .hg-vowel small {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .72rem;
+  color: var(--hg-mute);
+}
+
+.hg-vowel svg { width: 5.25rem; height: 5.25rem; display: block; }
+.hg-vowel b { font-size: 1.5rem; line-height: 1; color: var(--hg-jade); }
+
+.hg-lesson {
+  padding: clamp(2.5rem, 8vw, 5rem) 0;
+  border-bottom: 1px solid var(--hg-line);
+  scroll-margin-top: 1rem;
+}
+.hg-lesson[hidden] { display: none; }
+.hg-lesson-head { display: grid; gap: .75rem; margin-bottom: clamp(1.75rem, 5vw, 2.75rem); }
+
+.hg-lesson-no {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .5rem;
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  color: var(--hg-indigo);
+}
+
+.hg-lesson-no i { font-style: normal; font-size: 1.6rem; line-height: 1; }
+
+.hangul-guide h2 {
+  margin: 0;
+  font-size: clamp(1.75rem, 4.4vw, 2.7rem);
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -.015em;
+  text-wrap: balance;
+}
+
+.hangul-guide h3 {
+  margin: clamp(2rem, 5vw, 2.75rem) 0 .75rem;
+  font-size: clamp(1.15rem, 2.4vw, 1.4rem);
+  font-weight: 900;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+.hg-lede { max-width: var(--hg-measure); margin: 0; color: var(--hg-mute); }
+.hangul-guide p { max-width: var(--hg-measure); text-wrap: pretty; }
+
+.hg-organ { display: grid; gap: .85rem; padding: clamp(1.1rem, 3vw, 1.6rem); background: var(--hg-surface); }
+.hg-organ-top { display: flex; align-items: center; gap: .85rem; }
+.hg-organ-glyph { font-size: 2.6rem; line-height: 1; color: var(--hg-vermilion); font-weight: 900; }
+.hg-organ-name { display: grid; gap: .1rem; }
+.hg-organ-name b { font-size: .98rem; }
+.hg-organ-name small { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .74rem; color: var(--hg-mute); }
+.hg-organ svg { width: 100%; height: auto; display: block; border-radius: 2px; background: var(--hg-sunken); }
+.hg-organ p { margin: 0; max-width: none; font-size: .92rem; line-height: 1.62; color: var(--hg-mute); }
+
+.hg-svg-label { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.hg-svg-jamo { font-weight: 900; }
+
+/* Wider than a phone by design; it scrolls inside its own box. */
+.hg-ladder-scroll { overflow-x: auto; margin-top: 1.5rem; }
+.hg-ladder { width: 100%; min-width: 30rem; border-collapse: collapse; }
+.hg-ladder th, .hg-ladder td { padding: .7rem .8rem; border-bottom: 1px solid var(--hg-line); text-align: start; }
+
+.hg-ladder th {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: var(--hg-mute);
+}
+
+.hg-ladder td.hg-j { font-size: 1.7rem; font-weight: 900; line-height: 1; width: 4.5rem; }
+.hg-ladder td.hg-j.base { color: var(--hg-ink); }
+.hg-ladder td.hg-j.add { color: var(--hg-indigo); }
+.hg-ladder td.hg-j.add2 { color: var(--hg-vermilion); }
+.hg-ladder td small {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .7rem;
+  font-weight: 400;
+  color: var(--hg-mute);
+}
+
+.hg-blocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: clamp(1rem, 3vw, 1.75rem); margin-top: 1.5rem; }
+
+.hg-block {
+  display: grid;
+  gap: .9rem;
+  padding: clamp(1.1rem, 3vw, 1.5rem);
+  background: var(--hg-surface);
+  border: 1px solid var(--hg-line);
+  border-radius: 2px;
+}
+
+.hg-block svg { width: 100%; height: auto; display: block; }
+.hg-block b { font-size: .95rem; }
+.hg-block p { margin: 0; max-width: none; font-size: .9rem; color: var(--hg-mute); line-height: 1.6; }
+
+.hg-note {
+  display: grid;
+  gap: .5rem;
+  margin-top: clamp(1.75rem, 5vw, 2.5rem);
+  padding: clamp(1.1rem, 3vw, 1.5rem) clamp(1.1rem, 3vw, 1.75rem);
+  background: var(--hg-indigo-soft);
+  border-inline-start: 3px solid var(--hg-indigo);
+  border-radius: 0 2px 2px 0;
+}
+
+.hg-note b { font-size: .95rem; }
+.hg-note p { margin: 0; max-width: none; font-size: .93rem; line-height: 1.65; }
+
+.hg-history-grid,
+.hg-grammar-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1rem, 3vw, 1.5rem);
+}
+
+.hg-history-callout,
+.hg-grammar-card {
+  min-width: 0;
+  padding: clamp(1.2rem, 3vw, 1.7rem);
+  border: 1px solid var(--hg-line);
+  border-radius: 2px;
+  background: var(--hg-surface);
+}
+
+.hg-history-kicker,
+.hg-grammar-label {
+  margin: 0;
+  color: var(--hg-indigo);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .73rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
+.hg-history-callout h3,
+.hg-grammar-card h3,
+.hg-hangeul-day h3,
+.hg-timeline-item h3 {
+  margin: .55rem 0 .7rem;
+}
+
+.hg-history-callout > p:last-child,
+.hg-grammar-card > p,
+.hg-hangeul-day p,
+.hg-timeline-item p {
+  max-width: none;
+  margin: 0;
+  color: var(--hg-mute);
+  font-size: .93rem;
+  line-height: 1.68;
+}
+
+.hg-timeline {
+  display: grid;
+  margin-top: clamp(2rem, 5vw, 3rem);
+  border-block: 1px solid var(--hg-line);
+}
+
+.hg-timeline-item {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  gap: clamp(1rem, 4vw, 2rem);
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--hg-line);
+}
+
+.hg-timeline-item:last-child { border-bottom: 0; }
+.hg-timeline-item time {
+  color: var(--hg-vermilion);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+.hg-timeline-item h3 { margin-top: 0; }
+
+.hg-hangeul-day {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1.25rem, 5vw, 2.5rem);
+  margin-top: clamp(2rem, 5vw, 3rem);
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid var(--hg-line);
+  background: var(--hg-indigo-soft);
+}
+
+.hg-hangeul-day > span {
+  display: grid;
+  width: clamp(5.5rem, 16vw, 7.5rem);
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--hg-surface);
+  background: var(--hg-indigo);
+  font-size: clamp(1.45rem, 5vw, 2.15rem);
+  font-weight: 900;
+  letter-spacing: -.04em;
+}
+
+.hg-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem 1rem;
+  align-items: baseline;
+  margin-top: 1.25rem;
+  color: var(--hg-mute);
+  font-size: .78rem;
+}
+
+.hg-sources b { color: var(--hg-ink); }
+.hg-sources a { color: var(--hg-indigo); text-underline-offset: .2em; }
+
+.hg-grammar-formula {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  justify-content: center;
+  gap: .65rem;
+  margin-bottom: clamp(2rem, 5vw, 3rem);
+  padding: clamp(1rem, 4vw, 1.5rem);
+  border-block: 1px solid var(--hg-line);
+}
+
+.hg-grammar-formula span {
+  min-width: 8.5rem;
+  display: grid;
+  gap: .2rem;
+  place-content: center;
+  padding: .85rem 1rem;
+  border: 1px solid var(--hg-line);
+  background: var(--hg-surface);
+  text-align: center;
+  font-size: 1.08rem;
+  font-weight: 900;
+}
+
+.hg-grammar-formula small {
+  color: var(--hg-indigo);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .65rem;
+  letter-spacing: .1em;
+}
+
+.hg-grammar-formula i {
+  align-self: center;
+  color: var(--hg-mute);
+  font-style: normal;
+  font-weight: 900;
+}
+
+.hg-example {
+  display: grid;
+  gap: .3rem;
+  margin-top: 1.1rem;
+  padding-top: .9rem;
+  border-top: 1px solid var(--hg-line);
+}
+
+.hg-example b { color: var(--hg-vermilion); font-size: 1rem; }
+.hg-example small { color: var(--hg-mute); font-size: .76rem; line-height: 1.5; }
+
+.hg-lesson-pager {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  border-bottom: 1px solid var(--hg-line);
+  background: var(--hg-line);
+}
+
+.hg-lesson-pager > button {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  min-height: 4.5rem;
+  padding: 1rem clamp(.9rem, 3vw, 1.35rem);
+  border: 0;
+  color: var(--hg-ink);
+  background: var(--hg-surface);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.hg-lesson-pager > button.is-next { justify-content: flex-end; text-align: end; }
+.hg-lesson-pager > button:hover,
+.hg-lesson-pager > button:focus-visible { color: var(--hg-indigo); background: var(--hg-indigo-soft); }
+.hg-lesson-pager i { flex: 0 0 auto; color: var(--hg-indigo); font-style: normal; font-size: 1.2rem; font-weight: 900; }
+.hg-lesson-pager span { min-width: 0; }
+.hg-lesson-pager button span { display: grid; gap: .2rem; text-wrap: balance; }
+.hg-lesson-pager b {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .66rem;
+  letter-spacing: .08em;
+  color: var(--hg-mute);
+}
+
+.hg-footer {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+  padding: clamp(2rem, 6vw, 3.5rem) 0 clamp(3rem, 8vw, 4.5rem);
+  color: var(--hg-mute);
+  font-size: .9rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hg-pulse { animation: hg-breathe 3.2s ease-in-out infinite; }
+  @keyframes hg-breathe { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+}
+
+/* CJK line breaking on the guide.
+   The site sets `word-break: keep-all` globally, which is right for Korean —
+   it has spaces, and breaking mid-word is what we spent effort preventing. But
+   Japanese and Chinese have no spaces, so keep-all leaves a paragraph with no
+   break opportunity at all: one line ran to 8,000px and the page scrolled
+   sideways. Prose here breaks normally; Korean keeps its rule. */
+.hangul-guide p,
+.hangul-guide h1,
+.hangul-guide h2,
+.hangul-guide h3,
+.hangul-guide td,
+.hangul-guide b,
+.hangul-guide small,
+.hangul-guide span {
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+}
+
+html[lang="ko"] .hangul-guide p,
+html[lang="ko"] .hangul-guide h1,
+html[lang="ko"] .hangul-guide h2,
+html[lang="ko"] .hangul-guide h3,
+html[lang="ko"] .hangul-guide th,
+html[lang="ko"] .hangul-guide td,
+html[lang="ko"] .hangul-guide a,
+html[lang="ko"] .hangul-guide b,
+html[lang="ko"] .hangul-guide small,
+html[lang="ko"] .hangul-guide span {
+  word-break: keep-all !important;
+}
+
+/* ==========================================================================
+   Missing-IME notice and on-screen keyboard
+   Shown only after Latin letters actually arrive where Hangul was asked for.
+   The notice states the problem in the learner's own terms — the keys are
+   producing the wrong letters — and hands them a working keyboard before it
+   mentions installing anything.
+   ========================================================================== */
+.ime-missing {
+  display: grid;
+  gap: 12px;
+  margin-block-start: 14px;
+  padding: 14px 16px;
+  border: 2px solid var(--edge);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--yellow) 22%, var(--paper));
+  color: var(--ink);
+}
+
+.ime-missing-head { display: grid; gap: 4px; }
+.ime-missing-head b { font-size: 14px; font-weight: 900; }
+.ime-missing-head p { margin: 0; font-size: 13px; line-height: 1.6; opacity: .85; }
+
+.ime-missing-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ime-missing-actions .button { font-size: 13px; padding: 8px 14px; }
+
+.osk {
+  margin-block-start: 12px;
+  padding: 12px;
+  border: 2px solid var(--edge);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.osk-rows { display: grid; gap: 6px; }
+
+/* Rows stay centred rather than stretched, so the key grid keeps the shape of a
+   real keyboard and the left/right split stays readable. */
+.osk-row { display: flex; justify-content: center; gap: 6px; }
+
+.osk-key {
+  flex: 0 0 auto;
+  min-width: 38px;
+  min-height: 42px;
+  padding: 6px 8px;
+  border: 2px solid var(--edge);
+  border-radius: 9px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform .08s ease, background .12s ease;
+}
+
+.osk-key:active { transform: translateY(1px); }
+.osk-key:hover { background: color-mix(in srgb, var(--lime) 26%, var(--paper)); }
+
+/* Vowels tinted so the two-set split — consonants left, vowels right — is
+   visible on the board itself. That split is the lesson. */
+.osk-key.is-vowel { background: color-mix(in srgb, var(--cyan) 26%, var(--paper)); }
+.osk-key.is-vowel:hover { background: color-mix(in srgb, var(--cyan) 44%, var(--paper)); }
+
+.osk-mod { min-width: 52px; font-size: 15px; }
+.osk-mod.is-on { background: var(--lime); border-color: var(--edge); }
+.osk-space { flex: 1 1 200px; max-width: 320px; font-size: 13px; }
+.osk-enter { min-width: 90px; font-size: 13px; }
+
+@media (max-width: 560px) {
+  .osk-key { min-width: 30px; min-height: 38px; font-size: 15px; padding: 4px 5px; }
+  .osk-row { gap: 4px; }
+  .osk-mod { min-width: 42px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .osk-key { transition: none; }
+}
+
+/* ==========================================================================
+   The install offer, stage three.
+   It only appears after several lines have actually been finished by clicking,
+   so it is not a warning — it is the next step for somebody who has already
+   proved the keyboard works for them. Lime, not the yellow of the notice above
+   it, so the two do not read as one long alarm.
+   ========================================================================== */
+.ime-upgrade {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-block-start: 12px;
+  padding: 14px 16px;
+  border: 2px solid var(--edge);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--lime) 20%, var(--paper));
+  color: var(--ink);
+}
+
+.ime-upgrade-body { display: grid; gap: 4px; flex: 1 1 260px; min-width: 0; }
+.ime-upgrade-body b { font-size: 14px; font-weight: 900; }
+.ime-upgrade-body p { margin: 0; font-size: 13px; line-height: 1.6; opacity: .85; }
+
+.ime-upgrade-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ime-upgrade-actions .button { font-size: 13px; padding: 8px 14px; }
+
+/* ==========================================================================
+   Language picker, while its translation pack is in flight.
+   The page deliberately keeps the previous language until the new one can be
+   rendered whole, so the control itself has to show that the click landed —
+   otherwise the wait reads as a dead dropdown.
+   ========================================================================== */
+.language-picker.is-loading::after,
+.header-tools > .language-picker.is-loading::after {
+  content: "◠" !important;
+  font-weight: 900 !important;
+  animation: language-picker-spin .7s linear infinite !important;
+  transform-origin: 50% 50% !important;
+}
+
+.language-picker.is-loading select,
+.header-tools > .language-picker.is-loading select {
+  opacity: .7 !important;
+  cursor: progress !important;
+}
+
+@keyframes language-picker-spin {
+  from { transform: translateY(-50%) rotate(0deg); }
+  to { transform: translateY(-50%) rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .language-picker.is-loading::after,
+  .header-tools > .language-picker.is-loading::after {
+    animation: none !important;
+    content: "…" !important;
+  }
+}
+
+/* ==========================================================================
+   On-screen keyboard on a narrow screen.
+   Ten keys in the top row at their desktop size need about 460px; a phone has
+   375. Rather than clip the row — which would hide ㅔ, the key at the end — the
+   keys take a share of the row's own width, so the board always fits whatever
+   it is given and keeps its keyboard shape.
+   ========================================================================== */
+@media (max-width: 560px) {
+  .osk {
+    /* Reclaim the padding of the two cards the board sits inside. Nested inside
+       all of them a 320px phone left the keyboard only 174px to work with, which
+       shrank the keys until the jamo no longer fit inside them. Pulling out to
+       the practice card's edge gives back 72px — the difference between a usable
+       key and an unreadable one. overflow-x is the backstop: if that is ever
+       still not enough, the board scrolls rather than clipping a key. */
+    --osk-breakout: 36px;
+    margin-inline: calc(var(--osk-breakout) * -1);
+    padding: 10px 6px;
+    overflow-x: auto;
+  }
+  .osk-rows { gap: 5px; }
+  .osk-row { gap: 4px; }
+
+  .osk-key {
+    flex: 1 1 calc((100% - 9 * 4px) / 10);
+    /* A floor, not zero: below this the glyph spills out of its own key, and the
+       target gets too small to hit. Rows narrower than the floor scroll instead. */
+    min-width: 20px;
+    max-width: 44px;
+    min-height: 40px;
+    padding: 6px 2px;
+    font-size: 15px;
+  }
+
+  .osk-mod {
+    flex: 1 1 calc((100% - 9 * 4px) / 10);
+    min-width: 20px;
+    max-width: 44px;
+    font-size: 13px;
+  }
+
+  .osk-space { flex: 4 1 0; min-width: 0; max-width: none; font-size: 12px; }
+  .osk-enter { flex: 3 1 0; min-width: 0; max-width: none; font-size: 12px; }
+}
+
+/* The board is a grid of rows, and a grid column defaults to the widest thing in
+   it — so the space bar's label alone was making the whole keyboard wider than
+   its own card, pushing the outermost keys past the edge. Capping the column at
+   the container width is what keeps every row inside the board, at any size. */
+.osk-rows { grid-template-columns: minmax(0, 1fr); }
+.osk-row { min-width: 0; }
+
+/* ==========================================================================
+   The member list — the main body of the admin console.
+   The owner's own account is lifted out of it: it is the one row they never
+   need to compare against the others, and leaving it in made every "who has
+   practised most" sort answer itself.
+   ========================================================================== */
+.member-directory { display: grid; min-width: 0; gap: 14px; }
+
+.owner-me {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 2px dashed var(--line);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.owner-me-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+}
+
+.owner-me-body b { font-size: 15px; font-weight: 900; }
+.owner-me-body > span {
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: .75;
+  overflow-wrap: anywhere;
+}
+
+.owner-me dl { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0; }
+.owner-me dl div { display: flex; align-items: baseline; gap: 6px; }
+.owner-me dt { font-size: 11px; font-weight: 800; letter-spacing: .04em; opacity: .7; }
+.owner-me dd { margin: 0; font-size: 13px; font-weight: 800; }
+.owner-me-note { margin: 0; font-size: 11px; font-weight: 600; opacity: .6; }
+
+.member-directory-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.member-directory-bar h2 { margin: 0; }
+.member-directory-bar h2 span,
+.member-directory-group h3 span { font-weight: 700; opacity: .6; font-size: 13px; letter-spacing: 0; }
+
+.owner-group-toggle {
+  padding: 8px 14px;
+  border: 2px solid var(--edge);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.owner-group-toggle:hover { background: color-mix(in srgb, var(--lime) 24%, var(--paper)); }
+
+.member-directory-group { display: grid; gap: 8px; }
+
+.member-directory-group h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: .03em;
+}
+
+.owner-sort-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.owner-sort-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.owner-sort-controls select,
+.owner-sort-controls button {
+  min-height: 36px;
+  box-sizing: border-box;
+  border: 2px solid var(--edge);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.owner-sort-controls select {
+  min-width: 148px;
+  max-width: 100%;
+  padding: 7px 30px 7px 12px;
+}
+
+.owner-sort-controls button {
+  padding: 7px 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.owner-sort-controls button:hover {
+  background: color-mix(in srgb, var(--lime) 24%, var(--paper));
+}
+
+.owner-sort-controls :is(select, button):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--purple) 65%, transparent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .owner-console-stats,
+  .owner-activity-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .owner-console-grid { grid-template-columns: minmax(0, 1fr); }
+  .owner-sort-controls { justify-content: flex-start; }
+}
+
+@media (max-width: 480px) {
+  .owner-sort-controls label { width: 100%; }
+  .owner-sort-controls select { flex: 1 1 auto; min-width: 0; }
+}
+
+/* ==========================================================================
+   Getting off the on-screen keyboard.
+   The board began as a bridge and became a destination: one learner installed a
+   real Korean keyboard and went on clicking jamo with the mouse, because the
+   board was still on screen and nothing said it was the slow way. It is no
+   longer opened automatically, it is offered third, and it carries its own exit.
+   ========================================================================== */
+.ime-missing-fallback {
+  flex-basis: 100%;
+  padding: 4px 0 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: start;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  opacity: .72;
+  cursor: pointer;
+}
+
+.ime-missing-fallback:hover { opacity: 1; }
+
+.osk-exit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 10px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: .8;
+}
+
+.osk-exit button {
+  padding: 5px 12px;
+  border: 2px solid var(--edge);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.osk-exit button:hover { background: color-mix(in srgb, var(--lime) 26%, var(--paper)); }
+
+/* Shown for one moment after the setup walkthrough closes, in place of the
+   notice, so the next thing they do is try their own keys. */
+.ime-try {
+  display: grid;
+  gap: 4px;
+  margin-block-start: 14px;
+  padding: 12px 16px;
+  border: 2px solid var(--edge);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--lime) 20%, var(--paper));
+  color: var(--ink);
+}
+
+.ime-try b { font-size: 14px; font-weight: 900; }
+.ime-try p { margin: 0; font-size: 13px; line-height: 1.6; opacity: .85; }
+
+/* The member count on a country chip. A pill inside a pill, so the number reads
+   as a quantity attached to that flag rather than part of the country name. */
+.owner-flag b {
+  min-width: 18px;
+  margin-inline-start: 2px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  font-size: 11px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .hg-section-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hg-history-grid,
+  .hg-grammar-grid { grid-template-columns: minmax(0, 1fr); }
+  .hg-grammar-formula span { flex: 1 1 8.5rem; }
+}
+
+@media (max-width: 430px) {
+  .hg-nav { gap: 10px; }
+  .hg-nav .brand > span:last-child { display: none; }
+  .hg-section-tabs button { padding-inline: .7rem; }
+  .hg-hangeul-day { grid-template-columns: minmax(0, 1fr); }
+  .hg-hangeul-day > span { width: 5.5rem; }
+  .hg-timeline-item { grid-template-columns: 4rem minmax(0, 1fr); }
+  .hg-grammar-formula { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .hg-grammar-formula span { width: 100%; min-width: 0; }
+  .hg-grammar-formula i { justify-self: center; }
+}
+
+/* ==========================================================================
+   A member's own name, written in Hangul.
+   Set on paper rather than on a card: this is the one string on the site that
+   belongs to the person reading it, and it is meant to look like something you
+   would keep, not like a UI element.
+   ========================================================================== */
+.name-card {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 26px 24px 20px;
+  border: 2px solid var(--edge);
+  border-radius: 16px;
+  /* Warm paper with a seal-red rule down the leading edge, the way a hanji
+     sheet is bordered. Both are painted, so the card holds its own look on
+     either theme rather than borrowing the page's. */
+  background:
+    linear-gradient(90deg, #c0392b 0 5px, transparent 5px),
+    linear-gradient(160deg, #fffdf7, #f6efe1);
+  color: #1b1a17;
+  text-align: center;
+}
+
+.name-card-label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #8a8378;
+}
+
+.name-card-hangul {
+  margin: 2px 0 0;
+  /* The brush-serif face, with the OS calligraphic faces behind it so the name
+     still looks written if the webfont has not arrived. */
+  font-family: "Nanum Myeongjo", Gungsuh, 궁서, Batang, serif;
+  font-size: clamp(34px, 7vw, 58px);
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: .02em;
+  /* A long full name shrinks rather than breaking mid-name. */
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+
+.name-card-original {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #8a8378;
+}
+
+.name-card-save {
+  margin-block-start: 8px;
+  padding: 8px 16px;
+  border: 2px solid #1b1a17;
+  border-radius: 999px;
+  background: transparent;
+  color: #1b1a17;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.name-card-save:hover { background: #1b1a17; color: #fffdf7; }
+
+/* Beside the greeting on the member's own page: the same card, quieter. */
+.name-card.is-compact {
+  justify-items: start;
+  gap: 2px;
+  margin-block-start: 14px;
+  padding: 14px 16px;
+  text-align: start;
+}
+
+.name-card.is-compact .name-card-hangul { font-size: clamp(26px, 4vw, 36px); }
+.name-card.is-compact .name-card-save { margin-block-start: 6px; padding: 6px 13px; font-size: 11px; }
+
+.name-modal { max-width: 460px; text-align: center; }
+.name-modal-intro { margin: 0 0 14px; font-size: 14px; font-weight: 700; line-height: 1.6; }
+
+.name-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-block-start: 16px;
+}
+
+.name-modal-actions .button { flex: 0 0 auto; white-space: nowrap; }
+
+.name-modal-dismiss {
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  opacity: .7;
+  cursor: pointer;
+}
+
+.name-modal-dismiss:hover { opacity: 1; }
+.name-modal-note { margin: 12px 0 0; font-size: 11px; font-weight: 600; opacity: .6; }
+
+/* Owner-only preview of the member-facing name card. */
+.name-preview { display: grid; gap: 10px; justify-items: start; }
+.name-preview-note { margin: 0; font-size: 12px; font-weight: 600; opacity: .72; }
+.name-preview-none { margin: 0; font-size: 13px; font-weight: 600; opacity: .8; max-width: 60ch; line-height: 1.6; }
+
+.name-preview-field { display: grid; gap: 4px; }
+.name-preview-field span { font-size: 11px; font-weight: 800; letter-spacing: .06em; opacity: .7; }
+
+.name-preview-field input {
+  min-width: min(320px, 100%);
+  padding: 9px 13px;
+  border: 2px solid var(--edge);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.name-preview-samples { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.name-preview-samples button {
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.name-preview-samples button:hover { background: color-mix(in srgb, var(--lime) 24%, var(--paper)); }
+
+/* The caveat under a member's Hangul name. Quiet, but always present: the
+   reading follows the language a name comes from, and we do not know it. */
+.name-card-caveat {
+  max-width: 34ch;
+  margin: 6px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: #8a8378;
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+
+.name-card.is-compact .name-card-caveat { max-width: 42ch; }
+
+/* Legend for the dimmed cards in the member list. */
+.member-directory-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+  opacity: .72;
+  white-space: normal;
+}
+
+.member-directory-legend .is-idle-swatch {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 12px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--ink);
+  /* The same fade the rows get, so the swatch is the thing it describes. */
+  opacity: .62;
 }

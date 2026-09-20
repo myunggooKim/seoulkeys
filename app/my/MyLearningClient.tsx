@@ -3,20 +3,28 @@
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { ContactModal } from "../ContactModal";
-import { readManualLocalePreference, resolveVisitorLocale } from "../locale-detection";
+import { readManualLocalePreference, resolveVisitorLocale, type Locale } from "../locale-detection";
 import { practiceCurriculum, practiceStageLabels, practiceStageOrder, type PracticeKind } from "../practice-curriculum";
 import { applyTheme, readResolvedTheme } from "../theme";
 import { signOutEverywhere } from "../sign-out";
 import { MemberBreakdownModal, type MemberStats } from "./MemberBreakdownModal";
-import { displayNameForGreeting } from "../hangul-name";
+import { displayNameForGreeting, hangulNameOffer } from "../hangul-name";
+import { KoreanNameCard } from "../KoreanNameCard";
+import { tr } from "../ui-i18n";
+import { useLocaleTranslations } from "../use-locale-translations";
 
 type MyLearningClientProps = {
   identity: { email: string };
   signOutPath: string;
   /** The content studio is owner-only, so the link is hidden from everyone else. */
   isAdmin: boolean;
+  /** Already a member of a class — the join prompt is only for learners who are not. */
+  hasClass: boolean;
+  isTeacher: boolean;
   user: {
     displayName: string;
+    /** Used only to keep the Hangul-name card away from Korean members. */
+    country?: string | null;
     streakDays: number;
     totalXp: number;
     coins: number;
@@ -33,10 +41,10 @@ type MyLearningClientProps = {
 };
 
 const milestones = [
-  { days: 3, rewardKo: "50 비트", rewardEn: "50 beats" },
-  { days: 7, rewardKo: "150 비트", rewardEn: "150 beats" },
-  { days: 14, rewardKo: "300 비트", rewardEn: "300 beats" },
-  { days: 30, rewardKo: "1,000 비트", rewardEn: "1,000 beats" },
+  { days: 3, rewardBeats: 50 },
+  { days: 7, rewardBeats: 150 },
+  { days: 14, rewardBeats: 300 },
+  { days: 30, rewardBeats: 1_000 },
 ];
 
 const masteryGoals: Record<PracticeKind, { accuracy: number; cpm: number }> = {
@@ -48,29 +56,36 @@ const masteryGoals: Record<PracticeKind, { accuracy: number; cpm: number }> = {
   sentence: { accuracy: 94, cpm: 75 },
 };
 
-function formatDuration(totalSeconds: number, koreanUi: boolean) {
+function formatUnit(value: number, locale: Locale, unit: "day" | "hour" | "minute" | "second") {
+  return new Intl.NumberFormat(locale, { style: "unit", unit, unitDisplay: "short" }).format(value);
+}
+
+function formatDuration(totalSeconds: number, locale: Locale) {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
-  if (hours) return koreanUi ? `${hours}시간 ${minutes}분` : `${hours}h ${minutes}m`;
-  return koreanUi ? `${minutes}분 ${seconds}초` : `${minutes}m ${seconds}s`;
+  if (locale === "ko") return hours ? `${hours}시간 ${minutes}분` : `${minutes}분 ${seconds}초`;
+  if (locale === "en") return hours ? `${hours}h ${minutes}m` : `${minutes}m ${seconds}s`;
+  if (hours) return `${formatUnit(hours, locale, "hour")} ${formatUnit(minutes, locale, "minute")}`;
+  return `${formatUnit(minutes, locale, "minute")} ${formatUnit(seconds, locale, "second")}`;
 }
 
 function subscribeToLocale() {
   return () => undefined;
 }
 
-function getKoreanLocaleSnapshot() {
+function getLocaleSnapshot(): Locale {
   const locale = readManualLocalePreference(window.localStorage)
     ?? resolveVisitorLocale({
       languages: navigator.languages?.length ? navigator.languages : [navigator.language],
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
-  return locale === "ko";
+  return locale;
 }
 
-export default function MyLearningClient({ identity, signOutPath, isAdmin, user, progress, rewards }: MyLearningClientProps) {
-  const koreanUi = useSyncExternalStore(subscribeToLocale, getKoreanLocaleSnapshot, () => true);
+export default function MyLearningClient({ identity, signOutPath, isAdmin, hasClass, isTeacher, user, progress, rewards }: MyLearningClientProps) {
+  const locale = useSyncExternalStore<Locale>(subscribeToLocale, getLocaleSnapshot, () => "ko");
+  useLocaleTranslations(locale);
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [themeMode, setThemeMode] = useState<"dark" | "light">("dark");
 
@@ -114,9 +129,10 @@ export default function MyLearningClient({ identity, signOutPath, isAdmin, user,
         });
       }
     });
-  }, [koreanUi]);
+  }, [locale]);
 
   const greeting = displayNameForGreeting(user.displayName);
+  const nameOffer = hangulNameOffer({ fullName: user.displayName, country: user.country, locale });
   const level = Math.floor(user.totalXp / 500) + 1;
   const levelXp = user.totalXp % 500;
   const levelPercent = Math.round((levelXp / 500) * 100);
@@ -125,11 +141,16 @@ export default function MyLearningClient({ identity, signOutPath, isAdmin, user,
     ? 100
     : Math.round(((progress?.completedSentences ?? 0) / totalSteps) * 100);
   const nextMilestone = milestones.find((milestone) => milestone.days > user.streakDays)
-    ?? { days: 60, rewardKo: "특별 장기 방문 배지", rewardEn: "a long-streak badge" };
+    ?? { days: 60, rewardBeats: null };
   const remainingDays = Math.max(0, nextMilestone.days - user.streakDays);
-  const levelTitle = koreanUi
-    ? level < 3 ? "한글 탐험가" : level < 6 ? "리듬 타자수" : "한국어 키 스타"
-    : level < 3 ? "Hangul Explorer" : level < 6 ? "Rhythm Typist" : "Korean Key Star";
+  const levelTitle = level < 3
+    ? tr(locale, "Hangul Explorer", "한글 탐험가")
+    : level < 6
+      ? tr(locale, "Rhythm Typist", "리듬 타자수")
+      : tr(locale, "Korean Key Star", "한국어 키 스타");
+  const milestoneReward = nextMilestone.rewardBeats === null
+    ? tr(locale, "Long-streak badge", "특별 장기 방문 배지")
+    : `${nextMilestone.rewardBeats.toLocaleString(locale)} ${tr(locale, "beats", "비트")}`;
   const completedSteps = Math.min(totalSteps, progress?.completedSentences ?? 0);
   const stageRows = practiceStageOrder.map((kind) => {
     const indices = practiceCurriculum
@@ -143,15 +164,13 @@ export default function MyLearningClient({ identity, signOutPath, isAdmin, user,
   });
   const activeStage = stageRows.find((stage) => stage.state === "current") ?? stageRows.at(-1)!;
   const accuracyBand = (progress?.accuracy ?? 100) >= 95
-    ? koreanUi ? "매우 안정적" : "Highly stable"
+    ? tr(locale, "Highly stable", "매우 안정적")
     : (progress?.accuracy ?? 100) >= 90
-      ? koreanUi ? "좋음" : "On track"
-      : koreanUi ? "정확도 집중 필요" : "Accuracy focus";
+      ? tr(locale, "On track", "좋음")
+      : tr(locale, "Accuracy focus", "정확도 집중 필요");
   const nextAction = activeStage.state === "done"
-    ? koreanUi ? "문장 유창성 무한 연습" : "Endless sentence fluency"
-    : koreanUi
-      ? `${practiceStageLabels[activeStage.kind].ko} ${activeStage.completed + 1}번째 과제`
-      : `${practiceStageLabels[activeStage.kind].en} task ${activeStage.completed + 1}`;
+    ? tr(locale, "Endless sentence fluency", "문장 유창성 무한 연습")
+    : `${tr(locale, practiceStageLabels[activeStage.kind].en, practiceStageLabels[activeStage.kind].ko)} ${activeStage.completed + 1} · ${tr(locale, "task", "과제")}`;
 
   return (
     <main className="profile-shell">
@@ -161,19 +180,19 @@ export default function MyLearningClient({ identity, signOutPath, isAdmin, user,
           <span>Seoul Keys</span>
         </Link>
         <nav>
-          <Link href="/#practice">{koreanUi ? "학습 계속하기" : "Continue lesson"}</Link>
-          <Link href="/teacher">🎓 {koreanUi ? "교사 대시보드" : "Teacher Portal"}</Link>
+          <Link href="/#practice">{tr(locale, "Continue lesson", "학습 계속하기")}</Link>
+          {isTeacher && <Link href="/teacher">🎓 {tr(locale, "Teacher Portal", "교사 대시보드")}</Link>}
           <button type="button" className="theme-toggle-btn" onClick={toggleThemeMode}>
-            {themeMode === "dark" ? "☀️ Light" : "🌙 Dark"}
+            {themeMode === "dark" ? `☀️ ${tr(locale, "Light", "라이트")}` : `🌙 ${tr(locale, "Dark", "다크")}`}
           </button>
-          <Link href="/legal">{koreanUi ? "개인정보·약관" : "Privacy & terms"}</Link>
-          <button type="button" className="footer-link-btn" onClick={() => setContactModalOpen(true)}>✉️ {koreanUi ? "관리자 문의" : "Contact Admin"}</button>
+          <Link href="/legal">{tr(locale, "Privacy & terms", "개인정보·약관")}</Link>
+          <button type="button" className="footer-link-btn" onClick={() => setContactModalOpen(true)}>✉️ {tr(locale, "Contact Admin", "관리자 문의")}</button>
           <button
             type="button"
             className="signout-link"
             onClick={() => { void signOutEverywhere(signOutPath); }}
           >
-            {koreanUi ? "로그아웃" : "Sign out"}
+            {tr(locale, "Sign out", "로그아웃")}
           </button>
         </nav>
       </header>
@@ -183,22 +202,27 @@ export default function MyLearningClient({ identity, signOutPath, isAdmin, user,
           studio belongs here too — it is the same class of thing. */}
       {isAdmin && (
         <div className="owner-tools">
-          <span className="owner-tools-label">{koreanUi ? "관리자 도구" : "Owner tools"}</span>
+          <span className="owner-tools-label">{tr(locale, "Owner tools", "관리자 도구")}</span>
+
+          <Link className="owner-members" href="/admin/activity" title={tr(locale, "See what each member is doing", "가입자별 활동 상세 보기")}>
+            <span aria-hidden="true">📊</span>
+            {tr(locale, "activity", "활동 상세")}
+          </Link>
 
           <button
             type="button"
             className="owner-members"
             onClick={() => setMembersOpen(true)}
-            title={koreanUi ? "가입자 구성 보기" : "View member breakdown"}
+            title={tr(locale, "View member breakdown", "가입자 구성 보기")}
           >
             <span aria-hidden="true">👥</span>
             <b>{memberTotal === null ? "—" : memberTotal.toLocaleString()}</b>
-            {koreanUi ? "가입자" : "members"}
+            {tr(locale, "members", "가입자")}
           </button>
 
-          <div className="analytics-segment" role="group" aria-label={koreanUi ? "관리자 도구 모음" : "Owner tool group"}>
-            <Link className="analytics-seg analytics-studio" href="/admin" title={koreanUi ? "콘텐츠 관리" : "Content studio"}>
-              <span aria-hidden="true">🗂️</span>{koreanUi ? "콘텐츠 관리" : "Content"}
+          <div className="analytics-segment" role="group" aria-label={tr(locale, "Owner tool group", "관리자 도구 모음")}>
+            <Link className="analytics-seg analytics-studio" href="/admin" title={tr(locale, "Content studio", "콘텐츠 관리")}>
+              <span aria-hidden="true">🗂️</span>{tr(locale, "Content", "콘텐츠 관리")}
             </Link>
             <a
               className="analytics-seg analytics-cloudflare"
@@ -207,7 +231,7 @@ export default function MyLearningClient({ identity, signOutPath, isAdmin, user,
               rel="noopener noreferrer"
               title="Cloudflare Web Analytics"
             >
-              <span aria-hidden="true">📊</span>{koreanUi ? "방문 통계" : "Traffic"}
+              <span aria-hidden="true">📊</span>{tr(locale, "Traffic", "방문 통계")}
             </a>
             <a
               className="analytics-seg analytics-clarity"
@@ -216,7 +240,7 @@ export default function MyLearningClient({ identity, signOutPath, isAdmin, user,
               rel="noopener noreferrer"
               title="Microsoft Clarity"
             >
-              <span aria-hidden="true">🔥</span>{koreanUi ? "행동 분석" : "Clarity"}
+              <span aria-hidden="true">🔥</span>{tr(locale, "Clarity", "행동 분석")}
             </a>
           </div>
         </div>
@@ -226,45 +250,53 @@ export default function MyLearningClient({ identity, signOutPath, isAdmin, user,
         <MemberBreakdownModal
           open={membersOpen}
           onClose={() => setMembersOpen(false)}
-          koreanUi={koreanUi}
+          locale={locale}
           stats={memberStats}
         />
       )}
 
       <section className="profile-welcome">
         <div>
-          <p className="section-label">MY LEARNING SPACE</p>
+          <p className="section-label">{tr(locale, "MY LEARNING SPACE", "내 학습 공간")}</p>
           {/* Members are here to learn Hangul, so greet them with their whole
               name written in it — not just their surname. */}
-          <h1>{koreanUi ? `${greeting.display}님, 다시 만나 반가워요!` : `Welcome back, ${greeting.display}!`}</h1>
+          <h1>{locale === "ko" ? `${greeting.display}님, 다시 만나 반가워요!` : locale === "en" ? `Welcome back, ${greeting.display}!` : `${tr(locale, "Welcome back!")} ${greeting.display}`}</h1>
           {greeting.romanized && <p className="greeting-original">{greeting.original}</p>}
-          <p>{koreanUi ? "오늘 한 단계만 완성해도 방문 리듬과 실력이 함께 쌓여요." : "Complete one step today to keep your learning rhythm growing."}</p>
+          <p>{tr(locale, "Complete one step today to keep your learning rhythm growing.", "오늘 한 단계만 완성해도 방문 리듬과 실력이 함께 쌓여요.")}</p>
+          {nameOffer && (
+            <KoreanNameCard
+              locale={locale}
+              hangul={nameOffer.hangul}
+              original={nameOffer.original}
+              compact
+            />
+          )}
         </div>
         <div className="profile-avatar" aria-hidden="true">{greeting.display.slice(0, 1)}</div>
       </section>
 
-      <section className="profile-stat-grid" aria-label={koreanUi ? "학습 요약" : "Learning summary"}>
-        <article className="profile-stat streak-stat"><span>🔥</span><div><small>{koreanUi ? "연속 방문" : "Current streak"}</small><b>{user.streakDays}{koreanUi ? "일" : " days"}</b></div></article>
-        <article className="profile-stat"><span>⚡</span><div><small>{koreanUi ? "누적 XP" : "Total XP"}</small><b>{user.totalXp.toLocaleString()}</b></div></article>
-        <article className="profile-stat"><span>🎵</span><div><small>{koreanUi ? "보유 비트" : "Beat balance"}</small><b>{user.coins.toLocaleString()}</b></div></article>
-        <article className="profile-stat"><span>👋</span><div><small>{koreanUi ? "총 방문" : "Total visits"}</small><b>{user.totalVisits}</b></div></article>
+      <section className="profile-stat-grid" aria-label={tr(locale, "Learning summary", "학습 요약")}>
+        <article className="profile-stat streak-stat"><span>🔥</span><div><small>{tr(locale, "Current streak", "연속 방문")}</small><b>{formatUnit(user.streakDays, locale, "day")}</b></div></article>
+        <article className="profile-stat"><span>⚡</span><div><small>{tr(locale, "Total XP", "누적 XP")}</small><b>{user.totalXp.toLocaleString()}</b></div></article>
+        <article className="profile-stat"><span>🎵</span><div><small>{tr(locale, "Beat balance", "보유 비트")}</small><b>{user.coins.toLocaleString()}</b></div></article>
+        <article className="profile-stat"><span>👋</span><div><small>{tr(locale, "Total visits", "총 방문")}</small><b>{user.totalVisits}</b></div></article>
       </section>
 
       <section className="profile-main-grid">
         <article className="profile-card progress-card">
           <div className="profile-card-heading">
-            <div><p className="section-label">TODAY&apos;S LESSON</p><h2>{koreanUi ? "오늘의 리듬 이어가기" : "Continue your rhythm"}</h2></div>
+            <div><p className="section-label">{tr(locale, "TODAY'S LESSON", "오늘의 학습")}</p><h2>{tr(locale, "Continue your rhythm", "오늘의 리듬 이어가기")}</h2></div>
             <b>{lessonPercent}%</b>
           </div>
-          <div className="profile-progress-track" role="progressbar" aria-label={koreanUi ? "오늘의 학습 진도" : "Today's lesson progress"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={lessonPercent}>
+          <div className="profile-progress-track" role="progressbar" aria-label={tr(locale, "Today's lesson progress", "오늘의 학습 진도")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={lessonPercent}>
             <span style={{ width: `${lessonPercent}%` }} />
           </div>
           <div className="lesson-summary-row">
-            <span><b>{progress?.completedSentences ?? 0}</b> / {totalSteps} {koreanUi ? "학습 단계" : "learning steps"}</span>
-            <span><b>{Math.floor((progress?.typingSeconds ?? 0) / 60)}</b> {koreanUi ? "연습 분" : "practice minutes"}</span>
-            <span><b>{progress?.accuracy ?? 100}%</b> {koreanUi ? "정확도" : "accuracy"}</span>
+            <span><b>{progress?.completedSentences ?? 0}</b> / {totalSteps} {tr(locale, "learning steps", "학습 단계")}</span>
+            <span><b>{Math.floor((progress?.typingSeconds ?? 0) / 60)}</b> {tr(locale, "practice minutes", "연습 분")}</span>
+            <span><b>{progress?.accuracy ?? 100}%</b> {tr(locale, "accuracy", "정확도")}</span>
           </div>
-          <Link className="button button-primary" href="/#practice">{koreanUi ? "오늘 학습 계속하기" : "Continue today's lesson"} <span aria-hidden="true">→</span></Link>
+          <Link className="button button-primary" href="/#practice">{tr(locale, "Continue today's lesson", "오늘 학습 계속하기")} <span aria-hidden="true">→</span></Link>
         </article>
 
         <article className="profile-card level-card">
@@ -272,23 +304,23 @@ export default function MyLearningClient({ identity, signOutPath, isAdmin, user,
           <h2>{levelTitle}</h2>
           <div className="level-orbit"><span>{level}</span></div>
           <div className="profile-progress-track"><span style={{ width: `${levelPercent}%` }} /></div>
-          <small>{koreanUi ? `다음 레벨까지 ${levelXp} / 500 XP` : `${levelXp} / 500 XP to Level ${level + 1}`}</small>
+          <small>{locale === "ko" ? `다음 레벨까지 ${levelXp} / 500 XP` : locale === "en" ? `${levelXp} / 500 XP to Level ${level + 1}` : `${tr(locale, "NEXT", "다음")} ${tr(locale, "LEVEL", "레벨")} ${level + 1} · ${levelXp} / 500 XP`}</small>
         </article>
       </section>
 
       <section className="profile-detail-grid">
         <article className="profile-card mastery-map-card">
           <div className="profile-card-heading">
-            <div><p className="section-label">MASTERY MAP</p><h2>{koreanUi ? "단계별 숙련 지도" : "Stage mastery map"}</h2></div>
-            <span className="benefit-pill">{koreanUi ? `현재 · ${practiceStageLabels[activeStage.kind].ko}` : `Now · ${practiceStageLabels[activeStage.kind].en}`}</span>
+            <div><p className="section-label">{tr(locale, "MASTERY MAP", "숙련 지도")}</p><h2>{tr(locale, "Stage mastery map", "단계별 숙련 지도")}</h2></div>
+            <span className="benefit-pill">{tr(locale, "Now", "현재")} · {tr(locale, practiceStageLabels[activeStage.kind].en, practiceStageLabels[activeStage.kind].ko)}</span>
           </div>
           <div className="mastery-map-list">
             {stageRows.map((stage, index) => (
               <div className={stage.state} key={stage.kind}>
                 <span className="mastery-map-number">{stage.state === "done" ? "✓" : index + 1}</span>
                 <div>
-                  <b>{koreanUi ? practiceStageLabels[stage.kind].ko : practiceStageLabels[stage.kind].en}</b>
-                  <small>{stage.completed}/{stage.count} {koreanUi ? "과제" : "tasks"} · {koreanUi ? `목표 ${masteryGoals[stage.kind].accuracy}% / ${masteryGoals[stage.kind].cpm}타` : `target ${masteryGoals[stage.kind].accuracy}% / ${masteryGoals[stage.kind].cpm} CPM`}</small>
+                  <b>{tr(locale, practiceStageLabels[stage.kind].en, practiceStageLabels[stage.kind].ko)}</b>
+                  <small>{stage.completed}/{stage.count} {tr(locale, "tasks", "과제")} · {tr(locale, "target", "목표")} {masteryGoals[stage.kind].accuracy}% / {masteryGoals[stage.kind].cpm} CPM</small>
                   <i><span style={{ width: `${stage.percent}%` }} /></i>
                 </div>
                 <em>{stage.percent}%</em>
@@ -298,41 +330,66 @@ export default function MyLearningClient({ identity, signOutPath, isAdmin, user,
         </article>
 
         <article className="profile-card insight-card">
-          <p className="section-label">NEXT BEST ACTION</p>
-          <h2>{koreanUi ? "지금 가장 좋은 연습" : "Your best next step"}</h2>
+          <p className="section-label">{tr(locale, "NEXT BEST ACTION", "다음 추천 활동")}</p>
+          <h2>{tr(locale, "Your best next step", "지금 가장 좋은 연습")}</h2>
           <div className="accuracy-dial" style={{ "--accuracy": `${progress?.accuracy ?? 100}` } as CSSProperties}>
-            <span><b>{progress?.accuracy ?? 100}%</b><small>{koreanUi ? "최근 정확도" : "recent accuracy"}</small></span>
+            <span><b>{progress?.accuracy ?? 100}%</b><small>{tr(locale, "recent accuracy", "최근 정확도")}</small></span>
           </div>
           <div className="insight-status">
-            <span><small>{koreanUi ? "상태" : "STATUS"}</small><b>{accuracyBand}</b></span>
-            <span><small>{koreanUi ? "다음 과제" : "NEXT"}</small><b>{nextAction}</b></span>
-            <span><small>{koreanUi ? "누적 연습" : "PRACTICE"}</small><b>{formatDuration(progress?.typingSeconds ?? 0, koreanUi)}</b></span>
+            <span><small>{tr(locale, "STATUS", "상태")}</small><b>{accuracyBand}</b></span>
+            <span><small>{tr(locale, "NEXT", "다음 과제")}</small><b>{nextAction}</b></span>
+            <span><small>{tr(locale, "PRACTICE", "누적 연습")}</small><b>{formatDuration(progress?.typingSeconds ?? 0, locale)}</b></span>
           </div>
-          <Link className="button button-primary" href="/#practice">{koreanUi ? "키보드로 바로 이어가기" : "Resume at the keyboard"} <span aria-hidden="true">→</span></Link>
+          <Link className="button button-primary" href="/#practice">{tr(locale, "Resume at the keyboard", "키보드로 바로 이어가기")} <span aria-hidden="true">→</span></Link>
         </article>
       </section>
 
       <section className="reward-grid">
         <article className="profile-card visit-card">
           <div className="profile-card-heading">
-            <div><p className="section-label">VISIT BENEFITS</p><h2>{koreanUi ? "방문할수록 커지는 혜택" : "Come back, earn more"}</h2></div>
-            <span className="benefit-pill">{koreanUi ? `다음 · ${nextMilestone.days}일` : `Next · ${nextMilestone.days} days`}</span>
+            <div><p className="section-label">{tr(locale, "VISIT BENEFITS", "방문 혜택")}</p><h2>{tr(locale, "Come back, earn more", "방문할수록 커지는 혜택")}</h2></div>
+            <span className="benefit-pill">{tr(locale, "Next", "다음")} · {formatUnit(nextMilestone.days, locale, "day")}</span>
           </div>
-          <div className="week-rhythm" aria-label={koreanUi ? `${user.streakDays}일 연속 방문` : `${user.streakDays} day visit streak`}>
+          <div className="week-rhythm" aria-label={`${formatUnit(user.streakDays, locale, "day")} · ${tr(locale, "Current streak", "연속 방문")}`}>
             {Array.from({ length: 7 }, (_, index) => (
               <span className={index < Math.min(7, user.streakDays) ? "active" : ""} key={index}>
                 <i>{index < Math.min(7, user.streakDays) ? "✓" : index + 1}</i>
-                <small>{koreanUi ? `${index + 1}일` : `Day ${index + 1}`}</small>
+                <small>{locale === "ko" ? `${index + 1}일` : locale === "en" ? `Day ${index + 1}` : formatUnit(index + 1, locale, "day")}</small>
               </span>
             ))}
           </div>
-          <p>{koreanUi ? <><b>{remainingDays}일</b> 더 방문하면 {nextMilestone.rewardKo} 보상을 받아요.</> : <>Visit for <b>{remainingDays} more days</b> to unlock {nextMilestone.rewardEn}.</>}</p>
+          <p>{locale === "ko"
+            ? <><b>{remainingDays}일</b> 더 방문하면 {milestoneReward} 보상을 받아요.</>
+            : locale === "en"
+              ? <>{tr(
+                locale,
+                "Visit for {{days}} more days to unlock {{reward}}.",
+                "{{days}}일 더 방문하면 {{reward}} 보상이 열립니다.",
+              ).replace("{{days}}", String(remainingDays)).replace("{{reward}}", milestoneReward)}</>
+              : <><b>{formatUnit(remainingDays, locale, "day")}</b> · {tr(locale, "Next reward", "다음 보상")}: {milestoneReward}</>}</p>
         </article>
+
+        {!hasClass && !isTeacher && (
+          <article className="profile-card join-class-card" style={{ gridColumn: "1 / -1" }}>
+            <p className="section-label">{tr(locale, "CLASS", "클래스")}</p>
+            <h2>🎓 {tr(locale, "Are you in a class?", "선생님께 초대 코드를 받으셨나요?")}</h2>
+            <p style={{ opacity: 0.85, margin: "6px 0 14px" }}>
+              {tr(
+                locale,
+                "Enter the code from your teacher to join their class. Your progress then shows on their dashboard.",
+                "선생님께 받은 코드를 입력하면 학급에 등록되고, 학습 기록이 선생님 화면에 표시됩니다.",
+              )}
+            </p>
+            <Link href="/join" className="button button-primary" style={{ display: "inline-flex", padding: "10px 20px" }}>
+              {tr(locale, "Enter invitation code", "초대 코드 입력하기")}
+            </Link>
+          </article>
+        )}
 
         {studentAssignments.length > 0 && (
           <article className="profile-card assignment-card" style={{ gridColumn: "1 / -1", background: "linear-gradient(135deg, rgba(88,166,255,0.12), rgba(163,113,247,0.12))", border: "2px solid rgba(88,166,255,0.4)" }}>
-            <p className="section-label">CLASS ASSIGNMENTS</p>
-            <h2>🎓 {koreanUi ? "선생님이 출제한 맞춤 타자 지문" : "Teacher's Custom Typing Assignments"}</h2>
+            <p className="section-label">{tr(locale, "CLASS ASSIGNMENTS", "클래스 과제")}</p>
+            <h2>🎓 {tr(locale, "Teacher's Custom Typing Assignments", "선생님이 출제한 맞춤 타자 지문")}</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "16px", marginTop: "16px" }}>
               {studentAssignments.map((asgn) => (
                 <div key={asgn.id} style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "12px", padding: "16px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
@@ -343,10 +400,10 @@ export default function MyLearningClient({ identity, signOutPath, isAdmin, user,
                   </div>
                   <div style={{ marginTop: "14px" }}>
                     {asgn.isCompleted ? (
-                      <span style={{ color: "#2da44e", fontWeight: "bold", fontSize: "13px" }}>✅ {koreanUi ? "완료됨" : "Completed"}</span>
+                      <span style={{ color: "#2da44e", fontWeight: "bold", fontSize: "13px" }}>✅ {tr(locale, "Completed", "완료됨")}</span>
                     ) : (
                       <Link href={`/#practice`} className="button button-primary" style={{ display: "inline-block", padding: "6px 12px", fontSize: "12px", textAlign: "center" }}>
-                        🚀 {koreanUi ? "타자 연습 시작" : "Start Practice"}
+                        🚀 {tr(locale, "Start Practice", "타자 연습 시작")}
                       </Link>
                     )}
                   </div>
@@ -357,25 +414,25 @@ export default function MyLearningClient({ identity, signOutPath, isAdmin, user,
         )}
 
         <article className="profile-card badges-card">
-          <p className="section-label">MY REWARDS</p>
-          <h2>{koreanUi ? "배지와 혜택" : "Badges & benefits"}</h2>
+          <p className="section-label">{tr(locale, "MY REWARDS", "나의 리워드")}</p>
+          <h2>{tr(locale, "Badges & benefits", "배지와 혜택")}</h2>
           {rewards.length ? (
             <div className="badge-list">{rewards.map((reward) => <div key={reward.rewardCode}><span aria-hidden="true">🏅</span><p><b>{reward.title}</b><small>{reward.description}</small></p></div>)}</div>
           ) : (
-            <div className="empty-reward"><span aria-hidden="true">🌱</span><p><b>{koreanUi ? "첫 배지가 가까워요." : "Your first badge is close."}</b><small>{koreanUi ? "3일 연속 방문하면 첫 리듬 배지를 받아요." : "Visit 3 days in a row to earn the First Rhythm badge."}</small></p></div>
+            <div className="empty-reward"><span aria-hidden="true">🌱</span><p><b>{tr(locale, "Your first badge is close.", "첫 배지가 가까워요.")}</b><small>{tr(locale, "Visit 3 days in a row to earn the First Rhythm badge.", "3일 연속 방문하면 첫 리듬 배지를 받아요.")}</small></p></div>
           )}
         </article>
       </section>
 
       <section className="account-note">
-        <div><b>{koreanUi ? "로그인된 학습 계정" : "Signed-in learning account"}</b><span>{identity.email}</span></div>
-        <p>{koreanUi ? "이 계정에 학습 진도, 방문 기록, 리워드가 안전하게 저장됩니다." : "Your lesson progress, visits, and rewards are saved to this account."}</p>
+        <div><b>{tr(locale, "Signed-in learning account", "로그인된 학습 계정")}</b><span>{identity.email}</span></div>
+        <p>{tr(locale, "Your lesson progress, visits, and rewards are saved to this account.", "이 계정에 학습 진도, 방문 기록, 리워드가 안전하게 저장됩니다.")}</p>
       </section>
 
       <ContactModal
         isOpen={contactModalOpen}
         onClose={() => setContactModalOpen(false)}
-        locale={koreanUi ? "ko" : "en"}
+        locale={locale}
       />
     </main>
   );

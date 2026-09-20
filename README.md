@@ -1,6 +1,6 @@
 # Hangeul Pop
 
-Multilingual Korean typing and language-learning site built with Next.js/vinext and hosted with OpenAI Sites.
+Multilingual Korean typing and language-learning site built with Next.js/vinext and hosted independently on Cloudflare Workers.
 
 ## What is included
 
@@ -12,6 +12,21 @@ Multilingual Korean typing and language-learning site built with Next.js/vinext 
 - privacy, terms, advertising, copyright, child-safety, and accessibility baseline at `/legal`
 
 ## Local development
+
+### Continuing on another computer
+
+Clone the GitHub repository once a remote has been configured, then run `npm ci`
+with Node.js 22.13 or newer. Read `ONBOARDING-2026-09-20.md` before deploying:
+the transfer snapshot includes local changes that have not been deployed, two
+existing translation-test failures, and unresolved local browser-preview issues.
+
+Create a local `.dev.vars` with the required settings described below; credentials
+are deliberately excluded from Git. Sign in to Cloudflare separately on the new
+computer. The production D1 database is not stored in this repository: preserve
+its existing binding and do not recreate it or run remote migrations automatically.
+Checked-in audio and translation assets do not need paid regeneration.
+
+Committing or pushing this snapshot is not a production deployment.
 
 Requires Node.js 22.13 or newer.
 
@@ -36,11 +51,13 @@ To regenerate them, create the local `.venv-tts` Python 3.12 environment with
 `supertonic` and `soundfile`, install `ffmpeg`, then run:
 
 ```bash
+npm run audio:all
 npm run audio:drills
 ```
 
-This first rebuilds `scripts/korean-audio-lines.json` directly from the current
-curriculum, then renders both female and male MP3 files for every drill word.
+`audio:all` rebuilds `scripts/korean-audio-lines.json` from the complete content
+catalog and renders both voices for every lesson, themed word, conversation,
+and proverb. `audio:drills` regenerates only the beginner curriculum.
 For another manifest section, run
 `python scripts/generate_static_korean_audio.py --prefix lesson --force`.
 

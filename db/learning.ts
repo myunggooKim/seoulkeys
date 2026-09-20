@@ -96,6 +96,7 @@ export async function saveLearningProgress(email: string, displayName: string, u
     totalSentences: validated.totalSentences,
     typingSeconds: validated.typingSeconds,
     accuracy: validated.accuracy,
+    typedChars: validated.typedChars,
     lessonFinished: validated.lessonFinished,
     awardedXp: currentProgress.awardedXp + validated.xpDelta,
     updatedAt: new Date().toISOString(),

@@ -17,6 +17,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { practiceCurriculum, sentencePracticeItems } from "../app/practice-curriculum";
+import { learningThemes } from "../app/content-themes";
+import {
+  expandedThemeSentences,
+  expandedTravelPhrases,
+  proverbEntries,
+} from "../app/expanded-content";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const source = fs.readFileSync(path.join(root, "app/page.tsx"), "utf8");
@@ -50,6 +56,12 @@ const scenes = koreanOf(arrayAfter("const screenPracticeLines"));
  * had no recording, so choosing any concept meant the device voice from the
  * first sentence on. Anything a learner can be asked to speak belongs here. */
 const conceptLines = koreanOf(themeSource);
+const conceptWords = learningThemes.flatMap((theme) => theme.words.map((entry) => entry.word));
+const expandedConceptLines = Object.values(expandedThemeSentences)
+  .flatMap((sentences) => sentences.map((entry) => entry.korean));
+const expandedTravelLines = Object.values(expandedTravelPhrases)
+  .flatMap((phrases) => phrases.map((entry) => entry.korean));
+const proverbs = proverbEntries.map((entry) => entry.korean);
 const spokenDrills = practiceCurriculum.filter((item) => item.speak).map((item) => item.text);
 
 const pad = (n: number) => String(n + 1).padStart(2, "0");
@@ -82,6 +94,10 @@ add("travel-welcome", welcome);
 add("scene", scenes);
 add("concept", conceptLines);
 add("drill", spokenDrills);
+add("word", conceptWords);
+add("concept-extra", expandedConceptLines);
+add("travel-extra", expandedTravelLines);
+add("proverb", proverbs);
 
 const out = path.join(root, "scripts/korean-audio-lines.json");
 fs.writeFileSync(out, `${JSON.stringify(lines, null, 2)}\n`);

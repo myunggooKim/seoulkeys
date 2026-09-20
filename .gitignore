@@ -41,6 +41,7 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+/scratchpad/
 
 # local preview process files
 /tmp-*.log
@@ -48,3 +49,12 @@ next-env.d.ts
 
 # Local Python env for scripts/generate_static_korean_audio.py
 .venv-tts/
+__pycache__/
+*.py[cod]
+
+# Local-only secrets for previewing signed-in pages. Never deployed.
+.dev.vars
+.dev.vars.*
+
+# Empty accidental shell artifact (not application source).
+/tr(l

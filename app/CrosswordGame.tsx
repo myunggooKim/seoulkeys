@@ -31,7 +31,7 @@ function audioContextConstructor() {
     ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
 }
 
-export function CrosswordGame({ koreanUi, locale, soundEnabled, onSuccessSound, onKeySound, themeId }: CrosswordGameProps) {
+export function CrosswordGame({ locale, soundEnabled, onSuccessSound, onKeySound, themeId }: CrosswordGameProps) {
   // Build a board for the selected concept, falling back to the built-in pools.
   const buildBoard = useCallback((index: number): CrosswordPuzzle => (
     themeId ? makeThemedCrosswordBoard(index, themeId) : makeCrosswordBoard(index)
@@ -318,7 +318,7 @@ export function CrosswordGame({ koreanUi, locale, soundEnabled, onSuccessSound, 
       : status === "wrong"
         ? tr(locale, "Not quite. Your word stays—correct it and press Enter again.", "오답입니다. 입력한 단어는 남아 있어요. 고쳐서 다시 Enter!")
         : status === "incomplete"
-          ? koreanUi ? `총 ${Array.from(activeEntry.answer).length}글자를 모두 입력한 뒤 Enter를 누르세요.` : `Type all ${Array.from(activeEntry.answer).length} syllables, then press Enter.`
+          ? `${tr(locale, "Type all", "총")} ${Array.from(activeEntry.answer).length} ${tr(locale, "syllables, then press Enter.", "글자를 모두 입력한 뒤 Enter를 누르세요.")}`
           : tr(locale, "Type the whole answer to fill the grid automatically. Press Enter to check.", "정답 단어 전체를 입력하면 칸이 자동으로 채워집니다. Enter로 판정하세요.");
 
   return (
@@ -372,7 +372,7 @@ export function CrosswordGame({ koreanUi, locale, soundEnabled, onSuccessSound, 
               </button>
             );
           })}
-          {status === "solved" && <div className="crossword-complete-stamp" aria-hidden="true"><span>PUZZLE</span><b>CLEAR!</b></div>}
+          {status === "solved" && <div className="crossword-complete-stamp" aria-hidden="true"><span>{tr(locale, "PUZZLE", "퍼즐")}</span><b>{tr(locale, "CLEAR!", "완료!")}</b></div>}
         </div>
         <div className="crossword-direction-legend">
           <span><i className="across-arrow" aria-hidden="true">→</i>{tr(locale, "Across", "가로")}</span>

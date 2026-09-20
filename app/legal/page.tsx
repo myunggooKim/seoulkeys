@@ -1,16 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LegalTranslationBridge } from "./LegalTranslationBridge";
 
 export const metadata: Metadata = {
   title: "Legal & Safety Center — Seoul Keys",
   description: "Privacy, terms, cookies, advertising, copyright, child safety, and operating disclosures for Seoul Keys.",
+  alternates: { canonical: "https://seoulkeys.com/legal" },
 };
 
-const effectiveDate = "July 23, 2026";
+const effectiveDate = "September 3, 2026";
+const contactEmail = "travels444@gmail.com";
 
 export default function LegalCenter() {
   return (
     <main className="legal-shell">
+      <LegalTranslationBridge />
       <header className="legal-header">
         <Link className="brand" href="/" aria-label="Back to Seoul Keys">
           <span className="brand-mark" aria-hidden="true">ㅅ</span>
@@ -25,8 +29,8 @@ export default function LegalCenter() {
         <p>개인정보처리방침 · 이용약관 · 쿠키/광고 · 저작권 · 아동 안전 · 접근성</p>
         <div className="legal-status-row">
           <span>Effective {effectiveDate}</span>
-          <span>Policy version 1.0</span>
-          <span className="preview-status">Private preview · no ads</span>
+          <span>Policy version 1.1</span>
+          <span className="preview-status">Public learning service · no ads</span>
         </div>
       </section>
 
@@ -37,10 +41,10 @@ export default function LegalCenter() {
           <a href="#privacy">Privacy policy</a>
           <a href="#terms">Terms of use</a>
           <a href="#cookies">Cookies & advertising</a>
-          <a href="#copyright">Copyright & licensed content</a>
+          <a href="#copyright">Copyright & content</a>
           <a href="#children">Children & family safety</a>
           <a href="#accessibility">Accessibility</a>
-          <a href="#contact">Contact & launch status</a>
+          <a href="#contact">Contact & reporting</a>
         </nav>
 
         <article className="legal-content">
@@ -48,8 +52,9 @@ export default function LegalCenter() {
             <p className="legal-kicker">PLAIN-LANGUAGE SUMMARY</p>
             <h2>What the site does today</h2>
             <p>
-              Seoul Keys is currently a private educational preview. Signed-in learners receive a personal progress
-              page and visit rewards. The service does not offer payments, uploads, public profiles, or advertising.
+              Seoul Keys is a public educational service for learning Hangul and practising Korean typing. Signed-in
+              learners receive a personal progress page and visit rewards. The service does not currently offer
+              payments, uploads, public profiles, or advertising.
               It does use product analytics (Cloudflare Web Analytics and Microsoft Clarity) to understand how the
               lessons are used and where learners get stuck. Typing entries stay in the active browser session;
               summarized progress is saved to the learner’s account.
@@ -61,7 +66,7 @@ export default function LegalCenter() {
               <div><span>Advertising</span><b>Not active</b></div>
               <div><span>Product analytics</span><b>Cloudflare + Microsoft Clarity</b></div>
               <div><span>Korean speech</span><b>Pre-generated female/male audio</b></div>
-              <div><span>Licensed media</span><b>Not published yet</b></div>
+              <div><span>Third-party entertainment media</span><b>Not part of the current service</b></div>
             </div>
           </section>
 
@@ -73,14 +78,14 @@ export default function LegalCenter() {
               It does not sell personal information, build advertising profiles, or ask learners for phone numbers,
               precise locations, contacts, photos, or payment details.
             </p>
-            <h3>Information used by the current preview</h3>
+            <h3>Information used by the current service</h3>
             <div className="policy-table" role="table" aria-label="Current data processing">
               <div role="row"><b role="columnheader">Information</b><b role="columnheader">Purpose and retention</b></div>
               <div role="row"><span role="cell">Authenticated email address and display name</span><span role="cell">Identify the learner, secure account-owned progress, and display the personal page. Retained while the learning account remains active or until a valid deletion request is completed.</span></div>
               <div role="row"><span role="cell">Lesson number, completed sentences, practice time, accuracy, XP, visit streak, benefit balance, and earned badges</span><span role="cell">Provide progress sync, the personal dashboard, and repeat-visit benefits. Retained with the learning account.</span></div>
               <div role="row"><span role="cell">Interface language, keyboard layout, pronunciation and sound settings</span><span role="cell">Saved in browser storage until the learner clears site data.</span></div>
               <div role="row"><span role="cell">Daily lesson number and completion state</span><span role="cell">Saved on the device to resume the current day’s lesson; replaced as the lesson changes.</span></div>
-              <div role="row"><span role="cell">Text typed into practice fields</span><span role="cell">Used in memory to score the exercise. The preview does not submit or persist it on a Seoul Keys server.</span></div>
+              <div role="row"><span role="cell">Text typed into practice fields</span><span role="cell">Used in memory to score the exercise. The service does not submit or persist it on a Seoul Keys server.</span></div>
               <div role="row"><span role="cell">Technical access and security logs</span><span role="cell">The hosting infrastructure may process standard request data such as IP address, user agent, time, and requested page to deliver and protect the site. Seoul Keys does not use these logs for advertising profiles.</span></div>
             </div>
             <h3>Korean pronunciation</h3>
@@ -95,7 +100,12 @@ export default function LegalCenter() {
               <li>Turn pronunciation and typewriter sounds off independently.</li>
               <li>Remove local preferences and lesson progress by clearing this site’s browser data.</li>
               <li>Sign out of the personal page and continue using available public information.</li>
-              <li>Request information, correction, deletion, restriction, or objection where applicable once the operator contact channel is published.</li>
+              <li>
+                Request information, correction, deletion, restriction, or objection where applicable by emailing{" "}
+                <a href={`mailto:${contactEmail}?subject=${encodeURIComponent("Seoul Keys privacy request")}`}>
+                  {contactEmail}
+                </a>.
+              </li>
             </ul>
             <h3>Security and international delivery</h3>
             <p>
@@ -113,8 +123,8 @@ export default function LegalCenter() {
               <li><b>Permitted use.</b> Learners may use the service for personal and classroom learning. Automated scraping, security attacks, interference, impersonation, unlawful use, and unauthorized redistribution of protected content are prohibited.</li>
               <li><b>Availability.</b> Lessons may change, pause, or be removed for maintenance, safety, licensing, or technical reasons.</li>
               <li><b>Learning results.</b> Scores and translations are instructional aids. Accuracy and fluency outcomes are not guaranteed.</li>
-              <li><b>Third-party services.</b> Pre-generated speech models, optional browser speech, hosting, and future licensed media may be governed by additional provider terms.</li>
-              <li><b>Liability.</b> To the extent allowed by law, the preview is provided as available. Mandatory consumer rights are not excluded.</li>
+              <li><b>Third-party services.</b> Pre-generated speech models, optional browser speech, hosting, and any third-party content introduced later may be governed by additional provider terms.</li>
+              <li><b>Liability.</b> To the extent allowed by law, the service is provided as available. Mandatory consumer rights are not excluded.</li>
               <li><b>Changes.</b> Material changes will be dated and summarized on this page before they take effect where notice is required.</li>
             </ol>
           </section>
@@ -123,7 +133,7 @@ export default function LegalCenter() {
             <p className="legal-kicker">쿠키·광고 정책 · COOKIES & ADS</p>
             <h2>No advertising cookies — product analytics only</h2>
             <p>
-              The preview uses browser local storage for essential preferences and daily lesson continuity. It does
+              The service uses browser local storage for essential preferences and daily lesson continuity. It does
               not load Google AdSense, behavioral advertising, or social pixels.
             </p>
             <p>
@@ -147,7 +157,11 @@ export default function LegalCenter() {
               You can block these at any time with your browser’s tracking protection or an ad/tracker blocker; the
               lessons and games continue to work normally.
             </p>
-            <h3>Before advertising is enabled</h3>
+            <h3>If advertising is introduced</h3>
+            <p>
+              Advertising is not active today. Before any advertising provider is enabled, Seoul Keys will update
+              this notice to identify the provider, purposes, and available privacy choices.
+            </p>
             <ul>
               <li>This policy and the on-site privacy control must be updated with the actual providers and purposes.</li>
               <li>Where required, ads and non-essential storage must remain blocked until a valid choice is made.</li>
@@ -159,7 +173,7 @@ export default function LegalCenter() {
 
           <section id="copyright" className="legal-section">
             <p className="legal-kicker">저작권·콘텐츠 정책 · COPYRIGHT</p>
-            <h2>Original lessons first; licensed media only with permission</h2>
+            <h2>Original lessons first; protected media only with permission</h2>
             <p>
               The interface, original practice sentences, course structure, and original game presentation are
               Seoul Keys materials unless otherwise stated. Korean language facts and ordinary short expressions
@@ -168,9 +182,14 @@ export default function LegalCenter() {
             </p>
             <ul>
               <li>K-POP lyrics and real K-Drama or film dialogue will be published only when licensed or otherwise lawfully usable.</li>
-              <li>Current drama-style preview lines are original practice dialogue and are not represented as quotations from a real production.</li>
+              <li>Current drama-style practice lines are original dialogue and are not represented as quotations from a real production.</li>
               <li>Rights-holder names and marks remain the property of their owners and do not imply endorsement.</li>
-              <li>A takedown channel and response workflow must be active before third-party media launches.</li>
+              <li>
+                Copyright owners and other affected parties can report a concern at{" "}
+                <a href={`mailto:${contactEmail}?subject=${encodeURIComponent("Seoul Keys copyright report")}`}>
+                  {contactEmail}
+                </a>. Reports are reviewed and disputed material may be limited or removed while a concern is assessed.
+              </li>
             </ul>
           </section>
 
@@ -178,7 +197,7 @@ export default function LegalCenter() {
             <p className="legal-kicker">아동·가족 안전 · CHILD SAFETY</p>
             <h2>A low-data learning environment</h2>
             <p>
-              The preview has no public chat, direct messaging, public profile, upload, or location-sharing feature.
+              The service has no public chat, direct messaging, public profile, upload, or location-sharing feature.
               Signed-in progress uses an email address and display name. It is intended for general language learning
               and is not designed to collect children’s information without appropriate safeguards. Younger learners
               should use the service with a parent, guardian, or teacher. Age-appropriate design, parental consent,
@@ -192,30 +211,35 @@ export default function LegalCenter() {
             <p>
               Seoul Keys supports keyboard navigation, visible focus states, semantic labels, responsive layouts,
               reduced reliance on color alone, and independent audio controls. Learners can turn both pronunciation
-              and completion sounds off. Accessibility issues should be included in the future contact and reporting
-              channel with the device, browser, page, and problem description.
+              and completion sounds off. Accessibility issues can be reported through the{" "}
+              <Link href="/contact">contact page</Link> with the device, browser, page, and problem description.
             </p>
           </section>
 
           <section id="contact" className="legal-section launch-gate">
-            <p className="legal-kicker">CONTACT & PUBLIC-LAUNCH GATE</p>
-            <h2>Operator details required before public launch</h2>
+            <p className="legal-kicker">CONTACT & REPORTING</p>
+            <h2>Questions, corrections, and rights requests</h2>
             <p>
-              This site is still a private preview. The owner must publish the legal operator name, a monitored
-              privacy/support email address, and any address or registration information required by the operating
-              jurisdiction before making the site public, accepting payments, enabling ads, collecting inquiries,
-              or publishing licensed entertainment content.
+              Questions about the service, privacy requests, accessibility problems, content corrections, and
+              copyright reports can be sent to{" "}
+              <a href={`mailto:${contactEmail}?subject=${encodeURIComponent("Seoul Keys inquiry")}`}>
+                {contactEmail}
+              </a>. Include the relevant page address and enough detail to identify the issue. Sensitive account or
+              identity documents should not be included unless specifically requested through a secure process.
+            </p>
+            <p>
+              The <Link href="/about">About page</Link> explains the service purpose, lesson approach, and content
+              correction process. The <Link href="/contact">Contact page</Link> provides topic-specific email links.
             </p>
             <div className="launch-checklist">
-              <span><b>✓</b> Privacy, terms, cookie, copyright, child-safety and accessibility framework</span>
-              <span><b>✓</b> Current data inventory and local-storage disclosure</span>
-              <span><b>○</b> Operator legal name and monitored email — owner input required</span>
-              <span><b>○</b> Certified consent platform — required before applicable ad traffic</span>
-              <span><b>○</b> Rights-holder licenses — required before real lyrics or screenplay excerpts</span>
+              <span><b>✓</b> General questions and service feedback</span>
+              <span><b>✓</b> Privacy and account-data requests</span>
+              <span><b>✓</b> Accessibility and translation corrections</span>
+              <span><b>✓</b> Copyright and content reports</span>
             </div>
             <p className="legal-note">
-              These documents are an operationally accurate product baseline, not a substitute for advice from a
-              qualified lawyer familiar with the operator’s country and launch markets.
+              These documents describe the current service and are not a substitute for advice from a qualified
+              lawyer. They will be updated when the service, data practices, or third-party providers change.
             </p>
           </section>
         </article>

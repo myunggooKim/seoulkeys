@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ThemeWord } from "./content-themes";
+import { cloneContentDeck, createContentDeck, drawFromContentDeck, type ContentDeck } from "./content-deck";
+import { getTheme, type ThemeId, type ThemeWord } from "./content-themes";
 import type { Locale } from "./locale-detection";
 import { tr } from "./ui-i18n";
 
@@ -219,21 +220,21 @@ function buildGeneratedPuzzle(entry: WordEntry): MissingPuzzle | null {
 
 // A fresh 6-puzzle level drawn from the (shuffled) bank, difficulty rising with
 // the level number by preferring longer words.
-function buildGeneratedLevel(levelNumber: number, bank: WordEntry[]): MissingPuzzle[] {
+export function buildGeneratedLevel(
+  levelNumber: number,
+  bank: WordEntry[],
+  deck: ContentDeck<WordEntry> = createContentDeck<WordEntry>(),
+): MissingPuzzle[] {
   const minLength = Math.min(4, 2 + Math.floor(levelNumber / 3));
   const longEnough = bank.filter((entry) => Array.from(entry.word).length >= minLength);
-  const source = shuffle(longEnough.length >= 6 ? longEnough : bank);
+  const source = longEnough.length >= 6 ? longEnough : bank;
   const puzzles: MissingPuzzle[] = [];
-  for (const entry of source) {
+  const attempted = new Set<string>();
+  while (attempted.size < new Set(source.map((entry) => entry.word)).size && puzzles.length < 6) {
+    const entry = drawFromContentDeck(deck, source, (item) => item.word, attempted);
+    attempted.add(entry.word);
     const puzzle = buildGeneratedPuzzle(entry);
     if (puzzle) puzzles.push(puzzle);
-    if (puzzles.length >= 6) break;
-  }
-  // Guarantee a full level even if generation was unlucky.
-  while (puzzles.length < 6 && source.length) {
-    const puzzle = buildGeneratedPuzzle(source[puzzles.length % source.length]);
-    if (puzzle) puzzles.push(puzzle);
-    else break;
   }
   return puzzles.length ? puzzles : missingPuzzleLevels[missingPuzzleLevels.length - 1];
 }
@@ -519,7 +520,22 @@ export function makeThemedCrosswordBoard(boardIndex: number, conceptId: string):
   const poolId = crosswordThemeByConcept[conceptId];
   const theme = crosswordThemes.find((candidate) => candidate.id === poolId)
     ?? crosswordThemes[boardIndex % crosswordThemes.length];
-  const chosen = bestBoardFromPool(theme.words, theme.id, theme.titleKo, theme.titleEn, boardIndex);
+  const concept = getTheme((conceptId in crosswordThemeByConcept ? conceptId : "travel") as ThemeId);
+  const extraSeeds = concept.words.map((entry) => ({
+    answer: entry.word,
+    clueKo: entry.meaningKo,
+    clueEn: entry.meaningEn,
+  }));
+  // Keep board construction fast while rotating through the full vocabulary
+  // library. The proven connected core stays in every board; a different
+  // 24-word window supplies fresh answers and clues on each round.
+  const start = extraSeeds.length ? (boardIndex * 23) % extraSeeds.length : 0;
+  const rotatingWindow = Array.from(
+    { length: Math.min(24, extraSeeds.length) },
+    (_, offset) => extraSeeds[(start + offset) % extraSeeds.length],
+  );
+  const words = [...new Map([...theme.words, ...rotatingWindow].map((seed) => [seed.answer, seed])).values()];
+  const chosen = bestBoardFromPool(words, theme.id, theme.titleKo, theme.titleEn, boardIndex);
   return { ...chosen, id: `${theme.id}-c${boardIndex}` };
 }
 
@@ -568,15 +584,19 @@ export function MissingLetterGame({ koreanUi, locale, soundEnabled, onSuccessSou
   const [levelUp, setLevelUp] = useState(false);
   // Every level is generated from the active (themed) bank, so the whole game
   // reflects the chosen concept from the very first word and never runs out.
-  const [generatedLevels, setGeneratedLevels] = useState<MissingPuzzle[][]>(
-    () => [buildGeneratedLevel(0, words && words.length ? words : generativeWordBank)],
-  );
+  const [generation, setGeneration] = useState<{
+    deck: ContentDeck<WordEntry>;
+    levels: MissingPuzzle[][];
+  }>(() => {
+    const deck = createContentDeck<WordEntry>();
+    return { deck, levels: [buildGeneratedLevel(0, activeGenBank, deck)] };
+  });
   const [message, setMessage] = useState(tr(locale, "Type the missing syllable and press Enter.", "빠진 한 글자를 입력하고 Enter를 누르세요."));
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<number | null>(null);
   const puzzleStartedAt = useRef<number | null>(null);
   const didMountRef = useRef(false);
-  const allLevels = generatedLevels;
+  const allLevels = generation.levels;
   const level = allLevels[levelIndex] ?? allLevels[0];
   const puzzle = level[puzzleIndex % level.length];
   const characters = Array.from(puzzle.word);
@@ -602,7 +622,8 @@ export function MissingLetterGame({ koreanUi, locale, soundEnabled, onSuccessSou
     genBankRef.current = activeGenBank;
     if (!didMountRef.current) { didMountRef.current = true; return; }
     if (timerRef.current) window.clearTimeout(timerRef.current);
-    setGeneratedLevels([buildGeneratedLevel(0, activeGenBank)]);
+    const deck = createContentDeck<WordEntry>();
+    setGeneration({ deck, levels: [buildGeneratedLevel(0, activeGenBank, deck)] });
     setLevelIndex(0);
     setPuzzleIndex(0);
     setAnswer("");
@@ -635,7 +656,7 @@ export function MissingLetterGame({ koreanUi, locale, soundEnabled, onSuccessSou
     setCorrect((current) => current + 1);
     setStreak((current) => current + 1);
     setScore((current) => current + gained);
-    setMessage(koreanUi ? `정답! +${gained}점 · 손을 그대로 두세요.` : `Correct! +${gained} · Keep your hands in place.`);
+    setMessage(`${tr(locale, "Correct!", "정답!")} +${gained}${koreanUi ? "점" : ""} · ${tr(locale, "Keep your hands in place.", "손을 그대로 두세요.")}`);
     if (soundEnabled) onSuccessSound();
     if (isLevelEnd) setLevelUp(true);
 
@@ -644,14 +665,17 @@ export function MissingLetterGame({ koreanUi, locale, soundEnabled, onSuccessSou
         const nextLevel = levelIndex + 1;
         // Make sure the next level exists — generate a fresh one on demand so
         // there is always something new after the curated levels.
-        setGeneratedLevels((previous) => (
-          nextLevel >= previous.length
-            ? [...previous, buildGeneratedLevel(nextLevel, genBankRef.current)]
-            : previous
-        ));
+        setGeneration((previous) => {
+          if (nextLevel < previous.levels.length) return previous;
+          const deck = cloneContentDeck(previous.deck);
+          return {
+            deck,
+            levels: [...previous.levels, buildGeneratedLevel(nextLevel, genBankRef.current, deck)],
+          };
+        });
         setLevelIndex(nextLevel);
         setPuzzleIndex(0);
-        setMessage(koreanUi ? `${nextLevel + 1}단계 시작! 새로운 낱말이 계속 이어집니다.` : `Level ${nextLevel + 1}! Fresh words keep coming.`);
+        setMessage(`${tr(locale, "Level", "단계")} ${nextLevel + 1}! ${tr(locale, "Fresh words keep coming.", "새로운 낱말이 계속 이어집니다.")}`);
       } else {
         setPuzzleIndex(puzzleIndex + 1);
         setMessage(tr(locale, "The next word is ready. Type now.", "다음 낱말이 준비됐어요. 바로 입력하세요."));
@@ -685,7 +709,7 @@ export function MissingLetterGame({ koreanUi, locale, soundEnabled, onSuccessSou
       </div>
       <div className="missing-prompt">
         <small>{`${tr(locale, "WORD", "문제")} ${puzzleIndex + 1}/${level.length}`}</small>
-        <h3>{koreanUi ? puzzle.meaningKo : puzzle.meaningEn}</h3>
+        <h3>{tr(locale, puzzle.meaningEn, puzzle.meaningKo)}</h3>
       </div>
       <div className="missing-word" lang="ko">
         {characters.map((character, index) => index === puzzle.missingIndex
@@ -734,7 +758,7 @@ export function MissingLetterGame({ koreanUi, locale, soundEnabled, onSuccessSou
       </div>
       <p className={`form-message ${locked ? "success" : ""}`} aria-live="polite">{message}</p>
       <div className="game-key-help"><span><kbd>1–3</kbd>{tr(locale, "choose", "후보 선택")}</span><span><kbd>Enter</kbd>{tr(locale, "check", "정답 확인")}</span><span><kbd>⌫</kbd>{tr(locale, "correct", "고치기")}</span></div>
-      {levelUp && <div className="missing-level-up" role="status"><span>{tr(locale, "LEVEL", "단계")}</span><b>{koreanUi ? `${levelIndex + 1}단계 완료!` : `${levelIndex + 1} CLEAR!`}</b><small>{tr(locale, "Next level unlocked", "다음 단계가 열립니다")}</small></div>}
+      {levelUp && <div className="missing-level-up" role="status"><span>{tr(locale, "LEVEL", "단계")}</span><b>{levelIndex + 1} {tr(locale, "CLEAR!", "단계 완료!")}</b><small>{tr(locale, "Next level unlocked", "다음 단계가 열립니다")}</small></div>}
     </div>
   );
 }

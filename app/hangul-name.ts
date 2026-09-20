@@ -39,11 +39,11 @@ const NUCLEI: Array<[string, string[]]> = [
   ["ai", ["ㅔ", "ㅣ"]], ["ay", ["ㅔ", "ㅣ"]], ["ea", ["ㅣ"]], ["ee", ["ㅣ"]],
   ["ei", ["ㅔ", "ㅣ"]], ["ey", ["ㅣ"]], ["ie", ["ㅣ"]], ["oa", ["ㅗ"]],
   ["oo", ["ㅜ"]], ["ou", ["ㅏ", "ㅜ"]], ["ow", ["ㅗ", "ㅜ"]], ["oi", ["ㅗ", "ㅣ"]],
-  ["oy", ["ㅗ", "ㅣ"]], ["au", ["ㅗ"]], ["aw", ["ㅗ"]], ["ue", ["ㅜ"]],
+  ["oy", ["ㅗ", "ㅣ"]], ["au", ["ㅏ", "ㅜ"]], ["aw", ["ㅗ"]], ["ue", ["ㅜ"]],
   ["ui", ["ㅜ", "ㅣ"]], ["ia", ["ㅣ", "ㅏ"]], ["io", ["ㅣ", "ㅗ"]], ["eu", ["ㅠ"]],
   ["ya", ["ㅑ"]], ["ye", ["ㅖ"]], ["yo", ["ㅛ"]], ["yu", ["ㅠ"]], ["yi", ["ㅣ"]],
   ["wa", ["ㅘ"]], ["we", ["ㅞ"]], ["wi", ["ㅟ"]], ["wo", ["ㅝ"]],
-  ["a", ["ㅏ"]], ["e", ["ㅔ"]], ["i", ["ㅣ"]], ["o", ["ㅗ"]], ["u", ["ㅓ"]], ["y", ["ㅣ"]],
+  ["a", ["ㅏ"]], ["e", ["ㅔ"]], ["i", ["ㅣ"]], ["o", ["ㅗ"]], ["u", ["ㅜ"]], ["y", ["ㅣ"]],
 ];
 
 /** How a single vowel sounds when a silent final "e" lengthens it. */
@@ -142,6 +142,55 @@ const LEXICON: Record<string, string> = {
   souza: "소자",
 };
 
+/**
+ * Spellings whose Korean reading depends on a language we do not know.
+ *
+ * The rules below are English spelling rules. Applied to a French, Spanish,
+ * Portuguese or Polish name they do not merely lose polish — they produce a
+ * different name: Jorge became 조우르그 rather than 호르헤, Pierre became 필
+ * rather than 피에르, Guillaume became 구일라움 rather than 기욤. Somebody shown
+ * one of those has no way to know it is wrong, and will carry it for years.
+ *
+ * So a name that trips any of these is not shown at all. Being told nothing
+ * costs a person nothing; being told the wrong name costs them something real.
+ * A spelling listed in LEXICON is exempt — that reading was checked by hand.
+ */
+const LANGUAGE_DEPENDENT: Array<[RegExp, string]> = [
+  [/^j/, "initial j: Spanish 호, French 즈, English 제"],
+  [/^x/, "initial x: Xavier is 그자비에, not 크사비에르"],
+  [/ll/, "ll: Spanish and French read it as a glide"],
+  [/gu[ei]/, "gue/gui: the u is silent in Romance spellings"],
+  [/[crs]z/, "Polish digraphs"],
+  [/^(bj|dj|kn|gn|ps|wr|wo?j)/, "consonant clusters read differently by language"],
+  [/(eau|oeu|ae|oe)/, "French and Germanic vowel digraphs"],
+  [/oi/, "oi: French 와, elsewhere 오이"],
+  [/[aeiou]h[^aeiou]/, "h before a consonant: silent in English, sounded in Turkish and Arabic"],
+  [/(et|ot|ez)$/, "French silent final consonant"],
+  [/(bh|mh|dh)/, "Irish and Indic digraphs"],
+  [/ierr?e?$/, "French -ier / -ierre"],
+  [/[bcdfghjklmnpqrstvwxz]y[aeou]/, "consonant + y glide: Indic names keep both syllables"],
+  [/sch/, "German sch is 슈, English sch is 스"],
+  [/th/, "th: English 스, Indic and Vietnamese 트"],
+  [/^(ng|ph|kh|tr|nh)/, "Vietnamese onset clusters"],
+];
+
+/** Diacritics carry the pronunciation and are stripped before the rules run, so
+ *  a name that had them is a name we are reading with information missing. */
+const MEANINGFUL_DIACRITICS =
+  /[ãõçñøåæőűłřšžćśźżęąăâêôơưđ]/i;
+
+/** Why a name is not shown, or null when the reading can be trusted. */
+export function uncertainReason(word: string): string | null {
+  const lower = word.toLowerCase();
+  if (LEXICON[lower.replace(/[^a-z]/g, "")]) return null;
+  if (MEANINGFUL_DIACRITICS.test(word)) return "accented letters carry the sound";
+  const plain = lower.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z]/g, "");
+  for (const [pattern, reason] of LANGUAGE_DEPENDENT) {
+    if (pattern.test(plain)) return reason;
+  }
+  return null;
+}
+
 function longestMatch<T>(word: string, at: number, table: Array<[string, T]>): [string, T] | null {
   for (const [pattern, value] of table) {
     if (word.startsWith(pattern, at)) return [pattern, value];
@@ -161,7 +210,7 @@ function normalize(input: string): { word: string; silentE: boolean } {
 
   // Collapse doubled consonants: "Rossi" is 로시, not 로스시. Doubled l/m/n/r
   // survive because Korean can carry them as a coda plus a fresh onset.
-  word = word.replace(/([bcdfgkpstvz])\1/g, "$1");
+  word = word.replace(/([bcdfgkprstvz])\1/g, "$1");
 
   // "h" is silent after a vowel: John → 존, Sarah → 사라, Anh → 안.
   word = word.replace(/([aeiouy])h(?![aeiouy])/g, "$1");
@@ -182,14 +231,22 @@ function transliterateWord(raw: string): string {
   const pieces: Piece[] = [];
   let index = 0;
   let pendingOnset = "";
+  /** The spelling behind pendingOnset, because ㄹ from "l" and ㄹ from "r" behave
+   *  differently and the jamo alone cannot tell them apart. */
+  let pendingLetter = "";
 
-  const pushConsonantBefore = (sound: string) => {
+  const pushConsonantBefore = (sound: string, followedByL = false, letter = "") => {
     const previous = pieces[pieces.length - 1];
+    if (letter === "r") {
+      // Its own syllable, never a coda.
+      pieces.push({ onset: "ㄹ", nucleus: "ㅡ", coda: followedByL ? "ㄹ" : "" });
+      return;
+    }
     if (previous && !previous.coda && CODA_FOR[sound]) {
       previous.coda = CODA_FOR[sound];
       return;
     }
-    pieces.push({ onset: sound, nucleus: supportVowel(sound), coda: "" });
+    pieces.push({ onset: sound, nucleus: supportVowel(sound), coda: followedByL ? "ㄹ" : "" });
   };
 
   while (index < word.length) {
@@ -232,6 +289,10 @@ function transliterateWord(raw: string): string {
 
     if (vowel) {
       const [pattern, jamo] = vowel;
+      if (pendingOnset && pattern.startsWith("w")) {
+        pushConsonantBefore(pendingOnset);
+        pendingOnset = "";
+      }
       pieces.push({ onset: pendingOnset || "ㅇ", nucleus: jamo[0], coda: "" });
       for (const extra of jamo.slice(1)) {
         pieces.push({ onset: "ㅇ", nucleus: extra, coda: "" });
@@ -249,18 +310,34 @@ function transliterateWord(raw: string): string {
     if (pattern === "c" && VOWEL_LETTERS.has(word[index + 1] ?? "") && "eiy".includes(word[index + 1])) {
       sound = "ㅅ";
     }
-    if (pattern === "g" && "eiy".includes(word[index + 1] ?? "")) {
+    const afterG = word[index + 1] ?? "";
+    if (pattern === "g" && afterG !== "" && "eiy".includes(afterG)) {
       sound = "ㅈ"; // George → 조지
     }
 
-    if (pendingOnset) pushConsonantBefore(pendingOnset);
+    if (pendingOnset) pushConsonantBefore(pendingOnset, pattern === "l", pendingLetter);
+
+    if (pattern === "x") {
+      // /ks/: the k closes the syllable before it and the s carries on, which is
+      // what makes Alexandra 알렉산드라 and Max 맥스.
+      const previous = pieces[pieces.length - 1];
+      if (previous && !previous.coda) previous.coda = "ㄱ";
+      else pieces.push({ onset: "ㅋ", nucleus: "ㅡ", coda: "" });
+      pendingOnset = "ㅅ";
+      index += 1;
+      continue;
+    }
+
     pendingOnset = sound;
+    pendingLetter = pattern;
     index += pattern.length;
   }
 
   if (pendingOnset) {
     const previous = pieces[pieces.length - 1];
-    if (!silentE && previous && !previous.coda && CODA_FOR[pendingOnset]) {
+    // A word-final "r" does close the syllable — Peter is 피터, not 피터르 — so
+    // only the pre-consonant case above is changed.
+    if (previous && !previous.coda && CODA_FOR[pendingOnset]) {
       previous.coda = CODA_FOR[pendingOnset];
     } else {
       // A final consonant Korean cannot close on takes a supporting ㅡ, which is
@@ -287,6 +364,7 @@ export function toHangulName(name: string): string | null {
   const words = trimmed.split(/\s+/).filter((word) => /[A-Za-z]/.test(word));
   if (!words.length) return null;
 
+  if (words.some((word) => uncertainReason(word))) return null;
   const converted = words.map(transliterateWord);
   if (converted.some((word) => !word)) return null;
   return converted.join(" ");
@@ -306,4 +384,27 @@ export function displayNameForGreeting(fullName: string): {
   return hangul
     ? { display: hangul, original, romanized: true }
     : { display: original, original, romanized: false };
+}
+
+/**
+ * Whether to offer a member their name written in Hangul, and what to write.
+ *
+ * Korean members are excluded outright. For most of them the question never
+ * arises — a name already in Hangul returns null above — but a Korean who signed
+ * in with a romanised Google name would otherwise be shown "유민 킴" as though it
+ * were their name, when it is 김유민. Guessing the spelling back is not possible,
+ * so the offer is simply not made: the country on the account and a Korean
+ * interface are both taken as "this person already writes their own name".
+ */
+export function hangulNameOffer(input: {
+  fullName: string;
+  country?: string | null;
+  locale?: string | null;
+}): { hangul: string; original: string } | null {
+  if ((input.country ?? "").toUpperCase() === "KR") return null;
+  if ((input.locale ?? "").toLowerCase().startsWith("ko")) return null;
+
+  const original = input.fullName.trim();
+  const hangul = toHangulName(original);
+  return hangul ? { hangul, original } : null;
 }

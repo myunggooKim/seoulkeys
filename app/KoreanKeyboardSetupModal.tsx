@@ -155,7 +155,12 @@ export function KoreanKeyboardSetupModal({
         <footer className="modal-footer">
           <div className="shortcut-tip">
             <span>💡 {tr(locale, "Quick Switch Shortcut:", "한/영 자판 빠른 전환 단축키:")}</span>
-            <kbd>Win + Space</kbd> {tr(locale, "(Win)", "(윈도우)")} &nbsp; | &nbsp; <kbd>Ctrl + Space</kbd> {tr(locale, "(Mac)", "(맥)")}
+            <span className="shortcut-pair">
+              <kbd>Win + Space</kbd> {tr(locale, "(Win)", "(윈도우)")}
+            </span>
+            <span className="shortcut-pair">
+              <kbd>Ctrl + Space</kbd> {tr(locale, "(Mac)", "(맥)")}
+            </span>
           </div>
           <button type="button" className="button button-primary" onClick={onClose}>
             {tr(locale, "Done", "확인 완료")}

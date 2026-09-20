@@ -1,16 +1,5 @@
-# Allow indexing for major search engine crawlers (Google, Naver, Yandex, Bing)
-User-agent: Googlebot
-Allow: /
-
-User-agent: Yeti
-Allow: /
-
-User-agent: Yandex
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
+# One shared group keeps private application routes excluded consistently for
+# search and advertising crawlers while leaving every public lesson crawlable.
 User-agent: *
 Allow: /
 Disallow: /admin

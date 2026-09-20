@@ -1,37 +1,42 @@
 export const dynamic = "force-dynamic";
 
+// The previous version declared ten hreflang alternates for the homepage
+// (?lang=ko, ?lang=ja, …). Locale is resolved in the browser, so every one of
+// those URLs served byte-identical English HTML — Search Console filed the whole
+// set as "duplicate, no user-selected canonical". Real hreflang belongs here only
+// once the server actually renders a different document per locale.
+const pages = [
+  { loc: "https://seoulkeys.com/", changefreq: "daily", priority: "1.0" },
+  { loc: "https://seoulkeys.com/learn", changefreq: "weekly", priority: "0.9" },
+  { loc: "https://seoulkeys.com/learn/hangul", changefreq: "monthly", priority: "0.9" },
+  { loc: "https://seoulkeys.com/learn/korean-keyboard-layout", changefreq: "monthly", priority: "0.8" },
+  { loc: "https://seoulkeys.com/learn/add-korean-keyboard", changefreq: "monthly", priority: "0.8" },
+  { loc: "https://seoulkeys.com/learn/hangul-syllable-blocks", changefreq: "monthly", priority: "0.8" },
+  { loc: "https://seoulkeys.com/learn/type-batchim", changefreq: "monthly", priority: "0.8" },
+  { loc: "https://seoulkeys.com/learn/type-double-consonants-and-vowels", changefreq: "monthly", priority: "0.8" },
+  { loc: "https://seoulkeys.com/learn/korean-touch-typing", changefreq: "monthly", priority: "0.8" },
+  { loc: "https://seoulkeys.com/learn/korean-typing-mistakes", changefreq: "monthly", priority: "0.8" },
+  { loc: "https://seoulkeys.com/learn/korean-typing-practice-plan", changefreq: "monthly", priority: "0.8" },
+  { loc: "https://seoulkeys.com/about", changefreq: "monthly", priority: "0.5" },
+  { loc: "https://seoulkeys.com/contact", changefreq: "monthly", priority: "0.5" },
+  { loc: "https://seoulkeys.com/legal", changefreq: "monthly", priority: "0.3" },
+];
+
+const lastmod = "2026-09-03";
+
 export async function GET() {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  <url>
-    <loc>https://seoulkeys.com/</loc>
-    <lastmod>2026-07-26</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://seoulkeys.com/" />
-    <xhtml:link rel="alternate" hreflang="ko" href="https://seoulkeys.com/?lang=ko" />
-    <xhtml:link rel="alternate" hreflang="ja" href="https://seoulkeys.com/?lang=ja" />
-    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://seoulkeys.com/?lang=zh-Hans" />
-    <xhtml:link rel="alternate" hreflang="es" href="https://seoulkeys.com/?lang=es" />
-    <xhtml:link rel="alternate" hreflang="fr" href="https://seoulkeys.com/?lang=fr" />
-    <xhtml:link rel="alternate" hreflang="de" href="https://seoulkeys.com/?lang=de" />
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://seoulkeys.com/?lang=pt-BR" />
-    <xhtml:link rel="alternate" hreflang="ru" href="https://seoulkeys.com/?lang=ru" />
-    <xhtml:link rel="alternate" hreflang="ar" href="https://seoulkeys.com/?lang=ar" />
-  </url>
-  <url>
-    <loc>https://seoulkeys.com/legal</loc>
-    <lastmod>2026-07-26</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
-  </url>
-  <url>
-    <loc>https://seoulkeys.com/my</loc>
-    <lastmod>2026-07-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${pages
+  .map(
+    (p) => `  <url>
+    <loc>${p.loc}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>${p.changefreq}</changefreq>
+    <priority>${p.priority}</priority>
+  </url>`,
+  )
+  .join("\n")}
 </urlset>`;
 
   return new Response(xml, {

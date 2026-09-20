@@ -29,10 +29,39 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
-    // 1. Static asset bypass for SEO and verification files (sitemap, robots, naver, etc.)
+    // Keep one public origin without changing request semantics. 308 is used
+    // deliberately: unlike 301/302, clients must preserve the method and body
+    // when retrying POST/PUT requests on the canonical URL.
+    const isProductionHost = url.hostname === "seoulkeys.com" || url.hostname === "www.seoulkeys.com";
+    if (isProductionHost && (url.protocol !== "https:" || url.hostname !== "seoulkeys.com")) {
+      url.protocol = "https:";
+      url.hostname = "seoulkeys.com";
+      url.port = "";
+      return new Response(null, {
+        status: 308,
+        headers: {
+          location: url.toString(),
+          "cache-control": request.method === "GET" || request.method === "HEAD"
+            ? "public, max-age=3600"
+            : "private, no-store",
+        },
+      });
+    }
+
+    // The app router is the single source of truth for the dynamic sitemap.
+    if (url.pathname === "/sitemap.xml") {
+      return handler.fetch(request, env, ctx);
+    }
+
+    // robots.txt is a real public asset. Routing it through vinext's static-file
+    // adapter currently returns a 200 response with an empty body, so serve the
+    // asset binding directly and keep the crawler policy intact.
+    if (url.pathname === "/robots.txt") {
+      return env.ASSETS.fetch(request);
+    }
+
+    // 1. Static asset bypass for verification files (naver, Bing, etc.)
     if (
-      url.pathname === "/sitemap.xml" ||
-      url.pathname === "/robots.txt" ||
       url.pathname.startsWith("/naver") ||
       url.pathname.endsWith(".html") ||
       url.pathname.endsWith(".xml") ||

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { Locale } from "./locale-detection";
 import { clearSignedOutFlag } from "./sign-out";
+import { tr } from "./ui-i18n";
 
 type GoogleCredentialResponse = { credential?: string };
 
@@ -23,6 +25,26 @@ type GoogleIdentity = {
 export type SignupRole = "student" | "teacher";
 
 const GSI_SRC = "https://accounts.google.com/gsi/client";
+
+function googleButtonLocale(locale: Locale): string {
+  if (locale === "zh-Hans") return "zh_CN";
+  if (locale === "zh-Hant") return "zh_TW";
+  return locale.replace("-", "_");
+}
+
+function localizedSignInError(locale: Locale, message?: string): string {
+  if (
+    message === "This Google account is already linked to another member"
+    || message === "This email is linked to a different Google account"
+  ) {
+    return tr(
+      locale,
+      "This Google account is already linked to another member.",
+      "이 Google 계정은 이미 다른 회원에게 연결되어 있습니다.",
+    );
+  }
+  return tr(locale, "Sign-in failed. Please try again.", "로그인에 실패했습니다. 다시 시도해 주세요.");
+}
 
 function loadGoogleScript(): Promise<GoogleIdentity | null> {
   return new Promise((resolve) => {
@@ -50,6 +72,7 @@ export function GoogleSignIn({
   labelKo = "구글 계정으로 계속하기",
   labelEn = "Continue with Google",
   koreanUi = true,
+  locale,
   redirectTo,
   showRoleChoice = true,
 }: {
@@ -57,10 +80,12 @@ export function GoogleSignIn({
   labelKo?: string;
   labelEn?: string;
   koreanUi?: boolean;
+  locale?: Locale;
   /** Overrides the role-based destination the server picks. */
   redirectTo?: string;
   showRoleChoice?: boolean;
 }) {
+  const activeLocale = locale ?? (koreanUi ? "ko" : "en");
   const buttonRef = useRef<HTMLDivElement>(null);
   const [discoveredClientId, setDiscoveredClientId] = useState("");
   const [status, setStatus] = useState<"idle" | "working" | "error">("idle");
@@ -86,10 +111,10 @@ export function GoogleSignIn({
       .catch(() => {
         if (!active) return;
         setStatus("error");
-        setMessage(koreanUi ? "구글 로그인을 불러오지 못했습니다." : "Could not load Google Sign-In.");
+        setMessage(tr(activeLocale, "Could not load Google Sign-In.", "구글 로그인을 불러오지 못했습니다."));
       });
     return () => { active = false; };
-  }, [clientId, koreanUi]);
+  }, [activeLocale, clientId]);
 
   useEffect(() => {
     if (!effectiveClientId) return;
@@ -106,7 +131,7 @@ export function GoogleSignIn({
           body: JSON.stringify({ credential: response.credential, role: roleRef.current }),
         });
         const detail = await result.json().catch(() => ({})) as { error?: string; redirectTo?: string };
-        if (!result.ok) throw new Error(detail.error || "Sign-in failed");
+        if (!result.ok) throw new Error(localizedSignInError(activeLocale, detail.error));
 
         // This was a deliberate sign-in, so stop suppressing the session.
         clearSignedOutFlag();
@@ -114,7 +139,11 @@ export function GoogleSignIn({
       } catch (error) {
         if (cancelled) return;
         setStatus("error");
-        setMessage(error instanceof Error ? error.message : "Sign-in failed");
+        setMessage(
+          error instanceof Error
+            ? error.message
+            : localizedSignInError(activeLocale),
+        );
       }
     };
 
@@ -122,7 +151,7 @@ export function GoogleSignIn({
       if (cancelled || !google?.accounts?.id || !buttonRef.current) {
         if (!cancelled && !google) {
           setStatus("error");
-          setMessage(koreanUi ? "구글 로그인을 불러오지 못했습니다." : "Could not load Google Sign-In.");
+          setMessage(tr(activeLocale, "Could not load Google Sign-In.", "구글 로그인을 불러오지 못했습니다."));
         }
         return;
       }
@@ -140,19 +169,20 @@ export function GoogleSignIn({
         shape: "pill",
         text: "signin_with",
         logo_alignment: "left",
+        locale: googleButtonLocale(activeLocale),
       });
     });
 
     return () => { cancelled = true; };
-  }, [effectiveClientId, koreanUi, redirectTo]);
+  }, [activeLocale, effectiveClientId, redirectTo]);
 
   return (
     <div className="google-signin">
-      <p className="google-signin-label">{koreanUi ? labelKo : labelEn}</p>
+      <p className="google-signin-label">{tr(activeLocale, labelEn, labelKo)}</p>
 
       {showRoleChoice && (
         <fieldset className="signup-role">
-          <legend>{koreanUi ? "어떤 계정으로 시작할까요?" : "How will you use Seoul Keys?"}</legend>
+          <legend>{tr(activeLocale, "How will you use Seoul Keys?", "어떤 계정으로 시작할까요?")}</legend>
           <div className="signup-role-options">
             <label className={role === "student" ? "selected" : ""}>
               <input
@@ -163,8 +193,8 @@ export function GoogleSignIn({
                 onChange={() => setRole("student")}
               />
               <span aria-hidden="true">🙋</span>
-              <b>{koreanUi ? "혼자 배우기" : "I'm learning"}</b>
-              <small>{koreanUi ? "내 진도와 리워드를 저장합니다." : "Save your own progress and rewards."}</small>
+              <b>{tr(activeLocale, "I'm learning", "혼자 배우기")}</b>
+              <small>{tr(activeLocale, "Save your own progress and rewards.", "내 진도와 리워드를 저장합니다.")}</small>
             </label>
             <label className={role === "teacher" ? "selected" : ""}>
               <input
@@ -175,15 +205,15 @@ export function GoogleSignIn({
                 onChange={() => setRole("teacher")}
               />
               <span aria-hidden="true">🎓</span>
-              <b>{koreanUi ? "선생님입니다" : "I'm a teacher"}</b>
-              <small>{koreanUi ? "반을 만들고 학생 진도를 관리합니다." : "Create classes and track your students."}</small>
+              <b>{tr(activeLocale, "I'm a teacher", "선생님입니다")}</b>
+              <small>{tr(activeLocale, "Create classes and track your students.", "반을 만들고 학생 진도를 관리합니다.")}</small>
             </label>
           </div>
         </fieldset>
       )}
 
       <div ref={buttonRef} className="google-signin-button" />
-      {status === "working" && <p className="google-signin-status">{koreanUi ? "로그인 중…" : "Signing in…"}</p>}
+      {status === "working" && <p className="google-signin-status">{tr(activeLocale, "Signing in…", "로그인 중…")}</p>}
       {status === "error" && <p className="google-signin-status error">{message}</p>}
     </div>
   );

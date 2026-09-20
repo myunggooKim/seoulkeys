@@ -1,5 +1,5 @@
 {
-  "name": "hangeul-pop",
+  "name": "seoulkeys",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -8,9 +8,11 @@
   "scripts": {
     "dev": "vinext dev",
     "build": "vinext build",
+    "deploy": "npm run build && tsx scripts/prepare-deploy-config.mts && tsx scripts/deploy-cloudflare-version.mts",
     "start": "vinext start",
     "typecheck": "tsc --noEmit",
     "audio:manifest": "tsx scripts/build-korean-audio-manifest.mts",
+    "audio:all": "npm run audio:manifest && .\\.venv-tts\\Scripts\\python.exe scripts\\generate_static_korean_audio.py --quiet",
     "audio:drills": "npm run audio:manifest && .\\.venv-tts\\Scripts\\python.exe scripts\\generate_static_korean_audio.py --prefix drill --force",
     "test": "npm run typecheck && npm run build && tsx --test tests/*.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern scratchpad --ignore-pattern public/uiaudit.js",

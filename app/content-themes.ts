@@ -3,6 +3,8 @@
 // generation, conversation practice — pulls from that theme's banks. The word
 // generators extend these endlessly, so a theme never runs out.
 
+import { expandedThemeSentences, expandedThemeWords } from "./expanded-content";
+
 export type ThemeId = "travel" | "business" | "friends" | "reading";
 
 export type ThemeWord = { word: string; meaningKo: string; meaningEn: string; difficulty?: 1 | 2 | 3 };
@@ -33,6 +35,7 @@ const travel: LearningTheme = {
   blurbKo: "공항·교통·숙소·주문·길찾기 — 한국 여행에서 바로 쓰는 말",
   blurbEn: "Airports, transit, hotels, ordering, directions — words you use on a Korea trip.",
   words: [
+    ...expandedThemeWords.travel,
     { word: "공항", meaningKo: "비행기가 뜨고 내리는 곳", meaningEn: "airport", difficulty: 1 },
     { word: "여권", meaningKo: "해외에서 쓰는 신분증", meaningEn: "passport", difficulty: 1 },
     { word: "표", meaningKo: "타거나 들어갈 때 내는 것", meaningEn: "a ticket", difficulty: 1 },
@@ -63,6 +66,7 @@ const travel: LearningTheme = {
     { word: "탑승구", meaningKo: "비행기 타러 가는 문", meaningEn: "a boarding gate", difficulty: 3 },
   ],
   sentences: [
+    ...expandedThemeSentences.travel,
     { korean: "화장실이 어디예요?", translationEn: "Where is the restroom?", situationKo: "길 찾기", situationEn: "Finding a place" },
     { korean: "이 주소로 가 주세요.", translationEn: "Please take me to this address.", situationKo: "택시", situationEn: "Taking a taxi" },
     { korean: "이거 얼마예요?", translationEn: "How much is this?", situationKo: "쇼핑", situationEn: "Shopping" },
@@ -88,6 +92,7 @@ const business: LearningTheme = {
   blurbKo: "인사·회의·이메일·존댓말 — 한국 직장에서 통하는 말",
   blurbEn: "Greetings, meetings, email, honorifics — language that works at a Korean workplace.",
   words: [
+    ...expandedThemeWords.business,
     { word: "회사", meaningKo: "일하는 조직", meaningEn: "a company", difficulty: 1 },
     { word: "회의", meaningKo: "모여서 의논하는 자리", meaningEn: "a meeting", difficulty: 2 },
     { word: "명함", meaningKo: "이름과 직함이 적힌 카드", meaningEn: "a business card", difficulty: 2 },
@@ -116,6 +121,7 @@ const business: LearningTheme = {
     { word: "협력", meaningKo: "힘을 합쳐 함께함", meaningEn: "cooperation", difficulty: 2 },
   ],
   sentences: [
+    ...expandedThemeSentences.business,
     { korean: "처음 뵙겠습니다. 잘 부탁드립니다.", translationEn: "Nice to meet you. I look forward to working with you.", situationKo: "첫 인사", situationEn: "First meeting" },
     { korean: "명함 한 장 주시겠어요?", translationEn: "May I have your business card?", situationKo: "인사", situationEn: "Greeting" },
     { korean: "회의는 몇 시에 시작해요?", translationEn: "What time does the meeting start?", situationKo: "회의", situationEn: "Meetings" },
@@ -139,6 +145,7 @@ const friends: LearningTheme = {
   blurbKo: "자기소개·취미·SNS·리액션 — 한국인과 친해지는 대화",
   blurbEn: "Intros, hobbies, social media, reactions — talk that makes Korean friends.",
   words: [
+    ...expandedThemeWords.friends,
     { word: "친구", meaningKo: "가깝게 지내는 사람", meaningEn: "a friend", difficulty: 1 },
     { word: "취미", meaningKo: "즐겨 하는 일", meaningEn: "a hobby", difficulty: 1 },
     { word: "약속", meaningKo: "만나기로 정한 것", meaningEn: "plans to meet", difficulty: 1 },
@@ -167,6 +174,7 @@ const friends: LearningTheme = {
     { word: "추천", meaningKo: "좋은 것을 권함", meaningEn: "a recommendation", difficulty: 2 },
   ],
   sentences: [
+    ...expandedThemeSentences.friends,
     { korean: "우리 친구 하자!", translationEn: "Let's be friends!", situationKo: "친해지기", situationEn: "Getting close" },
     { korean: "취미가 뭐예요?", translationEn: "What are your hobbies?", situationKo: "자기소개", situationEn: "Intro" },
     { korean: "인스타 아이디 알려줄래?", translationEn: "Can you tell me your Instagram?", situationKo: "SNS", situationEn: "Social media" },
@@ -190,14 +198,15 @@ const reading: LearningTheme = {
   blurbKo: "간판·메뉴·표지판 읽기 — 한글을 소리 내어 읽는 힘",
   blurbEn: "Reading signs, menus, and labels — the power to sound out Hangul.",
   words: [
+    ...expandedThemeWords.reading,
     { word: "입구", meaningKo: "들어가는 곳", meaningEn: "entrance", difficulty: 1 },
     { word: "출구", meaningKo: "나가는 곳", meaningEn: "exit", difficulty: 1 },
     { word: "정지", meaningKo: "멈추라는 표시", meaningEn: "stop", difficulty: 1 },
     { word: "주의", meaningKo: "조심하라는 말", meaningEn: "caution", difficulty: 1 },
     { word: "금지", meaningKo: "하지 말라는 것", meaningEn: "prohibited", difficulty: 2 },
     { word: "안내", meaningKo: "알려 주는 것", meaningEn: "information", difficulty: 1 },
-    { word: "영업중", meaningKo: "지금 문을 연 상태", meaningEn: "open (for business)", difficulty: 2 },
-    { word: "준비중", meaningKo: "아직 준비하는 중", meaningEn: "preparing / not yet open", difficulty: 2 },
+    { word: "영업 중", meaningKo: "지금 문을 연 상태", meaningEn: "open (for business)", difficulty: 2 },
+    { word: "준비 중", meaningKo: "아직 준비하는 중", meaningEn: "preparing / not yet open", difficulty: 2 },
     { word: "할인", meaningKo: "값을 깎아 줌", meaningEn: "a discount", difficulty: 2 },
     { word: "무료", meaningKo: "돈을 안 받음", meaningEn: "free of charge", difficulty: 1 },
     { word: "가격", meaningKo: "물건의 값", meaningEn: "a price", difficulty: 1 },
@@ -218,6 +227,7 @@ const reading: LearningTheme = {
     { word: "주차장", meaningKo: "차를 세우는 곳", meaningEn: "a parking lot", difficulty: 2 },
   ],
   sentences: [
+    ...expandedThemeSentences.reading,
     { korean: "여기 입구가 어디예요?", translationEn: "Where is the entrance here?", situationKo: "표지판", situationEn: "Signs" },
     { korean: "지금 영업 중이에요?", translationEn: "Are you open right now?", situationKo: "가게", situationEn: "At a shop" },
     { korean: "이거 무료예요?", translationEn: "Is this free?", situationKo: "가격", situationEn: "Prices" },

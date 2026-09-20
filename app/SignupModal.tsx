@@ -63,6 +63,7 @@ export function SignupModal({ open, onClose, locale }: {
           <GoogleSignIn
             clientId={clientId}
             koreanUi={koreanUi}
+            locale={locale}
             labelKo="구글 계정으로 계속하기"
             labelEn="Continue with Google"
           />

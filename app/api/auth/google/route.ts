@@ -5,6 +5,7 @@ import { getLearningProfile } from "../../../../db/learning";
 import { dailyVisits, learningProgress, rewards, users } from "../../../../db/schema";
 import {
   classifySignIn,
+  googleSubjectHasDifferentOwner,
   normalizeAccountEmail,
   normalizeSignupRole,
   resolveMemberRole,
@@ -103,12 +104,23 @@ export async function POST(request: Request) {
         && user.googleSubject
         && existing.googleSubject !== user.googleSubject
       ) {
-        return Response.json({ error: "This email is linked to a different Google account" }, { status: 409 });
+        const [subjectOwner] = await db
+          .select({ email: users.email })
+          .from(users)
+          .where(eq(users.googleSubject, user.googleSubject))
+          .limit(1);
+
+        if (googleSubjectHasDifferentOwner(subjectOwner?.email, email)) {
+          return Response.json({ error: "This Google account is already linked to another member" }, { status: 409 });
+        }
       }
 
       await db.update(users).set({
         displayName: user.displayName,
-        googleSubject: existing.googleSubject ?? user.googleSubject,
+        // The ID token has a Google-verified email. Rebind stale legacy
+        // subjects for that same email while the uniqueness check above keeps
+        // one Google identity from taking over a different member.
+        googleSubject: user.googleSubject,
         country: existing.country || validCountry,
         lastLoginAt: nowIso,
         loginCount: existing.loginCount + 1,

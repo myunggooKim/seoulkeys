@@ -32,3 +32,19 @@ export function resolveMemberRole(
 export function isTeacherRole(role: string): role is "teacher" | "org_admin" {
   return role === "teacher" || role === "org_admin";
 }
+
+/**
+ * A verified Google email is the account's stable ownership proof. Google can
+ * legitimately issue a new subject after an account migration, so an old
+ * subject may be replaced as long as the new one is not owned by another
+ * Seoul Keys account.
+ */
+export function googleSubjectHasDifferentOwner(
+  subjectOwnerEmail: string | null | undefined,
+  verifiedEmail: string,
+): boolean {
+  return Boolean(
+    subjectOwnerEmail
+    && normalizeAccountEmail(subjectOwnerEmail) !== normalizeAccountEmail(verifiedEmail),
+  );
+}
