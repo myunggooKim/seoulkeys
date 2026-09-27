@@ -57,6 +57,13 @@ Cloudflare Web Analytics, last 24 hours as inspected during this task:
 Previous production version (rollback target):
 `8960edf2-7626-4625-9385-bc05fea7781f`.
 
+Activated `21d6f72f-b5bc-4d5c-b897-0cbb9ceabfd9` at 100% production traffic.
+Post-deployment checks: home, learning library, pulse and the 295,956-byte WebP
+return 200 on `seoulkeys.com`. The home uses `page-DI8vJbfH.js`; in the live
+signed-in browser the existing session remains valid, the 1-day/1,000-beat badge
+is present, both hand-image layers load, and no browser errors or horizontal
+document overflow were observed. These are functional checks, not an LCP trace.
+
 No database migration, role changes, class creation/deletion, new cron,
 notification campaign, paid AI call, dependency upgrade or authentication
 removal is part of this task. Teacher-account end-to-end flows are not claimed
