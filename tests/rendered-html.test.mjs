@@ -96,7 +96,7 @@ test("connects animated anatomical hands, pausable practice, Enter evaluation, s
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
-  assert.match(page, /\/images\/typing-hands-v2\.png/);
+  assert.match(page, /\/images\/typing-hands-v2-lossless\.webp/);
   assert.match(page, /hand-rest-image/);
   assert.match(page, /hand-press-layer/);
   assert.match(page, /pressedFinger/);

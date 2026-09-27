@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
+import { hasAvailablePulse } from "../app/CommunityPulse.tsx";
 
 const migrationUrl = new URL("../migrations/0001_community_pulse_rollup.sql", import.meta.url);
 
@@ -74,4 +75,16 @@ test("pulse reads only the rollup and visible tabs poll once a minute", async ()
   assert.doesNotMatch(route, /FROM (visitors|learning_progress|daily_visits)/);
   assert.match(component, /const POLL_MS = 60_000/);
   assert.match(component, /const read = \(\) => \{\s*if \(document\.visibilityState !== "visible"\) return;/);
+});
+
+test("a temporary counter failure cannot remove the board or replace valid totals with zeros", async () => {
+  assert.equal(hasAvailablePulse(null), false);
+  assert.equal(hasAvailablePulse({ learners: 0, countries: 0, liveNow: 0 }), false);
+  assert.equal(hasAvailablePulse({ learners: 878, countries: 69, liveNow: 0 }), true);
+  for (const invalid of [-1, NaN, Infinity, 1.5]) {
+    assert.equal(hasAvailablePulse({ learners: invalid, countries: 69, liveNow: 1 }), false);
+  }
+  const source = await readFile(new URL("../app/CommunityPulse.tsx", import.meta.url), "utf8");
+  assert.match(source, /if \(active && hasAvailablePulse\(data\)\) setPulse\(data\)/);
+  assert.doesNotMatch(source, /return null/);
 });

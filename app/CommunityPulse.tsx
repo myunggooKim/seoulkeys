@@ -10,6 +10,12 @@ type Pulse = {
   liveNow: number;
 };
 
+export function hasAvailablePulse(data: Pulse | null): data is Pulse {
+  return data !== null
+    && [data.learners, data.countries, data.liveNow].every((value) => Number.isSafeInteger(value) && value >= 0)
+    && data.countries + data.learners > 0;
+}
+
 const POLL_MS = 60_000;
 const HEARTBEAT_MS = 45_000;
 const VISITOR_KEY = "seoulkeys-visitor";
@@ -60,7 +66,7 @@ export function CommunityPulse({ locale }: { locale: Locale }) {
       if (document.visibilityState !== "visible") return;
       void fetch("/api/pulse", { cache: "no-store" })
         .then((response) => (response.ok ? response.json() : null))
-        .then((data: Pulse | null) => { if (active && data) setPulse(data); })
+        .then((data: Pulse | null) => { if (active && hasAvailablePulse(data)) setPulse(data); })
         .catch(() => {});
     };
 
@@ -94,7 +100,10 @@ export function CommunityPulse({ locale }: { locale: Locale }) {
       .split("")
       .map((character, index) => <b key={index}>{character}</b>);
 
-  if (pulse && countries !== null && learners !== null && countries + learners === 0) return null;
+  // The endpoint returns all zeros when its datastore is temporarily unavailable.
+  // Keep the reserved readout (or the last valid figures) rather than removing
+  // it after paint and moving the notice/practice screen. Zero is not a new
+  // cumulative total on this established service.
 
   /* The viewer is on the site, so this is never below one and never reads as an
      empty room. It is the only figure here that falls as well as rises. */

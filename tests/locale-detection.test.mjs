@@ -5,6 +5,7 @@ import {
   localeSourceStorageKey,
   localeStorageKey,
   manualLocaleSource,
+  needsLocaleCountryLookup,
   readManualLocalePreference,
   resolveVisitorLocale,
   saveManualLocalePreference,
@@ -36,6 +37,19 @@ test("respects a supported non-English browser language before geography", () =>
   assert.equal(resolveVisitorLocale({ languages: ["pt-BR"], countryCode: "KR" }), "pt-BR");
   assert.equal(resolveVisitorLocale({ languages: ["ko-KR"], countryCode: "US" }), "ko");
   assert.equal(resolveVisitorLocale({ languages: ["zh-TW"], countryCode: "US" }), "zh-Hant");
+});
+
+test("skips country requests only when geography cannot change the language", () => {
+  for (const language of ["ko-KR", "ja-JP", "zh-TW", "pt-BR", "ta-IN", "fr-FR"]) {
+    assert.equal(needsLocaleCountryLookup([language]), false);
+    const local = resolveVisitorLocale({ languages: [language] });
+    for (const countryCode of ["KR", "US", "BR", "TW", "IN"]) {
+      assert.equal(resolveVisitorLocale({ languages: [language], countryCode }), local);
+    }
+  }
+  for (const languages of [["en-US"], ["sv-SE"], [], ["en-US", "ko-KR"]]) {
+    assert.equal(needsLocaleCountryLookup(languages), true);
+  }
 });
 
 test("falls back to English only when no supported regional signal exists", () => {

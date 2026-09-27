@@ -135,6 +135,14 @@ function browserLocale(language: string | undefined): Locale | null {
   return localeByBrowserCode[normalized.split("-")[0]] ?? null;
 }
 
+// A supported non-English primary browser language wins over geography in
+// resolveVisitorLocale. Asking the server for a country cannot change that
+// answer, so it must not hold the first localized frame behind a network hop.
+export function needsLocaleCountryLookup(languages: readonly string[]): boolean {
+  const primary = browserLocale(languages[0]);
+  return !primary || primary === "en";
+}
+
 export function resolveVisitorLocale({
   languages,
   timeZone,
