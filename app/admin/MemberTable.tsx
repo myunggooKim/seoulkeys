@@ -293,56 +293,69 @@ export function MemberTable({
         </section>
       )}
 
-      <div className="member-directory-bar">
-        <h2>가입자 상세내역 <span>{nf.format(others.length)}명</span></h2>
-        {/* The dimming had no explanation anywhere on screen, and the first
-            reading of a faded row is that the account is gone. It is not — there
-            is no way to leave — so the legend says what it actually means. */}
-        <p className="member-directory-legend">
-          <span className="is-idle-swatch" aria-hidden="true" />
-          흐린 행 = 7일 넘게 접속 없음 (탈퇴 아님)
-        </p>
-        <button
-          type="button"
-          className="owner-group-toggle"
-          onClick={() => setGrouped((on) => !on)}
-          aria-pressed={grouped}
-        >
-          {grouped ? "한 목록으로 보기" : "선생님 · 학습자 나눠 보기"}
-        </button>
-      </div>
+      <details className={styles.memberDisclosure}>
+        <summary className={styles.disclosureSummary}>
+          <span className={styles.disclosureTitle} role="heading" aria-level={2}>가입자 상세내역 <span>{nf.format(others.length)}명</span></span>
+          <span className={styles.disclosureAction}>
+            <span className={styles.whenClosed}>목록 보기 ↓</span>
+            <span className={styles.whenOpen}>목록 접기 ↑</span>
+          </span>
+        </summary>
 
-      <div className="owner-sort-controls" role="group" aria-label="가입자 정렬">
-        <label>
-          <span>정렬 기준</span>
-          <select
-            value={sortKey}
-            onChange={(event) => chooseSort(event.target.value as SortKey)}
-          >
-            {COLUMNS.map((column) => (
-              <option key={column.key} value={column.key}>
-                {column.hint ?? column.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          type="button"
-          onClick={() => setDirection((current) => current === "asc" ? "desc" : "asc")}
-          aria-label={`정렬 방향: ${direction === "asc" ? "오름차순" : "내림차순"}`}
-        >
-          {direction === "asc" ? "오름차순 ↑" : "내림차순 ↓"}
-        </button>
-      </div>
+        <div className={styles.disclosureBody}>
+          <div className="member-directory-bar">
+            {/* The dimming had no explanation anywhere on screen, and the first
+                reading of a faded row is that the account is gone. It is not — there
+                is no way to leave — so the legend says what it actually means. */}
+            <p className="member-directory-legend">
+              <span className="is-idle-swatch" aria-hidden="true" />
+              흐린 행 = 7일 넘게 접속 없음 (탈퇴 아님)
+            </p>
+            <button
+              type="button"
+              className="owner-group-toggle"
+              onClick={() => setGrouped((on) => !on)}
+              aria-pressed={grouped}
+            >
+              {grouped ? "한 목록으로 보기" : "선생님 · 학습자 나눠 보기"}
+            </button>
+          </div>
 
-      {grouped ? (
-        <>
-          {section("🎓 선생님", teachers, "선생님 계정이 아직 없습니다.")}
-          {section("🙋 학습자", learners, "학습자 계정이 아직 없습니다.")}
-        </>
-      ) : (
-        section("전체", everyone, "아직 가입자가 없습니다.")
-      )}
+          <div className="owner-sort-controls" role="group" aria-label="가입자 정렬">
+            <label>
+              <span>정렬 기준</span>
+              <select
+                value={sortKey}
+                onChange={(event) => chooseSort(event.target.value as SortKey)}
+              >
+                {COLUMNS.map((column) => (
+                  <option key={column.key} value={column.key}>
+                    {column.hint ?? column.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={() => setDirection((current) => current === "asc" ? "desc" : "asc")}
+              aria-label={`정렬 방향: ${direction === "asc" ? "오름차순" : "내림차순"}`}
+            >
+              {direction === "asc" ? "오름차순 ↑" : "내림차순 ↓"}
+            </button>
+          </div>
+
+          <div className={styles.listScroll} role="region" aria-label="가입자 목록" tabIndex={0}>
+            {grouped ? (
+              <>
+                {section("🎓 선생님", teachers, "선생님 계정이 아직 없습니다.")}
+                {section("🙋 학습자", learners, "학습자 계정이 아직 없습니다.")}
+              </>
+            ) : (
+              section("전체", everyone, "아직 가입자가 없습니다.")
+            )}
+          </div>
+        </div>
+      </details>
     </div>
   );
 }
