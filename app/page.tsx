@@ -3017,13 +3017,20 @@ export default function Home() {
               or an assistant is most likely to land them on. */}
           <Link href="/learn">{tr(locale, "Learning guides", "학습 가이드")}</Link>
           <a href="/my">{t.navProgress}</a>
-          {/* Signed-in members need a way out from the home page too, not only
-              from /my. */}
-          {signedIn === true && (
-            <button type="button" className="signout-link" onClick={() => { void signOutEverywhere(); }}>
-              {tr(locale, "Sign out", "로그아웃")}
-            </button>
-          )}
+          {/* Reserve both translated labels in one slot so authentication never
+              moves the menu or the board. Reuse the existing sign-in dialog. */}
+          <button
+            type="button"
+            className="signout-link header-auth-button"
+            disabled={signedIn === null}
+            onClick={() => {
+              if (signedIn === true) void signOutEverywhere();
+              else if (signedIn === false) setSignupOpen(true);
+            }}
+          >
+            <span aria-hidden={signedIn === true}>{tr(locale, "Sign in", "로그인")}</span>
+            <span aria-hidden={signedIn !== true}>{tr(locale, "Sign out", "로그아웃")}</span>
+          </button>
         </nav>
         <CommunityPulse locale={locale} />
         </div>

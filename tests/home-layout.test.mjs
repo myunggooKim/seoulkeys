@@ -25,8 +25,23 @@ test("compact home spacing is desktop-only and cannot shrink expanded practice o
 test("desktop categories retain their original header centre while the wider board hangs below", async () => {
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(css, /@media \(min-width: 901px\) \{\s*\.topbar > \.header-navigation \{ padding-block: 0; \}/);
-  assert.match(css, /\.header-navigation > \.live-board \{[^}]*position: absolute;[^}]*inset-block-start: calc\(50% \+ 20px\);[^}]*width: max\(100%, 400px\);/s);
+  assert.match(css, /\.header-navigation > \.live-board \{[^}]*position: absolute;[^}]*inset-block-start: calc\(50% \+ 18px\);[^}]*width: max\(100%, 400px\);[^}]*padding-block: 3px;/s);
   assert.match(css, /\.header-navigation \.live-board-cell \{ flex: 0 0 auto;/);
   assert.match(css, /\.header-navigation \.live-board-digits \{ flex: 0 0 auto;/);
   assert.match(css, /\.header-navigation \.live-board \{[^}]*width: 400px;[^}]*max-width: 100%;/s);
+});
+
+test("sign-in and sign-out occupy the same slot and reuse the existing account actions", async () => {
+  const [page, css] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  const auth = page.slice(page.indexOf('className="signout-link header-auth-button"'), page.indexOf('</button>', page.indexOf('className="signout-link header-auth-button"')));
+  assert.match(auth, /disabled=\{signedIn === null\}/);
+  assert.match(auth, /if \(signedIn === true\) void signOutEverywhere\(\);/);
+  assert.match(auth, /else if \(signedIn === false\) setSignupOpen\(true\);/);
+  assert.match(auth, /aria-hidden=\{signedIn === true\}.*"Sign in", "로그인"/);
+  assert.match(auth, /aria-hidden=\{signedIn !== true\}.*"Sign out", "로그아웃"/);
+  assert.match(css, /\.header-auth-button > span \{ grid-area: 1 \/ 1; \}/);
+  assert.match(css, /\.header-auth-button > span\[aria-hidden="true"\] \{ visibility: hidden; \}/);
 });

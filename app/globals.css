@@ -11387,6 +11387,15 @@ html[lang="ko"] .hangul-guide span {
 }
 .header-navigation .nav-links { justify-content: flex-start; }
 .header-navigation .nav-links a { padding-block: 4px; border-bottom-width: 2px; }
+.header-navigation .header-auth-button {
+  display: grid;
+  padding-block: 4px;
+  border-bottom: 2px solid transparent;
+  line-height: inherit;
+  text-underline-offset: 3px;
+}
+.header-auth-button > span { grid-area: 1 / 1; }
+.header-auth-button > span[aria-hidden="true"] { visibility: hidden; }
 .header-navigation .live-board {
   flex: 0 0 auto;
   width: 400px;
@@ -11409,9 +11418,10 @@ html[lang="ko"] .hangul-guide span {
   .header-navigation > .live-board {
     position: absolute;
     inset-inline-start: 0;
-    inset-block-start: calc(50% + 20px);
+    inset-block-start: calc(50% + 18px);
     width: max(100%, 400px);
     max-width: none;
+    padding-block: 3px;
   }
 }
 
