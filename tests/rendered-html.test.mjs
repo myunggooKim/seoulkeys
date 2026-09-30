@@ -128,7 +128,7 @@ test("connects animated anatomical hands, pausable practice, Enter evaluation, s
   assert.match(page, /practiceFocusMode/);
   assert.match(page, /beginPracticeFocusTransition/);
   assert.match(page, /}, 620\)/);
-  assert.match(page, /showHeroIntroduction/);
+  assert.match(page, /returnPracticeHome/);
   assert.match(page, /소개 영역 다시 펼치기/);
   assert.match(page, /totalPracticeSecondsRef\.current \+ elapsedSeconds/);
   assert.match(page, /Restore the learning position, never the previous page's running timer state/);

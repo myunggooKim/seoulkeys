@@ -109,7 +109,7 @@ test("both practice views fit the visual viewport and never reset the lesson whe
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
-  assert.match(page, /className="practice-focus-exit"[^>]*onClick=\{\(\) => setPracticeFocusMode\(false\)\}/);
+  assert.match(page, /className="practice-focus-exit"[^>]*onClick=\{returnPracticeHome\}/);
   assert.match(page, /window\.visualViewport\?\.height \?\? window\.innerHeight/);
   assert.match(page, /notice\.getBoundingClientRect\(\)\.height \+ 16/);
   assert.match(css, /\.hero\.practice-focus-mode \.practice-stage \{[^}]*position: fixed/s);
@@ -124,7 +124,7 @@ test("the current key is high contrast in theatre and the existing exit is named
   ]);
   assert.equal((page.match(/tr\(locale, "Go home", "홈으로"\)/g) ?? []).length, 2);
   assert.doesNotMatch(page, /tr\(locale, "Show intro", "소개 보기"\)/);
-  assert.match(page, /className="practice-focus-exit"[^>]*onClick=\{\(\) => setPracticeFocusMode\(false\)\}/);
+  assert.match(page, /className="practice-focus-exit"[^>]*onClick=\{returnPracticeHome\}/);
   assert.match(css, /\.practice-card\.has-theatre \.finger-callout kbd \{[^}]*background: #ffe16b; color: #152032;/s);
   assert.match(css, /\.practice-card\.has-theatre \.finger-callout kbd\.single-key \{ font-size: 22px; \}/);
   const luminance = hex => {
@@ -133,4 +133,15 @@ test("the current key is high contrast in theatre and the existing exit is named
     return channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722;
   };
   assert.ok((luminance("ffe16b") + .05) / (luminance("152032") + .05) > 12);
+});
+
+test("home exits theatre to basic and preserves the current lesson and input", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const home = page.slice(page.indexOf('  function returnPracticeHome()'), page.indexOf('  function startTodayLesson()'));
+  assert.match(home, /setPracticeFocusMode\(false\)/);
+  assert.match(home, /setPracticeView\("basic"\)/);
+  assert.match(home, /window\.clearTimeout\(practiceFocusTimerRef\.current\)/);
+  assert.match(home, /getElementById\("top"\)\?\.scrollIntoView/);
+  assert.doesNotMatch(home, /setTyped|setLessonIndex|setLessonStarted|setLessonPaused|setElapsedSeconds|setLessonEvaluation/);
+  assert.match(page, /onClick=\{practiceFocusMode \|\| practicePreparing \? returnPracticeHome : startTodayLesson\}/);
 });

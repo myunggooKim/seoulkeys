@@ -1547,22 +1547,16 @@ export default function Home() {
     };
   }, [soundMenuOpen]);
 
-  /* Publishes the real height of the chrome above the hero — header plus notice
-     bar — as --chrome-h, which is what the hero's `calc(100svh - …)` subtracts.
-     It used to be a constant repeated five times in globals.css, and every copy
-     was short of the truth, so the hero reserved height that nothing needed and
-     `align-items: center` showed it as a blank band under the notice bar.
-     Measured rather than assumed: the bar is one line in most languages, two in
-     Tamil, and several on a phone. */
+  // Measure the header (including the compact board) rather than reserving
+  // space for the retired optimization strip. Translated menus can wrap.
   useEffect(() => {
-    const header = document.querySelector("header");
-    const notice = document.querySelector(".desktop-notice-bar");
-    if (!header || !notice) return;
+    const header = document.querySelector(".topbar");
+    if (!header) return;
     let last = "";
     const apply = () => {
       // Document space, so the number is the same whether or not the page is
       // scrolled and whether or not the header is sticky.
-      const height = Math.round(notice.getBoundingClientRect().bottom + window.scrollY);
+      const height = Math.round(header.getBoundingClientRect().bottom + window.scrollY);
       const next = `${height}px`;
       // A zero or absurd reading means layout is not ready; keep the fallback
       // rather than write a number that would collapse the hero.
@@ -1576,12 +1570,8 @@ export default function Home() {
     // the next frame and the fonts are in.
     const frame = requestAnimationFrame(apply);
     document.fonts?.ready.then(apply).catch(() => {});
-    // Body is observed as well: the bar moves whenever anything above it
-    // reflows, which is not something a size observer on the bar alone sees.
-    // `apply` is idempotent, so this settles in one extra pass.
     const observer = new ResizeObserver(apply);
     observer.observe(header);
-    observer.observe(notice);
     observer.observe(document.body);
     window.addEventListener("resize", apply);
     return () => {
@@ -2762,13 +2752,12 @@ export default function Home() {
     }, 620);
   }
 
-  function showHeroIntroduction() {
+  function returnPracticeHome() {
     if (practiceFocusTimerRef.current) window.clearTimeout(practiceFocusTimerRef.current);
     practiceFocusTimerRef.current = null;
     setPracticePreparing(false);
     setPracticeFocusMode(false);
-    setLessonStarted(false);
-    setLessonPaused(false);
+    setPracticeView("basic");
     window.requestAnimationFrame(() => document.getElementById("top")?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
 
@@ -3019,6 +3008,7 @@ export default function Home() {
           <span className="brand-mark" aria-hidden="true">ㅅ</span>
           <span>Seoul Keys</span>
         </a>
+        <div className="header-navigation">
         <nav className="nav-links" aria-label={tr(locale, "Main menu", "메인 메뉴")}>
           <a href="#learn">{t.navLearn}</a>
           <a href="#games">{t.navGames}</a>
@@ -3035,6 +3025,8 @@ export default function Home() {
             </button>
           )}
         </nav>
+        <CommunityPulse locale={locale} />
+        </div>
         <div className="header-tools">
           <div className="sound-menu" ref={soundMenuRef}>
             <button
@@ -3131,35 +3123,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Notice and readout share one row, half each. The board used to sit on a
-          line of its own, spending a whole band of vertical space on two short
-          numbers. */}
-      <div className="notice-row">
-        {/* Completely isolated top notice bar that never invades practice stage */}
-        <div className="desktop-notice-bar" role="note">
-        <span>
-          🖥️ {tr(locale, "Desktop Environment Optimized — Physical Keyboard Recommended for Mobile/Tablet", "데스크톱 환경 최적화 — 모바일·태블릿 접속 시 물리 키보드 연결 권장")}
-          <span style={{ marginInline: "8px", opacity: 0.5 }}>|</span>
-          {/* The "this site is under development" line used to sit here. It was
-              directly above the sign-up call to action, where on a site that saves
-              your streak it reads as "your progress may not survive" — the one
-              doubt most likely to stop someone creating an account. What is left
-              is an invitation to write in, which a finished product carries as a
-              matter of course.
-              Reuses the contact modal instead of a bare mailto: — a visitor without
-              a desktop mail client gets the address and the web-Gmail link either way. */}
-          <button
-            type="button"
-            className="notice-bar-report"
-            onClick={() => setContactModalOpen(true)}
-          >
-            {tr(locale, "Have a suggestion or found a problem? Email us.", "개선 의견이나 문제를 발견하시면 이메일로 알려주세요.")}
-          </button>
-        </span>
-      </div>
-        <CommunityPulse locale={locale} />
-      </div>
-
       <section
         className={`hero stage-${currentPracticeItem.kind} ${practicePreparing ? "practice-preparing" : ""} ${practiceFocusMode ? "practice-focus-mode" : ""}`}
         id="top"
@@ -3200,7 +3163,7 @@ export default function Home() {
             <button
               className={`button hero-focus-toggle ${signedIn === false ? "button-secondary" : "button-primary"}`}
               type="button"
-              onClick={practiceFocusMode || practicePreparing ? showHeroIntroduction : startTodayLesson}
+              onClick={practiceFocusMode || practicePreparing ? returnPracticeHome : startTodayLesson}
               aria-label={practiceFocusMode || practicePreparing ? (tr(locale, "Expand the introduction", "소개 영역 다시 펼치기")) : t.start}
             >
               <span className="hero-focus-label">{practiceFocusMode ? (tr(locale, "Go home", "홈으로")) : practicePreparing ? (tr(locale, "Preparing", "준비 중")) : t.start}</span>
@@ -3222,7 +3185,7 @@ export default function Home() {
             <div className="theme-picker-row">
               {renderThemeChips()}
             </div>
-            {practiceFocusMode && <button className="practice-focus-exit" type="button" onClick={() => setPracticeFocusMode(false)}>{tr(locale, "Go home", "홈으로")} ↗</button>}
+            {practiceFocusMode && <button className="practice-focus-exit" type="button" onClick={returnPracticeHome}>{tr(locale, "Go home", "홈으로")} ↗</button>}
           </div>
 
           <div className="stage-orbit orbit-one" aria-hidden="true" />

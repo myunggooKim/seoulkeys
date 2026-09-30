@@ -11372,6 +11372,42 @@ html[lang="ko"] .hangul-guide span {
   white-space: nowrap;
 }
 
+/* The board sits below the category links, inside the existing header height.
+   This changes its presentation only: one instance keeps the same polling. */
+.topbar > .header-navigation {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 100%;
+  padding-block: 8px;
+}
+.header-navigation .nav-links { justify-content: flex-start; }
+.header-navigation .nav-links a { padding-block: 4px; border-bottom-width: 2px; }
+.header-navigation .live-board {
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 6px 9px;
+  padding: 4px 9px;
+  border-radius: 10px;
+}
+.header-navigation .live-board-cell { gap: 4px; }
+.header-navigation .live-board-digits { gap: 2px; }
+.header-navigation .live-board-digits b { min-width: 13px; padding: 2px; font-size: 12px; }
+.header-navigation .live-board-label { font-size: 10px; letter-spacing: .02em; }
+.header-navigation .live-board-cell.is-now { padding-inline-end: 8px; }
+.header-navigation .live-board-lamp { width: 6px; height: 6px; }
+
+@media (max-width: 900px) {
+  .topbar > .header-navigation { flex: 1 1 auto; }
+  .header-navigation .nav-links { flex-wrap: wrap; gap: 6px 16px; }
+}
+
 .owner-sort-controls button:hover {
   background: color-mix(in srgb, var(--lime) 24%, var(--paper));
 }
@@ -11999,6 +12035,41 @@ body:has(.hero.practice-focus-mode) { overflow: hidden; }
 .practice-focus-mode .is-theatre .hangul-input-options[open] { grid-column: 1 / -1; }
 .practice-focus-mode .is-theatre .typing-feedback { font-size: 12px; line-height: 1.35; margin-top: 4px; }
 .practice-focus-mode .is-theatre .typing-feedback.initial-hint { position: absolute; width: 1px; height: 1px; padding: 0; margin: 0; overflow: hidden; clip-path: inset(50%); }
+/* Only the desktop home preview is compacted. Expanded basic/theatre layouts,
+   readable text sizes and natural overflow on narrow devices stay intact. */
+@media(min-width:901px){
+.hero:not(.practice-focus-mode){align-items:start!important;padding-block:6px 12px!important}
+.hero:not(.practice-focus-mode) .practice-stage{padding-block-end:10px}
+.hero:not(.practice-focus-mode) .global-theme-bar{margin-bottom:6px!important;padding-block:2px!important}
+.hero:not(.practice-focus-mode) .practice-card:not(.has-theatre){padding:12px}
+.hero:not(.practice-focus-mode) .practice-card:not(.has-theatre) .practice-choice-row{margin-block:6px 0!important;gap:6px 12px!important}
+.hero:not(.practice-focus-mode) .practice-choice-row button{min-height:30px;padding-block:5px}
+.hero:not(.practice-focus-mode) .curriculum-progress{margin-block:8px 0}
+.hero:not(.practice-focus-mode) .curriculum-progress li button{min-height:30px;padding-block:4px}
+.hero:not(.practice-focus-mode) .practice-workspace:not(.is-theatre){gap:8px;margin-top:8px}
+.hero:not(.practice-focus-mode) .practice-guidance-column{padding:6px}
+.hero:not(.practice-focus-mode) .finger-callout{padding:6px 8px;margin:0}
+.hero:not(.practice-focus-mode) .keyboard-map.has-3d-guide{padding:5px}
+.hero:not(.practice-focus-mode) .keyboard-map.has-3d-guide .hand-overlay{height:clamp(70px,calc(100svh - 660px),140px);margin-top:3px}
+.hero:not(.practice-focus-mode) .keyboard-map.has-3d-guide .keyboard-row{margin-block:2px}
+.hero:not(.practice-focus-mode) .practice-card.stage-home .keyboard-row.home{transform:none}
+.hero:not(.practice-focus-mode) .typing-panel{padding:10px}
+.hero:not(.practice-focus-mode) .target-sentence{margin-block:6px}
+.hero:not(.practice-focus-mode) .keyboard-tools{margin-top:4px;padding-top:4px}
+.hero:not(.practice-focus-mode) .keyboard-tools>p{margin-block:3px}
+.hero:not(.practice-focus-mode) .next-key-card{min-height:50px;padding:7px;margin-block:4px 2px;gap:8px}
+.hero:not(.practice-focus-mode) .next-key-jamo{width:34px;height:34px;font-size:24px}
+.hero:not(.practice-focus-mode) .key-guide{margin-top:5px}
+.hero:not(.practice-focus-mode) .key-guide kbd{min-height:34px;padding:3px 6px}
+.hero:not(.practice-focus-mode) .key-guide kbd span{font-size:18px;line-height:1.1}
+.hero:not(.practice-focus-mode) .key-guide kbd small{line-height:1.1}
+.hero:not(.practice-focus-mode) .daily-meter{padding:8px;gap:6px}
+.hero:not(.practice-focus-mode) .daily-time{display:flex;flex-wrap:wrap;gap:4px}
+.hero:not(.practice-focus-mode) .daily-time>div{width:auto}
+.hero:not(.practice-focus-mode) .daily-time b{font-size:22px;line-height:1.1}
+.hero:not(.practice-focus-mode) .timer-pause-button{min-width:0;min-height:30px;height:30px;padding:4px 6px}
+.hero:not(.practice-focus-mode) .daily-meter .meter-copy>small{margin-block:3px}
+}
 @media (min-width: 1101px) {
   .practice-focus-mode .is-theatre { grid-template-columns: minmax(0, 1fr) 260px; }
   .practice-focus-mode .is-theatre .daily-time { flex-wrap: nowrap; gap: 4px; }
