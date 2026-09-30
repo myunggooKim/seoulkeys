@@ -21,3 +21,12 @@ test("compact home spacing is desktop-only and cannot shrink expanded practice o
   assert.doesNotMatch(home, /overflow:\s*(hidden|clip)|zoom:|scale\(/);
   assert.match(css, /\.header-navigation \.live-board \{[^}]*max-width: 100%;[^}]*flex-wrap: wrap;/s);
 });
+
+test("desktop categories retain their original header centre while the wider board hangs below", async () => {
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(css, /@media \(min-width: 901px\) \{\s*\.topbar > \.header-navigation \{ padding-block: 0; \}/);
+  assert.match(css, /\.header-navigation > \.live-board \{[^}]*position: absolute;[^}]*inset-block-start: calc\(50% \+ 20px\);[^}]*width: max\(100%, 400px\);/s);
+  assert.match(css, /\.header-navigation \.live-board-cell \{ flex: 0 0 auto;/);
+  assert.match(css, /\.header-navigation \.live-board-digits \{ flex: 0 0 auto;/);
+  assert.match(css, /\.header-navigation \.live-board \{[^}]*width: 400px;[^}]*max-width: 100%;/s);
+});

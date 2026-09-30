@@ -11372,9 +11372,10 @@ html[lang="ko"] .hangul-guide span {
   white-space: nowrap;
 }
 
-/* The board sits below the category links, inside the existing header height.
-   This changes its presentation only: one instance keeps the same polling. */
+/* The board hangs below the categories without moving their original centre.
+   Its reserved width allows more digits without resizing the desktop header. */
 .topbar > .header-navigation {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -11388,20 +11389,31 @@ html[lang="ko"] .hangul-guide span {
 .header-navigation .nav-links a { padding-block: 4px; border-bottom-width: 2px; }
 .header-navigation .live-board {
   flex: 0 0 auto;
-  width: max-content;
+  width: 400px;
   max-width: 100%;
   flex-wrap: wrap;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 6px 9px;
   padding: 4px 9px;
   border-radius: 10px;
 }
-.header-navigation .live-board-cell { gap: 4px; }
-.header-navigation .live-board-digits { gap: 2px; }
+.header-navigation .live-board-cell { flex: 0 0 auto; gap: 4px; }
+.header-navigation .live-board-digits { flex: 0 0 auto; gap: 2px; }
 .header-navigation .live-board-digits b { min-width: 13px; padding: 2px; font-size: 12px; }
 .header-navigation .live-board-label { font-size: 10px; letter-spacing: .02em; }
 .header-navigation .live-board-cell.is-now { padding-inline-end: 8px; }
 .header-navigation .live-board-lamp { width: 6px; height: 6px; }
+
+@media (min-width: 901px) {
+  .topbar > .header-navigation { padding-block: 0; }
+  .header-navigation > .live-board {
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-start: calc(50% + 20px);
+    width: max(100%, 400px);
+    max-width: none;
+  }
+}
 
 @media (max-width: 900px) {
   .topbar > .header-navigation { flex: 1 1 auto; }
