@@ -1,5 +1,6 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
+import { fileURLToPath } from "node:url";
 
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
@@ -15,6 +16,9 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
+    // Addons and the lazily imported WebGLRenderer must share one Three core.
+    // Otherwise the theatre loads a second core and incompatible mesh classes.
+    resolve: { alias: [{ find: /^three$/, replacement: fileURLToPath(new URL("./node_modules/three/src/Three.Core.js", import.meta.url)) }] },
     // Preserve min-width/max-width media queries for older Mac/iOS Safari.
     // The default CSS minifier otherwise emits range queries (Safari 16.4+).
     build: {

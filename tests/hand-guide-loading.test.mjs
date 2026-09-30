@@ -19,15 +19,26 @@ test("the smaller hand guide preserves all visible pixels, alpha and dimensions"
   }
 });
 
-test("the home preload, illustration and pressed-finger mask share one image", async () => {
-  const [layout, page, css] = await Promise.all([
+test("3D rendering is lazy, keeps the original fallback and never duplicates masked photographs", async () => {
+  const [layout, page, guide, css, scene] = await Promise.all([
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/HandGuide.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/hand-guide-scene.ts", import.meta.url), "utf8"),
   ]);
-  assert.match(layout, /if \(path === "\/"\) \{[\s\S]*?hands\.rel = "preload";[\s\S]*?hands\.href = "\/images\/typing-hands-v2-lossless\.webp";/);
-  assert.equal((page.match(/src="\/images\/typing-hands-v2-lossless\.webp"/g) ?? []).length, 2);
-  assert.match(page, /className="hand-rest-image"[^>]*fetchPriority="high"/);
-  assert.equal((css.match(/mask: url\("\/images\/typing-hands-v2-lossless\.webp"\)/g) ?? []).length, 2);
-  assert.doesNotMatch(page + css, /typing-hands-v2\.png/);
+  assert.doesNotMatch(layout + page, /typing-hands-v2/);
+  assert.match(page, /<HandGuide finger=\{displayedFinger\}/);
+  assert.match(guide, /import\("\.\/hand-guide-scene"\)/);
+  assert.match(guide, /IntersectionObserver/);
+  assert.match(guide, /hand-guide-fallback/);
+  assert.doesNotMatch(guide, /clip-path|<svg/);
+  assert.match(css, /\.hand-guide-art\.is-ready \.hand-guide-fallback/);
+  assert.match(css, /\.keyboard-map\.has-3d-guide \.hand-overlay \{ position: relative; inset: auto; height: 160px; margin-block-start: 8px;/);
+  assert.match(scene, /1000 \/ 30/);
+  assert.match(scene, /prefers-reduced-motion/);
+  assert.match(scene, /renderer\.dispose\(\)/);
+  assert.match(scene, /geometry\.dispose\(\)/);
+  assert.match(scene, /document\.removeEventListener\("visibilitychange"/);
+  assert.doesNotMatch(scene, /fetch\(|keydown|keyup|localStorage/);
 });

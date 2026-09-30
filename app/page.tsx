@@ -6,6 +6,10 @@ import { ActivityPreview } from "./ActivityPreview";
 import { CommunityPulse } from "./CommunityPulse";
 import { InstallAppButton } from "./InstallAppButton";
 import { HangulInput, HangulTextarea } from "./HangulTypingField";
+import { WordMeaningText } from "./WordMeaningText";
+import { HandGuide } from "./HandGuide";
+import { TypingTheatre } from "./TypingTheatre";
+import { typingViewCopy } from "./typing-view-copy";
 import { FirstMinuteWarmup } from "./FirstMinuteWarmup";
 import { SyllableGuide } from "./SyllableGuide";
 import { firstMinuteToolsReleased } from "./release-features";
@@ -1377,7 +1381,7 @@ type TargetCharState = { character: string; state: string };
 function renderTargetCharacters(characters: TargetCharState[], bindings: CharRange[]) {
   const nodes: React.ReactNode[] = [];
   const charSpan = (entry: TargetCharState, index: number) => (
-    <span className={entry.state} key={`${entry.character}-${index}`}>{entry.character}</span>
+    <span className={entry.state} data-gloss-index={index} key={`${entry.character}-${index}`}>{entry.character}</span>
   );
 
   let index = 0;
@@ -1665,6 +1669,11 @@ export default function Home() {
   // flag so that pressing Enter again re-triggers the cue animation.
   const [continueNudge, setContinueNudge] = useState(0);
   const [keyboardLayout, setKeyboardLayout] = useState<KeyboardLayout>("qwerty");
+  const [practiceView, setPracticeView] = useState<"basic" | "theatre">("basic");
+  const [theatreUnavailable, setTheatreUnavailable] = useState(false);
+  const theatreKeyLegend = useCallback((code: string) => keyboardLegend(keyboardLayout, code), [keyboardLayout]);
+  const restoreBasicView = useCallback(() => { setTheatreUnavailable(true); setPracticeView("basic"); }, []);
+  const viewText = typingViewCopy(locale);
   const [lessonIndex, setLessonIndex] = useState(0);
   const [practiceTrack, setPracticeTrack] = useState<PracticeTrack>("guided");
   const [lessonStarted, setLessonStarted] = useState(false);
@@ -3227,7 +3236,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Choice Row inside practice card: Holds ONLY the practice track picker for maximum breathing room */}
+            {/* A view changes presentation only, never the learner's practice state. */}
             <div className="practice-choice-row">
               <div className="practice-track-picker" role="group" aria-label={tr(locale, "Choose a practice track", "연습 진행 방식 선택")}>
                 <span>{tr(locale, "Practice track", "진행 방식")}</span>
@@ -3256,6 +3265,12 @@ export default function Home() {
                   {tr(locale, "Sentences only", "문장만")}
                 </button>
               </div>
+              <div className="practice-view-picker" role="group" aria-label={viewText.view}>
+                <span>{viewText.view}</span>
+                <button type="button" aria-pressed={practiceView === "basic"} onClick={() => setPracticeView("basic")}>{viewText.basic}</button>
+                <button type="button" aria-pressed={practiceView === "theatre"} onClick={() => { setTheatreUnavailable(false); setPracticeView("theatre"); beginPracticeFocusTransition(); }}>{viewText.theatre}</button>
+              </div>
+              {theatreUnavailable && <p className="practice-view-notice" role="status">{locale === "ko" ? "극장 그래픽을 열 수 없어 기본 화면으로 돌아왔습니다. 연습은 계속할 수 있어요." : `${viewText.theatre} (3D) → ${viewText.basic}`}</p>}
             </div>
 
             <ol className="curriculum-progress" aria-label={tr(locale, "Selectable Korean typing stages", "선택 가능한 한글 타자 학습 단계")}>
@@ -3276,12 +3291,15 @@ export default function Home() {
             </ol>
 
             {firstMinuteToolsReleased && currentPracticeItem.kind === "home" && <FirstMinuteWarmup locale={locale} />}
-            <div className={`practice-workspace ${masteryPrompt ? "mastery-open" : ""}`}>
+            <div className={`practice-workspace ${masteryPrompt ? "mastery-open" : ""} ${!lessonFinished && !masteryPrompt ? "with-guidance-progress" : ""} ${practiceView === "theatre" && !lessonFinished && !masteryPrompt ? "is-theatre" : ""}`}>
               <div className="practice-input-column">
+                <div className="practice-screen-stage">
+                  {practiceView === "theatre" && !lessonFinished && !masteryPrompt && (
+                    <TypingTheatre state={{ started: lessonStarted, paused: lessonPaused, code: activePracticeKey?.code ?? null, pressed: pressedCode, hint: true, jamo: activePracticeKey?.jamo }} legend={theatreKeyLegend} onFailure={restoreBasicView} />
+                  )}
                 <div className="typing-panel">
               {lessonPaused && (
                 <div className="practice-pause-banner" role="status">
-                  <span aria-hidden="true">Ⅱ</span>
                   <div><b>{tr(locale, "Practice paused", "연습 일시정지")}</b><small>{tr(locale, "The timer and hand motion are paused.", "타이머와 손 동작이 멈췄습니다.")}</small></div>
                 </div>
               )}
@@ -3295,14 +3313,16 @@ export default function Home() {
                   characters and their state classes are untouched — only the
                   nesting of a few of them changes — so scoring is unaffected. */}
               <div className="target-preview-row">
-                <p
+                <WordMeaningText
+                  text={targetSentence}
+                  locale={locale}
                   className={`target-sentence${atInnerSentenceEnd || continueNudge > 0 ? " mid-sentence" : ""}`}
                   lang="ko"
                   aria-label={targetSentence}
                   key={targetSentence}
                 >
                   {renderTargetCharacters(targetCharStates, targetBindings)}
-                </p>
+                </WordMeaningText>
                 <button
                   className="word-pronunciation-button"
                   type="button"
@@ -3432,10 +3452,11 @@ export default function Home() {
                     <div><dt>{tr(locale, "Accuracy", "입력 정확도")}</dt><dd>{lessonEvaluation.accuracy}%</dd></div>
                     {lastAttemptCpm > 0 && <div><dt>{tr(locale, "CPM", "타/분")}</dt><dd>{lastAttemptCpm}</dd></div>}
                   </dl>
-                  {!lessonEvaluation.accepted && sentenceComplete && <button className="retry-practice" type="button" onClick={resetCurrentPractice}>↻ 다시 연습</button>}
+                  {!lessonEvaluation.accepted && sentenceComplete && <button className="retry-practice" type="button" onClick={resetCurrentPractice}>{viewText.clear}</button>}
                 </div>
               )}
 
+                </div>
                 </div>
 
               {masteryPrompt ? (
@@ -3504,7 +3525,7 @@ export default function Home() {
 
                   {activePracticeKey ? (
                     <div className="next-key-card" aria-live="polite">
-                      <span className="next-key-jamo" lang="ko">{activePracticeKey.jamo}</span>
+                      <span className="next-key-jamo" lang="ko">{activePracticeKey.code === "Space" ? "␣" : activePracticeKey.jamo}</span>
                       <span className="next-key-copy">
                         <small>{keyboardText.nextKey}</small>
                         <b>{keyboardText.press} <kbd>{practiceKeyLegend(keyboardLayout, activePracticeKey)}</kbd></b>
@@ -3527,7 +3548,7 @@ export default function Home() {
                   <div className="key-guide" aria-label={tr(locale, "Upcoming Korean keys", "다음 한글 키")}>
                     {upcomingPracticeKeys.map((key, index) => (
                       <kbd className={`${index === 0 ? "active" : ""} ${key.code === "Space" ? "key-space" : ""}`} key={`${key.jamo}-${guideStep + index}`}>
-                        <span lang="ko">{key.jamo}</span>
+                        <span lang="ko">{key.code === "Space" ? "␣" : key.jamo}</span>
                         <small>{practiceKeyLegend(keyboardLayout, key)}</small>
                       </kbd>
                     ))}
@@ -3547,7 +3568,7 @@ export default function Home() {
                     </div>
                     {activePracticeKey && <kbd>{practiceKeyLegend(keyboardLayout, activePracticeKey)}</kbd>}
                   </div>
-                  <div className={`keyboard-map ${currentPracticeItem.kind === "home" ? "home-row-only" : ""}`} aria-label={keyboardText.mapTitle}>
+                  {practiceView !== "theatre" && <div className={`keyboard-map has-3d-guide ${currentPracticeItem.kind === "home" ? "home-row-only" : ""}`} aria-label={keyboardText.mapTitle}>
                     <div className="keyboard-map-legend">
                       <b>{keyboardText.mapTitle}</b>
                       <span><i className="legend-hangul" /> {keyboardText.hangul}</span>
@@ -3570,22 +3591,18 @@ export default function Home() {
                         ))}
                       </div>
                     ))}
-                    <div className={`hand-overlay ${pressedFinger ? "is-pressing" : "is-demonstrating"} target-${handReach}`} aria-label={displayedFingerGuide ? locale === "ko" ? `${displayedFingerGuide.ko}으로 키를 누르는 손 모양` : locale === "en" ? `${displayedFingerGuide.en} pressing motion` : `${tr(locale, "Finger pressing the key")}: ${tr(locale, displayedFingerGuide.en, displayedFingerGuide.ko)}` : "Complete hand position guide"}>
-                      {/* The resting hand and the clipped moving finger use the same anatomical artwork, so the guide changes pose without abstract lines. */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img className="hand-rest-image" src="/images/typing-hands-v2-lossless.webp" width={1776} height={888} fetchPriority="high" alt="" aria-hidden="true" />
-                      {displayedFinger && (
-                        <span className={`hand-press-layer ${displayedFinger}`} aria-hidden="true" key={`${displayedFinger}-${activePracticeKey?.code ?? "complete"}`}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src="/images/typing-hands-v2-lossless.webp" width={1776} height={888} alt="" />
-                        </span>
-                      )}
+                    <div className={`keyboard-row space${activePracticeKey?.code === "Space" ? " active-row" : ""}`}>
+                      <kbd className={`key-space${activePracticeKey?.code === "Space" ? " active" : ""}`} aria-label={`Space: ${keyboardText.press} ${keyboardLegend(keyboardLayout, "Space")}`}>
+                        <span aria-hidden="true">␣</span>
+                        <small>{keyboardLegend(keyboardLayout, "Space")}</small>
+                      </kbd>
                     </div>
-                  </div>
+                    <div className={`hand-overlay ${pressedFinger ? "is-pressing" : "is-demonstrating"} target-${handReach}`} aria-label={displayedFingerGuide ? locale === "ko" ? `${displayedFingerGuide.ko}으로 키를 누르는 손 모양` : locale === "en" ? `${displayedFingerGuide.en} pressing motion` : `${tr(locale, "Finger pressing the key")}: ${tr(locale, displayedFingerGuide.en, displayedFingerGuide.ko)}` : "Complete hand position guide"}>
+                      <HandGuide finger={displayedFinger} pressing={Boolean(pressedFinger)} paused={lessonPaused} reach={handReach} />
+                    </div>
+                  </div>}
                 </div>
               )}
-            </div>
-
             <div className="daily-meter" id="progress">
               <div className="daily-time">
                 <div><b>{formatPracticeTime(elapsedSeconds)}</b><span>{tr(locale, "/10 min", "/10분")}</span></div>
@@ -3597,9 +3614,9 @@ export default function Home() {
                   aria-label={lessonPaused ? tr(locale, "Resume practice timer", "연습 타이머 다시 시작") : tr(locale, "Pause practice timer", "연습 타이머 일시정지")}
                   onClick={() => changeLessonPause(!lessonPaused)}
                 >
-                  <span aria-hidden="true">{lessonPaused ? "▶" : "Ⅱ"}</span>
-                  {lessonPaused ? tr(locale, "Resume", "계속") : tr(locale, "Pause", "정지")}
+                  {lessonPaused ? tr(locale, "Resume", "계속하기") : tr(locale, "Pause", "일시정지")}
                 </button>
+                <button className="timer-pause-button timer-clear-button" type="button" disabled={!typed || lessonPaused || lessonAccepted || advanceQueued || lessonFinished || Boolean(masteryPrompt)} onClick={resetCurrentPractice}>{viewText.clear}</button>
               </div>
               <div className="meter-copy">
                 <div><span>{tr(locale, "Today’s practice", "오늘의 연습")}</span><b>{dailyProgress}%</b></div>
@@ -3617,6 +3634,7 @@ export default function Home() {
                   <em>{locale === "ko" ? `목표 ${currentMasteryTarget.accuracy}% · ${currentMasteryTarget.cpm}타/분 · ${sessionRounds + 1}회차` : `${tr(locale, "Target")} ${currentMasteryTarget.accuracy}% · ${currentMasteryTarget.cpm} ${tr(locale, "CPM")} · ${tr(locale, "round")} ${sessionRounds + 1}`}</em>
                 </div>
               </div>
+            </div>
             </div>
           </article>
         </div>
@@ -3769,7 +3787,7 @@ export default function Home() {
                   </button>
                 </div>
                 <span className="travel-situation">{tr(locale, currentTravelPhrase.situation)}</span>
-                <blockquote lang="ko">{currentTravelPhrase.korean}</blockquote>
+                <WordMeaningText as="blockquote" text={currentTravelPhrase.korean} locale={locale} lang="ko" />
                 <p>{tr(locale, currentTravelPhrase.meaning)}</p>
                 <div className="phrase-dots" aria-label={locale === "ko" ? `${travelSessionPhrases[travelMode].length}개 중 ${travelIndex + 1}번째 표현` : `${tr(locale, "Phrase")} ${travelIndex + 1} ${tr(locale, "of")} ${travelSessionPhrases[travelMode].length}`}>
                   {travelSessionPhrases[travelMode].map((phrase, index) => (
@@ -3848,7 +3866,7 @@ export default function Home() {
                     <p className="demo-label">{tr(locale, "PUBLISHED CONTENT", "등록 콘텐츠")} · {kpopIndex + 1}/{publishedKpopItems.length}</p>
                     <h3>{currentKpopItem.title}</h3>
                     <p className="kpop-source">{currentKpopItem.sourceTitle || "Original K-POP practice"}{currentKpopItem.creator ? ` · ${currentKpopItem.creator}` : ""}</p>
-                    <blockquote lang="ko">{currentKpopItem.koreanText}</blockquote>
+                    <WordMeaningText as="blockquote" text={currentKpopItem.koreanText} locale={locale} lang="ko" />
                     {currentKpopItem.translation && <p>{currentKpopItem.translation}</p>}
                   </div>
                   <div className="kpop-live-card">
@@ -3903,7 +3921,7 @@ export default function Home() {
                   <span className="spotlight spotlight-two" />
                   <b>{tr(locale, "SCENE", "장면")} {String(screenIndex + 1).padStart(2, "0")}</b>
                 </div>
-                <blockquote lang="ko">“{currentScreenLine.korean}”</blockquote>
+                <WordMeaningText as="blockquote" text={`“${currentScreenLine.korean}”`} locale={locale} lang="ko" />
                 <p>{tr(locale, currentScreenLine.translation)}</p>
                 {(() => {
                   const work = locale === "ko"

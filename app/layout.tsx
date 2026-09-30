@@ -126,18 +126,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               (function(){
                 var root = document.documentElement;
                 var path = window.location.pathname;
-                // This illustration is an observed LCP element on the home
-                // screen. Discover it before hydration, but do not download it
-                // on guide, account or teacher pages that never display it.
-                if (path === "/") {
-                  var hands = document.createElement("link");
-                  hands.rel = "preload";
-                  hands.as = "image";
-                  hands.type = "image/webp";
-                  hands.href = "/images/typing-hands-v2-lossless.webp";
-                  hands.setAttribute("fetchpriority", "high");
-                  document.head.appendChild(hands);
-                }
+                // The 3D hand guide loads independently when its practice pane is visible.
                 var appRoots = ["/", "/my", "/teacher", "/join", "/legal"];
                 var needsAppBoot = appRoots.some(function(route) {
                   return path === route || (route !== "/" && path.indexOf(route + "/") === 0);

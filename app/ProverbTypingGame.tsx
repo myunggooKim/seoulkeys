@@ -1,6 +1,7 @@
 "use client";
 
 import { HangulTextarea } from "./HangulTypingField";
+import { WordMeaningText } from "./WordMeaningText";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cloneContentDeck, createContentDeck, takeContentBatch, type ContentDeck } from "./content-deck";
@@ -100,7 +101,7 @@ export function ProverbTypingGame({
         <span className="travel-situation">
           {localizedProverbKind(current, locale)} · {proverbTr(locale, "round")} {round}
         </span>
-        <blockquote lang="ko">{current.korean}</blockquote>
+        <WordMeaningText as="blockquote" text={current.korean} locale={locale} lang="ko" />
         <p>{localizedProverbMeaning(current, locale)}</p>
         <div
           className="phrase-dots"

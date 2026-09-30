@@ -2062,6 +2062,21 @@ button {
   max-width: 100% !important;
 }
 
+.keyboard-map .keyboard-row.space kbd.key-space {
+  display: flex;
+  width: min(65%, 240px) !important;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.keyboard-map .keyboard-row.space { margin-block-start: 7px; }
+.practice-card .keyboard-row.space kbd.active {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 0 0 4px rgb(199 255 66 / .32), 0 3px 0 var(--shadow-ink);
+}
+
 .key-guide kbd.key-space {
   width: 100% !important;
   aspect-ratio: auto !important;
@@ -2155,6 +2170,38 @@ button {
   direction: ltr;
   pointer-events: none;
 }
+
+/* Display-only additions: fixed tooltip never occupies exercise layout space. */
+.word-meaning-popup {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  max-width: min(260px, calc(100vw - 16px));
+  padding: 10px 13px;
+  border: 1px solid color-mix(in srgb, var(--purple) 30%, var(--edge));
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 7px 24px rgb(0 0 0 / .18);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: normal;
+  overflow-wrap: anywhere;
+  text-align: start;
+}
+.word-meaning-popup b { display: block; margin-block-end: 3px; color: var(--purple); font-size: 14px; }
+
+.keyboard-map.has-3d-guide { flex: 0 0 auto; min-height: 0; height: auto; }
+.keyboard-map.has-3d-guide .hand-overlay { position: relative; inset: auto; height: 160px; margin-block-start: 8px; }
+.practice-guidance-column:has(.hand-guide-art) { align-self: start; }
+.hand-guide-art { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
+.hand-guide-canvas { position: absolute; inset: 0; opacity: 0; }
+.hand-guide-canvas canvas { display: block; width: 100%; height: 100%; filter: drop-shadow(0 5px 4px rgb(45 25 65 / .17)); }
+.hand-guide-art .hand-guide-fallback { position: absolute; inset: 0; object-fit: contain; opacity: .5; }
+.hand-guide-art.is-ready .hand-guide-canvas { opacity: 1; }
+.hand-guide-art.is-ready .hand-guide-fallback { visibility: hidden; }
 
 .hand-overlay img {
   width: 100%;
@@ -2414,6 +2461,54 @@ button {
   border-radius: inherit;
   background: linear-gradient(90deg, var(--lime), var(--yellow));
   transition: width 260ms ease;
+}
+
+/* Reuse the space below the hand guide instead of adding a full-width footer.
+   The existing progress values and timer controls remain the same DOM nodes. */
+.practice-workspace > .daily-meter {
+  grid-column: 1 / -1;
+  margin-block-start: 0;
+  min-width: 0;
+}
+
+@media (min-width: 821px) {
+  @container practicecard (min-width: 471px) {
+    .with-guidance-progress > .practice-input-column {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+    }
+    .with-guidance-progress > .practice-guidance-column {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .with-guidance-progress > .daily-meter {
+      grid-column: 2;
+      grid-row: 2;
+      align-self: start;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .with-guidance-progress > .daily-meter .daily-time {
+      flex: 0 0 172px;
+      max-width: 100%;
+    }
+    .with-guidance-progress > .daily-meter .meter-copy {
+      flex: 1 1 150px;
+      min-width: 0;
+    }
+    .with-guidance-progress > .daily-meter .meter-copy > small {
+      display: block;
+      margin-block-start: 6px;
+    }
+    .with-guidance-progress > .daily-meter .mastery-target-line {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+    .with-guidance-progress > .daily-meter .mastery-target-line > em {
+      grid-column: 1 / -1;
+      justify-self: start;
+    }
+  }
 }
 
 .activity-section {
@@ -11577,4 +11672,75 @@ html[lang="ko"] .hangul-guide span {
   background: var(--ink);
   /* The same fade the rows get, so the swatch is the thing it describes. */
   opacity: .62;
+}
+
+/* Optional theatre: scoped to practice only; the normal site keeps its palette. */
+.practice-screen-stage { display: contents; }
+.practice-choice-row:has(.practice-view-picker) { flex-wrap: wrap !important; gap: 12px 20px; }
+.practice-view-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-inline-start: auto; }
+.practice-view-picker > span { font-size: 13px; font-weight: 800; color: var(--muted); }
+.practice-view-picker button { padding: 7px 14px; border: 2px solid var(--edge); border-radius: 999px; background: var(--paper); color: var(--ink); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+.practice-view-picker button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.practice-view-picker button:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; }
+.practice-view-notice { flex-basis: 100%; margin: 0; font-size: 13px; color: var(--muted); }
+.daily-meter .daily-time { flex-wrap: wrap; }
+.daily-meter .timer-pause-button { min-width: 82px; min-height: 36px; height: auto; padding: 7px 11px; font-size: 13px; line-height: 1.4; }
+.daily-meter .timer-clear-button { border-color: #8792ad; background: #243047; }
+.practice-workspace.is-theatre { grid-template-columns: minmax(0, 1fr) 230px; grid-template-rows: auto 1fr; align-items: start; }
+.practice-workspace.is-theatre > .practice-input-column { grid-column: 1; grid-row: 1 / span 2; }
+.practice-workspace.is-theatre > .practice-guidance-column { grid-column: 2; grid-row: 1; }
+.practice-workspace.is-theatre > .daily-meter { grid-column: 2; grid-row: 2; align-self: start; display: flex; flex-wrap: wrap; }
+.practice-workspace.is-theatre .practice-screen-stage {
+  position: relative; display: grid; min-width: 0; min-height: 610px; isolation: isolate;
+  border: 2px solid #647193; border-radius: 24px; overflow: hidden;
+  background: radial-gradient(ellipse at 50% 20%, #253655 0%, #0a1020 65%);
+  box-shadow: inset 0 0 70px #050b18, 0 8px 22px rgb(15 23 42 / .16);
+}
+.typing-theatre-canvas { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.typing-theatre-canvas canvas { display: block; width: 100%; height: 100%; }
+.practice-workspace.is-theatre .typing-panel {
+  z-index: 1; align-self: start; justify-self: center; width: calc(100% - 40px); min-width: 0;
+  margin-block: 18px 0; padding: 18px; max-height: 320px; overflow: auto;
+  border: 2px solid #a2bde4; border-radius: 15px;
+  color: #edf4ff; background: linear-gradient(160deg, #192a47, #0c182d);
+  box-shadow: 0 0 28px rgb(159 195 255 / .18), 0 15px 36px #060b18;
+}
+.practice-workspace.is-theatre .typing-meta { color: #c2d4f2; font-size: 14px; flex-wrap: wrap; gap: 6px; }
+.practice-workspace.is-theatre .target-sentence { color: #fff; font-size: clamp(28px, 3vw, 42px); margin-block: 14px; }
+.practice-workspace.is-theatre .target-sentence .correct { color: #70f1d6; }
+.practice-workspace.is-theatre .target-sentence .incorrect { color: #ff9eae; }
+.practice-workspace.is-theatre .target-sentence .pending { color: #f5f7ff; }
+.practice-workspace.is-theatre .target-sentence .current { color: #fff16b; }
+.practice-workspace.is-theatre .typing-input { background: #071225; color: #fff; border-color: #90abd1; font-size: 22px; }
+.practice-workspace.is-theatre .typing-input::placeholder { color: #b3c3db; }
+.practice-workspace.is-theatre .typing-feedback,
+.practice-workspace.is-theatre .hangul-input-tools { color: #d9e7fa; }
+.practice-workspace.is-theatre .typing-feedback { font-size: 14px; }
+.practice-workspace.is-theatre .hangul-input-tools small { font-size: 13px; }
+.practice-workspace.is-theatre .hangul-input-tools button,
+.practice-workspace.is-theatre .hangul-input-options summary { color: #eef4ff; background: #223552; border-color: #819bbd; font-size: 13px; }
+.practice-workspace.is-theatre .typing-panel > details { color: #edf4ff; background: #223552; border-color: #819bbd; }
+.practice-workspace.is-theatre .practice-pause-banner { color: var(--ink); }
+.practice-workspace.is-theatre .finger-callout { margin: 0; font-size: 15px; }
+.practice-workspace.is-theatre .finger-callout small { font-size: 13px; }
+.practice-workspace.is-theatre .finger-callout b { font-size: 16px; }
+.practice-workspace.is-theatre .meter-copy > div:first-child { font-size: 15px; }
+.practice-workspace.is-theatre .meter-copy small,
+.practice-workspace.is-theatre .mastery-target-line { font-size: 12px; line-height: 1.5; }
+@media (max-width: 1100px) {
+  .practice-workspace.is-theatre { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
+  .practice-workspace.is-theatre > .practice-input-column,
+  .practice-workspace.is-theatre > .practice-guidance-column,
+  .practice-workspace.is-theatre > .daily-meter { grid-column: 1; grid-row: auto; }
+  .practice-workspace.is-theatre > .practice-guidance-column { padding: 8px; }
+  .practice-workspace.is-theatre .practice-screen-stage { min-height: 590px; }
+}
+@media (max-width: 600px) {
+  .practice-view-picker { margin-inline-start: 0; }
+  .practice-workspace.is-theatre .practice-screen-stage { min-height: 570px; border-radius: 16px; }
+  .practice-workspace.is-theatre .typing-panel { width: calc(100% - 16px); padding: 11px; margin-block-start: 10px; max-height: 330px; }
+  .practice-workspace.is-theatre .target-preview-row { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .practice-workspace.is-theatre .word-pronunciation-button { justify-self: start; }
+  .practice-workspace.is-theatre .typing-meta { font-size: 12px; }
+  .practice-workspace.is-theatre .typing-input { font-size: 18px; }
 }

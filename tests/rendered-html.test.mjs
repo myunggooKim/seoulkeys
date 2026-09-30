@@ -96,9 +96,8 @@ test("connects animated anatomical hands, pausable practice, Enter evaluation, s
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
-  assert.match(page, /\/images\/typing-hands-v2-lossless\.webp/);
-  assert.match(page, /hand-rest-image/);
-  assert.match(page, /hand-press-layer/);
+  assert.match(page, /<HandGuide finger=\{displayedFinger\}/);
+  assert.doesNotMatch(page, /hand-rest-image|hand-press-layer/);
   assert.match(page, /pressedFinger/);
   assert.match(page, /pressedCode/);
   assert.match(page, /finger-callout/);
@@ -150,13 +149,16 @@ test("connects animated anatomical hands, pausable practice, Enter evaluation, s
   assert.match(page, /선택 가능한 한글 타자 학습 단계/);
   assert.match(page, /한국어 발음 목소리 선택/);
   assert.match(page, /화면 언어 선택/);
-  assert.match(css, /\.hand-overlay img/);
-  assert.match(css, /\.hand-press-layer\.left-pinky/);
-  assert.match(css, /\.hand-press-layer\.right-index/);
+  assert.match(css, /\.hand-guide-art/);
+  assert.match(css, /\.hand-guide-canvas canvas/);
   assert.match(css, /\.practice-workspace/);
-  assert.match(css, /@keyframes real-finger-demonstrate/);
-  assert.match(css, /@keyframes real-finger-press/);
-  assert.match(css, /\.practice-card\.is-paused \.hand-press-layer/);
+  assert.match(page, /pressing=\{Boolean\(pressedFinger\)\}/);
+  assert.match(page, /paused=\{lessonPaused\}/);
+  assert.match(page, /reach=\{handReach\}/);
+  assert.match(page, /keyboard-row space\$\{activePracticeKey\?\.code === "Space"/);
+  assert.match(page, /className=\{`key-space\$\{activePracticeKey\?\.code === "Space"/);
+  assert.match(page, /Space: \$\{keyboardText\.press\} \$\{keyboardLegend\(keyboardLayout, "Space"\)\}/);
+  assert.match(css, /\.keyboard-map \.keyboard-row\.space kbd\.key-space\s*\{[^}]*width: min\(65%, 240px\)/s);
   assert.match(css, /\.word-pronunciation-button/);
   assert.match(css, /\.keyboard-map \{[\s\S]*?isolation: isolate;/);
   assert.match(css, /\.practice-card \.keyboard-row kbd\.active \{\s*z-index: 31 !important;/);
@@ -173,6 +175,25 @@ test("connects animated anatomical hands, pausable practice, Enter evaluation, s
   assert.match(css, /\.hero\.practice-preparing \.practice-stage/);
   assert.match(css, /\.practice-focus-mode \.hero-copy \{\s*position: static;\s*display: flex;/);
   assert.doesNotMatch(css, /\.practice-focus-mode \.hero-copy \{\s*display: none;/);
+});
+
+test("places the unchanged daily meter in the hand-guide column only when two columns fit", async () => {
+  const [page, css] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  const start = page.indexOf('className={`practice-workspace');
+  const end = page.indexOf('</article>', start);
+  const workspace = page.slice(start, end);
+  assert.match(workspace, /!lessonFinished && !masteryPrompt \? "with-guidance-progress"/);
+  assert.match(workspace, /className="daily-meter" id="progress"/);
+  assert.equal((page.match(/id="progress"/g) ?? []).length, 1);
+  assert.match(workspace, /aria-valuenow=\{dailyProgress\}/);
+  assert.match(workspace, /width: `\$\{dailyProgress\}%`/);
+  assert.match(workspace, /onClick=\{\(\) => changeLessonPause\(!lessonPaused\)\}/);
+  assert.match(css, /\.practice-workspace > \.daily-meter\s*\{[^}]*grid-column: 1 \/ -1;/s);
+  assert.match(css, /@media \(min-width: 821px\)\s*\{\s*@container practicecard \(min-width: 471px\)/);
+  assert.match(css, /\.with-guidance-progress > \.daily-meter\s*\{[^}]*grid-column: 2;[^}]*grid-row: 2;/s);
 });
 
 test("ships Enter-confirmed falling words, advancing missing letters, and a real checked crossword", async () => {
