@@ -1906,8 +1906,8 @@ button {
 }
 
 .key-guide {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   margin-block-start: 8px;
   direction: ltr;
@@ -1915,7 +1915,8 @@ button {
 
 .key-guide kbd {
   display: grid;
-  min-width: 0;
+  flex: 0 0 calc((100% - 24px) / 7);
+  min-width: max-content;
   min-height: 35px;
   padding: 3px 5px;
   place-items: center;
@@ -1933,6 +1934,7 @@ button {
   font-size: 11px !important;
   font-weight: 800 !important;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .key-guide kbd.active {
@@ -2078,18 +2080,15 @@ button {
 }
 
 .key-guide kbd.key-space {
-  width: 100% !important;
+  width: auto !important;
   aspect-ratio: auto !important;
   padding: 2px 2px !important;
-  overflow: hidden !important;
 }
 
 .key-guide kbd.key-space small {
   font-size: 11px !important;
   font-weight: 800 !important;
   white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
 }
 
 .keyboard-row kbd.active {
