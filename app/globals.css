@@ -11755,3 +11755,225 @@ html[lang="ko"] .hangul-guide span {
   .practice-workspace.is-theatre .typing-meta { font-size: 12px; }
   .practice-workspace.is-theatre .typing-input { font-size: 18px; }
 }
+
+/* The session is a viewport-sized working surface, not a tall landing card.
+   Only active practice is fixed; leaving it restores the untouched homepage. */
+body:has(.hero.practice-focus-mode) { overflow: hidden; }
+.hero.practice-focus-mode .practice-stage {
+  position: fixed; z-index: 40; inset-block: 12px calc(16px + var(--practice-notice-height, 0px));
+  height: calc(var(--practice-viewport-height, 100dvh) - 28px - var(--practice-notice-height, 0px));
+  inset-inline: max(12px, calc((100vw - var(--site-content-max)) / 2));
+  width: auto !important; max-width: none !important; min-height: 0;
+  padding: 0 !important; display: flex !important; flex-direction: column; gap: 8px;
+  animation: none; transform: none; background: var(--paper); border-radius: 20px;
+}
+.practice-focus-mode .global-theme-bar { flex: 0 0 auto; margin: 0; padding: 5px 10px; gap: 8px; }
+.practice-focus-exit {
+  margin-inline-start: auto; flex: 0 0 auto; padding: 6px 12px; border: 1px solid var(--edge);
+  border-radius: 999px; background: var(--paper); color: var(--ink); font: inherit;
+  font-size: 13px; font-weight: 800; cursor: pointer;
+}
+.practice-focus-exit:focus-visible { outline: 3px solid var(--purple); outline-offset: 2px; }
+.practice-focus-mode .practice-stage > .stage-orbit { display: none; }
+.practice-focus-mode .practice-card {
+  flex: 1 1 0; min-height: 0; height: auto; display: flex !important; flex-direction: column;
+  padding: 14px; overflow: hidden; border-radius: 20px; box-shadow: 4px 4px 0 var(--shadow-ink);
+}
+.practice-focus-mode .practice-card-header { flex: 0 0 auto; gap: 6px 12px; }
+.practice-focus-mode .practice-card-heading { flex-basis: 270px; }
+.practice-focus-mode .card-kicker { font-size: 12px; margin-bottom: 3px; }
+.practice-focus-mode .practice-card h2.practice-instruction { font-size: 15px; line-height: 1.35; max-width: none; }
+.practice-focus-mode .practice-choice-row { flex: 0 0 auto; margin-block: 8px 0; gap: 6px 12px !important; }
+.practice-focus-mode .curriculum-progress { flex: 0 0 auto; margin-block: 8px 0; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
+.practice-focus-mode .practice-workspace { flex: 1 1 0; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; margin-top: 10px; gap: 10px; }
+.practice-focus-mode .practice-input-column { min-height: 0; }
+.practice-focus-mode .typing-panel { min-height: 0; overflow: auto; }
+.practice-focus-mode .practice-guidance-column { min-height: 0; max-height: 100%; overflow: auto; padding: 8px; gap: 8px; }
+.practice-focus-mode .finger-callout { animation: none; }
+.practice-focus-mode .keyboard-map.has-3d-guide { padding-bottom: 8px; }
+.practice-focus-mode .keyboard-map.has-3d-guide .hand-overlay { height: clamp(84px, 20dvh, 160px); margin-top: 4px; transform: none; }
+.practice-focus-mode .keyboard-tools { margin-block: 8px 0; }
+.practice-focus-mode .next-key-card { margin-block: 8px 6px; }
+.practice-focus-mode .daily-meter { padding: 12px; gap: 8px; }
+.practice-focus-mode .daily-time > div > b { font-size: clamp(20px, 2vw, 29px); }
+.practice-focus-mode .is-theatre { grid-template-columns: minmax(0, 1fr) 230px; grid-template-rows: auto minmax(0, 1fr); }
+.practice-focus-mode .is-theatre .practice-screen-stage { height: 100%; min-height: 0; border-radius: 14px; }
+.practice-focus-mode .is-theatre > .practice-input-column { min-height: 0; height: 100%; }
+.practice-focus-mode .is-theatre > .practice-guidance-column { grid-column: 2; grid-row: 1; }
+.practice-focus-mode .is-theatre > .daily-meter { grid-column: 2; grid-row: 2; }
+
+/* Restore the approved room palette only inside the optional theatre. */
+.practice-card.has-theatre { background: #101521; color: #e8edf6; border-color: #505b76; box-shadow: 0 12px 45px #060a1633; }
+.practice-card.has-theatre::before { display: none; }
+.has-theatre .card-kicker, .has-theatre .practice-view-picker > span, .has-theatre .practice-track-picker > span { color: #bac6dc; }
+.has-theatre .practice-instruction { color: #edf2fb; }
+.has-theatre .practice-view-picker button, .has-theatre .practice-track-picker button { color: #dce5f5; background: #20293b; border-color: #64738d; }
+.has-theatre .practice-view-picker button[aria-pressed="true"], .has-theatre .practice-track-picker button.active { background: #b5a1ed; color: #171525; }
+.has-theatre .curriculum-progress li { background: #1d2637; border-color: #4a5973; color: #dce5f5; }
+.has-theatre .curriculum-progress li.current { background: #3b3357; border-color: #b3a0ee; color: #f1ebff; }
+.has-theatre .curriculum-progress li button { color: inherit; }
+.has-theatre .streak { background: #26364b; border-color: #7088ae; color: #e9f1ff; }
+.has-theatre .practice-guidance-column { background: #1a2233; border: 1px solid #56657f; box-shadow: none; }
+.has-theatre .finger-callout { background: #242f45; color: #ecf3ff; border-color: #7188ac; box-shadow: none; }
+.has-theatre .finger-callout small { color: #c5d2e8; }
+.has-theatre .daily-meter { background: #161f30; border: 1px solid #4a5b79; border-radius: 13px; }
+.has-theatre .meter-copy small, .has-theatre .mastery-target-line { color: #bdcce2; }
+.practice-workspace.is-theatre .typing-panel {
+  width: 74%; margin-top: 7%; padding: 14px 18px; max-height: none; overflow: visible;
+  border: 1px solid #8a9cc0; border-radius: 5px;
+  background: linear-gradient(160deg, #1d2a40, #111c30);
+  box-shadow: 0 0 0 5px #080e1a66, 0 20px 35px #03081499;
+}
+.practice-workspace.is-theatre .typing-panel[data-projected="true"] {
+  position: absolute; top: var(--cinema-screen-top); left: var(--cinema-screen-left);
+  margin: 0; width: var(--cinema-screen-width); transform: none;
+}
+.practice-workspace.is-theatre .typing-meta { flex-direction: row; gap: 6px; font-size: 13px; }
+.practice-workspace.is-theatre .target-sentence { margin-block: 8px; font-size: clamp(29px, 2.8vw, 40px); line-height: 1.35; }
+.practice-workspace.is-theatre .typing-input { min-height: 42px; padding: 8px 10px; font-size: 23px; border-radius: 5px; }
+.practice-workspace.is-theatre .typing-feedback { margin-top: 7px; font-size: 13px; }
+.practice-workspace.is-theatre .hangul-input-tools { margin-top: 7px; gap: 5px 8px; }
+.practice-workspace.is-theatre .hangul-input-tools small { font-size: 12px; }
+.practice-workspace.is-theatre .hangul-input-tools button, .practice-workspace.is-theatre .hangul-input-options summary { font-size: 12px; }
+.practice-workspace.is-theatre .hangul-input-screen { position: absolute; inset-inline: 0; top: 100%; z-index: 4; }
+.practice-workspace.is-theatre .lesson-evaluation.rejected { color: #f8e7ed; background: #342231; border-color: #bd738f; }
+.practice-workspace.is-theatre .lesson-evaluation.accepted { color: #d8fff4; background: #16362f; border-color: #74bca5; }
+.practice-workspace.is-theatre .lesson-evaluation p, .practice-workspace.is-theatre .lesson-evaluation dt { color: inherit; }
+.practice-workspace.is-theatre .lesson-evaluation dl div { color: #edf4ff; background: #202b3e; }
+@media (max-width: 1100px) and (min-width: 761px) {
+  .practice-focus-mode .is-theatre { grid-template-columns: minmax(0, 1fr) 190px; }
+  .practice-focus-mode .is-theatre > .practice-input-column { grid-column: 1; grid-row: 1 / span 2; }
+}
+@media (max-height: 720px) {
+  .practice-focus-mode .practice-card { padding: 10px; }
+  .practice-focus-mode .practice-card-header { gap: 4px; }
+  .practice-focus-mode .practice-card h2.practice-instruction { font-size: 13px; }
+  .practice-focus-mode .card-kicker { margin: 0; }
+  .practice-focus-mode .global-theme-bar { padding-block: 2px; }
+  .practice-focus-mode .keyboard-row kbd { min-height: 32px; }
+  .practice-focus-mode .daily-meter { padding: 8px 10px; }
+}
+@media (max-width: 760px) {
+  .hero.practice-focus-mode .practice-stage { inset-inline: 8px; inset-block-start: 8px; }
+  .practice-focus-mode .global-theme-bar { flex-wrap: wrap; }
+  .practice-focus-mode .global-theme-bar > .theme-picker-label { display: none; }
+  .practice-focus-exit { font-size: 12px; padding: 5px 8px; }
+  .practice-focus-mode .practice-card { padding: 9px; }
+  .practice-focus-mode .practice-card-heading { flex-basis: 180px; }
+  .practice-focus-mode .practice-card h2.practice-instruction { font-size: 12px; }
+  .practice-focus-mode .curriculum-progress li button { min-height: 28px; gap: 2px; padding: 3px; }
+  .practice-focus-mode .curriculum-progress li span { width: 17px; height: 17px; font-size: 10px; }
+  .practice-focus-mode .curriculum-progress li b { font-size: 10px; }
+  .practice-focus-mode .practice-workspace:not(.is-theatre) { grid-template-columns: 1fr; grid-template-rows: minmax(0, .8fr) minmax(0, 1fr) auto; }
+  .practice-focus-mode .practice-workspace:not(.is-theatre) > * { grid-column: 1; grid-row: auto; }
+  .practice-focus-mode .keyboard-map.has-3d-guide .hand-overlay { height: 75px; }
+  .practice-focus-mode .keyboard-row kbd { min-height: 27px; }
+  .practice-focus-mode .daily-meter { flex-wrap: nowrap; padding: 8px; }
+  .practice-focus-mode .daily-time { flex: 0 0 auto; }
+  .practice-focus-mode .is-theatre { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr) auto; }
+  .practice-focus-mode .is-theatre > .practice-input-column { grid-column: 1 / -1; grid-row: 1; }
+  .practice-focus-mode .is-theatre > .practice-guidance-column { grid-column: 1; grid-row: 2; padding: 6px; max-height: 160px; }
+  .practice-focus-mode .is-theatre > .daily-meter { grid-column: 2; grid-row: 2; }
+  .practice-focus-mode .is-theatre .mastery-target-line { display: none; }
+  .practice-focus-mode .is-theatre .daily-time { flex-basis: auto; }
+  .practice-focus-mode .is-theatre .finger-callout { padding: 8px; font-size: 13px; }
+  .practice-focus-mode .is-theatre .finger-callout b { font-size: 13px; }
+  .practice-workspace.is-theatre .typing-panel { padding: 10px; }
+  .practice-workspace.is-theatre .target-sentence { font-size: 27px; }
+  .practice-workspace.is-theatre .typing-input { font-size: 20px; }
+}
+
+/* Let the 3D room use the entire working height. Flattening the presentation
+   wrapper (not unmounting it) puts the existing keyboard controls alongside
+   the room instead of subtracting their height from the foreground keyboard. */
+.hero.practice-focus-mode .practice-card h2.practice-instruction { font-size: 15px !important; }
+.practice-focus-mode .typing-panel { flex-shrink: 0; }
+.practice-focus-mode .practice-workspace:not(.is-theatre) .typing-panel .target-sentence { font-size: clamp(26px, 2.6vw, 38px); margin-block: 8px; }
+.practice-focus-mode .practice-workspace:not(.is-theatre) .practice-guidance-column { display: flex; overflow: visible; align-self: stretch; }
+.practice-focus-mode .practice-workspace:not(.is-theatre) .finger-callout { flex: 0 0 auto; padding: 6px 8px; margin: 0; }
+.practice-focus-mode .practice-workspace:not(.is-theatre) .finger-callout b { font-size: 14px; }
+.practice-focus-mode .practice-workspace:not(.is-theatre) .keyboard-map.has-3d-guide {
+  display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; padding: 5px;
+}
+.practice-focus-mode .keyboard-map-legend { flex: 0 0 auto; }
+.practice-focus-mode .keyboard-map.has-3d-guide .keyboard-row { flex: 1 1 26px; min-height: 22px; max-height: 38px; margin-block: 2px; }
+.practice-focus-mode .keyboard-map.has-3d-guide .keyboard-row kbd { height: 100%; min-height: 0; padding: 2px; grid-template-rows: 1fr auto; }
+.practice-focus-mode .keyboard-map.has-3d-guide .keyboard-row kbd > span { font-size: 16px; line-height: 1; }
+.practice-focus-mode .keyboard-map.has-3d-guide .keyboard-row kbd > small { font-size: 10px; line-height: 1; }
+.practice-focus-mode .keyboard-map.has-3d-guide .hand-overlay { flex: 1 1 64px; min-height: 38px; max-height: 160px; height: auto; margin: 2px 0 0; }
+.practice-focus-mode .next-key-card { padding: 7px; gap: 8px; border-radius: 12px; }
+.practice-focus-mode .next-key-jamo { width: 34px; height: 34px; font-size: 24px; }
+.practice-focus-mode .next-key-copy b { font-size: 14px; }
+.practice-focus-mode .key-guide { margin-top: 5px; gap: 4px; }
+.practice-focus-mode .key-guide kbd { min-height: 34px; padding: 3px 6px; }
+.practice-focus-mode .key-guide kbd span { font-size: 18px; }
+.practice-focus-mode .is-theatre { grid-template-rows: auto auto auto minmax(0, 1fr); }
+.practice-focus-mode .is-theatre > .practice-input-column { display: contents; }
+.practice-focus-mode .is-theatre .practice-screen-stage { grid-column: 1; grid-row: 1 / span 4; height: 100%; }
+.practice-focus-mode .is-theatre .keyboard-tools { grid-column: 2; grid-row: 1; margin: 0; padding: 0; display: block; }
+.practice-focus-mode .is-theatre .keyboard-tools > p { display: none; }
+.practice-focus-mode .is-theatre .keyboard-layout-picker { color: #d3dff3; justify-content: space-between; font-size: 13px; }
+.practice-focus-mode .is-theatre .keyboard-layout-picker select { background: #26334a; color: #eaf2ff; border-color: #7384a0; }
+.practice-focus-mode .is-theatre .next-key-card { display: none; }
+.practice-focus-mode .is-theatre > .practice-guidance-column { grid-column: 2; grid-row: 2; overflow: visible; }
+.practice-focus-mode .is-theatre .key-guide { grid-column: 2; grid-row: 3; margin: 0; }
+.practice-focus-mode .is-theatre .key-guide kbd { background: #26334a; color: #eff5ff; border-color: #647694; }
+.practice-focus-mode .is-theatre .key-guide kbd.active { background: #b4a1ed; color: #171525; }
+.practice-focus-mode .is-theatre > .daily-meter { grid-column: 2; grid-row: 4; }
+.practice-focus-mode .has-theatre .finger-callout b { color: #edf4ff; }
+.practice-focus-mode .practice-workspace:has(.lesson-evaluation) .keyboard-tools,
+.practice-focus-mode .practice-workspace:has(.lesson-evaluation) .next-key-card,
+.practice-focus-mode .practice-workspace:has(.lesson-evaluation) .key-guide,
+.practice-focus-mode .practice-workspace:has(.lesson-evaluation) .finger-callout,
+.practice-focus-mode .practice-workspace:has(.lesson-evaluation) .keyboard-map { display: none; }
+.practice-focus-mode .lesson-evaluation { margin: 0; padding: 10px; gap: 8px; grid-template-columns: 1fr; }
+.practice-focus-mode .lesson-evaluation p { margin-top: 4px; font-size: 12px; line-height: 1.4; }
+.practice-focus-mode .lesson-evaluation dl { gap: 5px; margin: 0; }
+.practice-focus-mode .lesson-evaluation dl div { padding: 6px 4px; }
+.practice-focus-mode .lesson-evaluation dd { font-size: 19px; }
+/* Compact chrome, not the 3D keyboard or the input mechanics. */
+.practice-focus-mode .practice-choice-row button { min-height: 30px; padding-block: 5px; }
+.practice-focus-mode .keyboard-tools > p { display: none; }
+.practice-focus-mode .practice-workspace:not(.is-theatre) .keyboard-tools { padding-top: 4px; margin-top: 4px; }
+.practice-focus-mode .practice-workspace:not(.is-theatre) .next-key-card { margin-block: 4px 2px; }
+.practice-focus-mode .practice-workspace:not(.is-theatre) .next-key-copy { display: flex; align-items: center; gap: 8px; }
+.practice-focus-mode .key-guide kbd span { line-height: 1.1; }
+.practice-focus-mode .key-guide kbd small { line-height: 1.1; }
+.practice-focus-mode .practice-card.stage-home .keyboard-row.home { transform: none; }
+.practice-focus-mode .curriculum-progress li button { min-height: 30px; padding-block: 4px; }
+.practice-focus-mode .daily-time { display: flex; flex-wrap: wrap; width: 100%; gap: 6px; }
+.practice-focus-mode .daily-time > div { width: auto; }
+.practice-focus-mode .timer-pause-button { height: 30px; min-height: 30px; min-width: 0; padding: 4px 6px; }
+.practice-focus-mode .timer-pause-button { white-space: nowrap; flex: 0 0 auto; }
+.practice-focus-mode .daily-time b { line-height: 1.1; }
+.practice-focus-mode .daily-meter .meter-copy > small { margin-block: 3px; }
+.practice-focus-mode .mastery-target-line { margin-top: 3px; gap: 3px 6px; }
+.practice-focus-mode .is-theatre .daily-time > div { flex-basis: 100%; }
+.practice-focus-mode .is-theatre .daily-meter .daily-time { flex: 0 0 100%; max-width: none; }
+.practice-focus-mode .is-theatre .finger-callout { padding: 6px; gap: 6px; }
+.practice-focus-mode .is-theatre .finger-callout > span { width: 24px; min-width: 24px; height: 28px; font-size: 18px; }
+.practice-focus-mode .is-theatre .finger-callout small { font-size: 12px; white-space: nowrap; }
+.practice-focus-mode .is-theatre .typing-panel { padding: 8px 12px; }
+.practice-focus-mode .is-theatre .target-sentence { font-size: 32px; margin-block: 4px; line-height: 1.25; }
+.practice-focus-mode .is-theatre .typing-input { height: 42px; min-height: 42px; padding: 6px 10px; font-size: 22px; }
+.practice-focus-mode .is-theatre .hangul-input-tools { display: grid; grid-template-columns: 1fr 1fr; margin-block: 5px 0; gap: 4px 6px; }
+.practice-focus-mode .is-theatre .hangul-input-tools > small { grid-column: 1 / -1; line-height: 1.35; }
+.practice-focus-mode .is-theatre .hangul-input-options[open] { grid-column: 1 / -1; }
+.practice-focus-mode .is-theatre .typing-feedback { font-size: 12px; line-height: 1.35; margin-top: 4px; }
+.practice-focus-mode .is-theatre .typing-feedback.initial-hint { position: absolute; width: 1px; height: 1px; padding: 0; margin: 0; overflow: hidden; clip-path: inset(50%); }
+@media (min-width: 1101px) {
+  .practice-focus-mode .is-theatre { grid-template-columns: minmax(0, 1fr) 260px; }
+  .practice-focus-mode .is-theatre .daily-time { flex-wrap: nowrap; gap: 4px; }
+  .practice-focus-mode .is-theatre .daily-time > div { flex-basis: auto; }
+  .practice-focus-mode .is-theatre .daily-time b { font-size: 22px; }
+}
+@media (max-width: 760px) {
+  .hero.practice-focus-mode .practice-card h2.practice-instruction { font-size: 12px !important; }
+  .practice-focus-mode .is-theatre { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr) auto auto; }
+  .practice-focus-mode .is-theatre .practice-screen-stage { grid-column: 1 / -1; grid-row: 1; }
+  .practice-focus-mode .is-theatre .keyboard-tools { grid-column: 1; grid-row: 3; }
+  .practice-focus-mode .is-theatre > .practice-guidance-column { grid-column: 1; grid-row: 2; }
+  .practice-focus-mode .is-theatre .key-guide { grid-column: 1; grid-row: 3; }
+  .practice-focus-mode .is-theatre .keyboard-tools:has(+ .next-key-card) { display: none; }
+  .practice-focus-mode .is-theatre > .daily-meter { grid-column: 2; grid-row: 2 / span 2; }
+}

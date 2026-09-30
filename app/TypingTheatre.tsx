@@ -23,7 +23,8 @@ export function TypingTheatre({ state, legend, onFailure }: Props) {
     const fail = () => { if (!disposed) failed.current(); };
     void import("./cinema-scene").then(async ({ createCinemaScene }) => {
       if (disposed) return;
-      instance = await createCinemaScene(element, latest.current, legend, fail);
+      instance = await createCinemaScene(element, latest.current, legend, fail,
+        element.parentElement?.querySelector<HTMLElement>(".typing-panel") ?? null);
       if (disposed) { instance.dispose(); return; }
       scene.current = instance;
       instance.update(latest.current);

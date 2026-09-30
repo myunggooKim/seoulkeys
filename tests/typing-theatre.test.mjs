@@ -32,8 +32,10 @@ test("Enter results and coaching cannot create a scrollbar inside the theatre sc
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
   assert.equal((page.match(/const lessonEvaluationPanel = lessonEvaluation &&/g) ?? []).length, 1);
-  assert.match(page, /\{!theatreActive && lessonEvaluationPanel\}/);
-  assert.match(page, /<div className="practice-guidance-column">\s*\{theatreActive && practiceCoachPanel\}\s*\{theatreActive && lessonEvaluationPanel\}/);
+  assert.match(page, /const externalPracticeFeedback = theatreActive \|\| practiceFocusMode/);
+  assert.match(page, /\{!externalPracticeFeedback && lessonEvaluationPanel\}/);
+  assert.match(page, /<div className="practice-guidance-column">\s*\{theatreActive && typingFeedbackPanel\}\s*\{externalPracticeFeedback && practiceCoachPanel\}\s*\{externalPracticeFeedback && lessonEvaluationPanel\}/);
+  assert.match(page, /\{!theatreActive && typingFeedbackPanel\}/);
   assert.match(css, /\.practice-workspace\.is-theatre \.lesson-evaluation \{[^}]*max-height: none; overflow: visible;/s);
   assert.match(css, /\.practice-workspace\.is-theatre \.lesson-evaluation dl \{[^}]*minmax\(0, 1fr\)/s);
 });
@@ -55,4 +57,17 @@ test("optional 3D is lazy, self-hosted, disposable and cannot mutate typing or s
   assert.match(rig, /\/images\/typing-theatre\/\$\{side\}\.glb/);
   assert.match(license, /MIT License/);
   assert.doesNotMatch(component + scene + rig, /localStorage|keydown|keyup|\/api\/|https:\/\//);
+});
+
+test("both practice views fit the visual viewport and never reset the lesson when exiting focus", async () => {
+  const [page, css] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /className="practice-focus-exit"[^>]*onClick=\{\(\) => setPracticeFocusMode\(false\)\}/);
+  assert.match(page, /window\.visualViewport\?\.height \?\? window\.innerHeight/);
+  assert.match(page, /notice\.getBoundingClientRect\(\)\.height \+ 16/);
+  assert.match(css, /\.hero\.practice-focus-mode \.practice-stage \{[^}]*position: fixed/s);
+  assert.match(css, /height: calc\(var\(--practice-viewport-height, 100dvh\) - 28px - var\(--practice-notice-height, 0px\)\)/);
+  assert.match(css, /\.practice-focus-mode \.is-theatre \.practice-screen-stage \{[^}]*height: 100%; min-height: 0/s);
 });

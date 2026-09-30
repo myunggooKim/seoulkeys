@@ -1,0 +1,10 @@
+IBM M2 sound — Anonimski, 17 May 2014
+Source: https://commons.wikimedia.org/wiki/File:IBM_M2_sound.ogg
+Original: https://upload.wikimedia.org/wikipedia/commons/1/16/IBM_M2_sound.ogg
+License: CC0 1.0 Universal Public Domain Dedication
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Seoul Keys modifications: extract three individual strikes, convert to mono
+44.1 kHz PCM, remove low-frequency rumble, normalize modestly, and fade the
+edges. key-wide is the recorded wide-key/Enter strike, reused for Space.
+The completion bell and carriage-return sound are not changed.

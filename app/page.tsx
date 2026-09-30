@@ -10,6 +10,7 @@ import { WordMeaningText } from "./WordMeaningText";
 import { HandGuide } from "./HandGuide";
 import { TypingTheatre } from "./TypingTheatre";
 import { typingViewCopy } from "./typing-view-copy";
+import { playRecordedTypingKey } from "./typing-key-audio";
 import { FirstMinuteWarmup } from "./FirstMinuteWarmup";
 import { SyllableGuide } from "./SyllableGuide";
 import { firstMinuteToolsReleased } from "./release-features";
@@ -1147,60 +1148,7 @@ function playTypingKeySound(code: string) {
   typingAudioContext ??= new AudioContextConstructor();
   const context = typingAudioContext;
   if (context.state === "suspended") void context.resume();
-  const now = context.currentTime;
-  // Per-key variation so rapid typing sounds organic rather than a single beep.
-  const seed = Array.from(code).reduce((total, character) => total + character.charCodeAt(0), 0);
-  const variation = (seed % 100) / 100;
-
-  // Layer 1 — the mechanical click: a very short, band-passed noise burst. This
-  // is what makes it read as a real key strike instead of a synth tone.
-  const clickLength = 0.026;
-  const clickBuffer = context.createBuffer(1, Math.max(1, Math.floor(context.sampleRate * clickLength)), context.sampleRate);
-  const clickData = clickBuffer.getChannelData(0);
-  for (let index = 0; index < clickData.length; index += 1) {
-    clickData[index] = (Math.random() * 2 - 1) * (1 - index / clickData.length);
-  }
-  const click = context.createBufferSource();
-  click.buffer = clickBuffer;
-  const clickFilter = context.createBiquadFilter();
-  clickFilter.type = "bandpass";
-  clickFilter.frequency.value = 1700 + variation * 900;
-  clickFilter.Q.value = 5.5;
-  const clickGain = context.createGain();
-  clickGain.gain.setValueAtTime(0.0001, now);
-  clickGain.gain.exponentialRampToValueAtTime(0.08, now + 0.001);
-  clickGain.gain.exponentialRampToValueAtTime(0.0006, now + clickLength);
-  const keyBus = context.createGain();
-  keyBus.gain.value = uiSoundVolume;
-  keyBus.connect(context.destination);
-  click.connect(clickFilter).connect(clickGain).connect(keyBus);
-  click.start(now);
-  click.stop(now + clickLength + 0.004);
-
-  // Layer 2 — the low "thock" body of the key bottoming out.
-  const thock = context.createOscillator();
-  const thockGain = context.createGain();
-  thock.type = "triangle";
-  thock.frequency.setValueAtTime(150 + variation * 34, now);
-  thock.frequency.exponentialRampToValueAtTime(66, now + 0.05);
-  thockGain.gain.setValueAtTime(0.0001, now);
-  thockGain.gain.exponentialRampToValueAtTime(0.05, now + 0.004);
-  thockGain.gain.exponentialRampToValueAtTime(0.0006, now + 0.055);
-  thock.connect(thockGain).connect(keyBus);
-  thock.start(now);
-  thock.stop(now + 0.06);
-
-  // Layer 3 — a crisp high "tick" for the typebar hitting the platen.
-  const tick = context.createOscillator();
-  const tickGain = context.createGain();
-  tick.type = "square";
-  tick.frequency.value = 2600 + variation * 520;
-  tickGain.gain.setValueAtTime(0.0001, now);
-  tickGain.gain.exponentialRampToValueAtTime(0.018, now + 0.001);
-  tickGain.gain.exponentialRampToValueAtTime(0.0004, now + 0.012);
-  tick.connect(tickGain).connect(keyBus);
-  tick.start(now);
-  tick.stop(now + 0.014);
+  playRecordedTypingKey(context, code, uiSoundVolume);
 }
 
 function playSuccessChime() {
@@ -1684,6 +1632,28 @@ export default function Home() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [progressLoaded, setProgressLoaded] = useState(false);
   const [privacyNoticeVisible, setPrivacyNoticeVisible] = useState(false);
+  useEffect(() => {
+    if (!practiceFocusMode) return;
+    const stage = document.getElementById("practice");
+    if (!stage) return;
+    const notice = document.querySelector(".privacy-notice");
+    const resize = () => {
+      stage.style.setProperty("--practice-viewport-height", `${window.visualViewport?.height ?? window.innerHeight}px`);
+      stage.style.setProperty("--practice-notice-height", `${notice ? notice.getBoundingClientRect().height + 16 : 0}px`);
+    };
+    resize();
+    const observer = new ResizeObserver(resize);
+    if (notice) observer.observe(notice);
+    window.visualViewport?.addEventListener("resize", resize);
+    window.addEventListener("resize", resize);
+    return () => {
+      observer.disconnect();
+      window.visualViewport?.removeEventListener("resize", resize);
+      window.removeEventListener("resize", resize);
+      stage.style.removeProperty("--practice-viewport-height");
+      stage.style.removeProperty("--practice-notice-height");
+    };
+  }, [practiceFocusMode, privacyNoticeVisible]);
   const [accountSummary, setAccountSummary] = useState<{ streakDays: number; coins: number } | null>(null);
   // null until /api/progress answers, so the sign-up CTA never flashes for
   // someone who is already a member.
@@ -2973,6 +2943,33 @@ export default function Home() {
   }
 
   const theatreActive = practiceView === "theatre" && !lessonFinished && !masteryPrompt;
+  const externalPracticeFeedback = theatreActive || practiceFocusMode;
+  const typingFeedbackPanel = (
+    <p
+      className={`typing-feedback ${sentenceComplete ? "complete" : ""}${continueNudge > 0 ? " keep-going" : ""}${!typedChars.length && !lessonFinished && !masteryPrompt ? " initial-hint" : ""}`}
+      id="typing-feedback"
+      aria-live="polite"
+      key={`nudge-${continueNudge}`}
+    >
+      {lessonFinished
+        ? tr(locale, "Today’s lesson is complete. Great work!", "오늘의 학습을 완료했습니다. 정말 잘했어요!")
+        : masteryPrompt
+          ? tr(locale, "Stage target cleared · Enter advances, R repeats this stage", "단계 기준을 통과했습니다 · Enter로 다음 단계, R로 현재 단계 반복")
+        : advanceQueued
+          ? tr(locale, "Completed", "입력 확인 완료") + "…"
+          : sentenceComplete
+            ? "✓ " + tr(locale, "Complete — press Enter.", currentPracticeItem.kind === "sentence"
+              ? "문장 입력 완료 · Enter ↵를 눌러 정확도를 검사하세요."
+              : "단어 입력 완료 · Enter ↵를 눌러 정확도를 검사하세요.")
+            : continueNudge > 0
+              ? tr(locale, "Not yet — this line keeps going. Stay on the keys.", "아직이에요 — 이 줄은 계속 이어집니다. 손을 그대로 두고 이어서 입력하세요.")
+              : atInnerSentenceEnd
+                ? tr(locale, "One line, two sentences — keep going without Enter.", "한 줄에 두 문장이에요 · Enter 없이 이어서 입력하세요.")
+                : typedChars.length
+                  ? locale === "ko" ? `정확도 ${accuracy}% · 계속 입력하세요` : `${accuracy}% accurate · keep going`
+                  : tr(locale, "Follow the highlighted key position below.", "아래 강조된 키와 손가락 위치를 따라 입력하세요.")}
+    </p>
+  );
   const lessonEvaluationPanel = lessonEvaluation && (
                 <div className={`lesson-evaluation ${lessonEvaluation.accepted ? "accepted" : "rejected"}`} aria-live="assertive">
                   <div>
@@ -3213,12 +3210,13 @@ export default function Home() {
             <div className="theme-picker-row">
               {renderThemeChips()}
             </div>
+            {practiceFocusMode && <button className="practice-focus-exit" type="button" onClick={() => setPracticeFocusMode(false)}>{tr(locale, "Show intro", "소개 보기")} ↗</button>}
           </div>
 
           <div className="stage-orbit orbit-one" aria-hidden="true" />
           <div className="stage-orbit orbit-two" aria-hidden="true" />
           <article
-            className={`practice-card stage-${currentPracticeItem.kind} ${lessonPaused ? "is-paused" : ""} ${masteryPrompt ? "is-mastered" : ""}`}
+            className={`practice-card stage-${currentPracticeItem.kind} ${lessonPaused ? "is-paused" : ""} ${masteryPrompt ? "is-mastered" : ""} ${practiceView === "theatre" ? "has-theatre" : ""}`}
             onKeyDownCapture={(event) => {
               if (isImeKey(event.nativeEvent)) return;
               if (!lessonStarted || lessonFinished || masteryPrompt) return;
@@ -3431,34 +3429,11 @@ export default function Home() {
                 spellCheck={false}
                 aria-describedby="typing-feedback"
               />
-              <p
-                className={`typing-feedback ${sentenceComplete ? "complete" : ""}${continueNudge > 0 ? " keep-going" : ""}`}
-                id="typing-feedback"
-                aria-live="polite"
-                key={`nudge-${continueNudge}`}
-              >
-                {lessonFinished
-                  ? tr(locale, "Today’s lesson is complete. Great work!", "오늘의 학습을 완료했습니다. 정말 잘했어요!")
-                  : masteryPrompt
-                    ? tr(locale, "Stage target cleared · Enter advances, R repeats this stage", "단계 기준을 통과했습니다 · Enter로 다음 단계, R로 현재 단계 반복")
-                  : advanceQueued
-                    ? tr(locale, "Completed", "입력 확인 완료") + "…"
-                    : sentenceComplete
-                      ? "✓ " + tr(locale, "Complete — press Enter.", currentPracticeItem.kind === "sentence"
-                        ? "문장 입력 완료 · Enter ↵를 눌러 정확도를 검사하세요."
-                        : "단어 입력 완료 · Enter ↵를 눌러 정확도를 검사하세요.")
-                      : continueNudge > 0
-                        ? tr(locale, "Not yet — this line keeps going. Stay on the keys.", "아직이에요 — 이 줄은 계속 이어집니다. 손을 그대로 두고 이어서 입력하세요.")
-                      : atInnerSentenceEnd
-                        ? tr(locale, "One line, two sentences — keep going without Enter.", "한 줄에 두 문장이에요 · Enter 없이 이어서 입력하세요.")
-                      : typedChars.length
-                        ? locale === "ko" ? `정확도 ${accuracy}% · 계속 입력하세요` : `${accuracy}% accurate · keep going`
-                        : tr(locale, "Follow the highlighted key position below.", "아래 강조된 키와 손가락 위치를 따라 입력하세요.")}
-              </p>
+              {!theatreActive && typingFeedbackPanel}
 
-              {!theatreActive && practiceCoachPanel}
+              {!externalPracticeFeedback && practiceCoachPanel}
 
-              {!theatreActive && lessonEvaluationPanel}
+              {!externalPracticeFeedback && lessonEvaluationPanel}
 
                 </div>
                 </div>
@@ -3564,8 +3539,9 @@ export default function Home() {
 
               {!lessonFinished && !masteryPrompt && (
                 <div className="practice-guidance-column">
-                  {theatreActive && practiceCoachPanel}
-                  {theatreActive && lessonEvaluationPanel}
+                  {theatreActive && typingFeedbackPanel}
+                  {externalPracticeFeedback && practiceCoachPanel}
+                  {externalPracticeFeedback && lessonEvaluationPanel}
                   <div className="finger-callout" aria-live="polite">
                     <span aria-hidden="true">☝</span>
                     <div>

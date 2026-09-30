@@ -9,12 +9,13 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import { createCinemaHands } from "./cinema-hand-rig";
 import { codeForCharacter, fingerForCode, keyboardRows } from "./cinema-keyboard";
 import { fingerPointerColor, keyLegendColor, pointerHalfWidth, pointerHeight, thumbPointerLiftPixels, separateKeyLegend, type GuideBox } from "./cinema-guide-layout";
+import { cinemaScreen, cinemaScreenRect, frameCinemaCamera } from "./cinema-composition";
 
 export type CinemaState = { started: boolean; paused: boolean; code: string | null; pressed: string | null; hint: boolean; jamo?: string };
 export type CinemaScene = { update(state: CinemaState): void; dispose(): void };
 type Cap = { group: Group; skin: MeshPhysicalMaterial; label: Mesh<PlaneGeometry, MeshBasicMaterial>; lift: number; x: number; z: number; resting: number; hangul: string; glyph: string; draw: (glyph: string) => void };
 
-export async function createCinemaScene(host: HTMLElement, initial: CinemaState, legend: (code: string) => string = code => code.replace(/^Key/, ""), failed: () => void = () => {}): Promise<CinemaScene> {
+export async function createCinemaScene(host: HTMLElement, initial: CinemaState, legend: (code: string) => string = code => code.replace(/^Key/, ""), failed: () => void = () => {}, screen: HTMLElement | null = null): Promise<CinemaScene> {
   const { WebGLRenderer } = await import("three/src/renderers/WebGLRenderer.js");
   const renderer = new WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5)); renderer.setClearColor(0, 0);
@@ -28,6 +29,11 @@ export async function createCinemaScene(host: HTMLElement, initial: CinemaState,
   const keyLight = new DirectionalLight("#f8eddf", 1.5); keyLight.position.set(-3, 7, 4);
   keyLight.castShadow = true; keyLight.shadow.mapSize.set(1024, 1024); keyLight.shadow.camera.left = -5; keyLight.shadow.camera.right = 5; keyLight.shadow.camera.top = 5; keyLight.shadow.camera.bottom = -5; keyLight.shadow.bias = -.0003; keyLight.shadow.normalBias = .018;
   const rim = new DirectionalLight("#afa9ff", 1.3); rim.position.set(5, 3, -2); scene.add(keyLight, rim);
+  const screenFrame = new Mesh(new RoundedBoxGeometry(cinemaScreen.width + .16, cinemaScreen.top - cinemaScreen.bottom + .16, .08, 4, .045),
+    new MeshPhysicalMaterial({ color: "#667498", roughness: .45, metalness: .25, emissive: "#182137", emissiveIntensity: .5 }));
+  screenFrame.position.set(0, (cinemaScreen.top + cinemaScreen.bottom) / 2, cinemaScreen.z - .06); scene.add(screenFrame);
+  const backWall = new Mesh(new PlaneGeometry(18, 12), new MeshBasicMaterial({ color: "#131b2c" }));
+  backWall.position.set(0, 3, cinemaScreen.z - .15); scene.add(backWall);
   const deck = new Group(); deck.position.set(0, -.06, 1.4); scene.add(deck);
   const bodyMaterial = new MeshPhysicalMaterial({ color: "#32364b", roughness: .3, metalness: .7, clearcoat: .5 });
   const body = new Mesh(new RoundedBoxGeometry(6.85, .21, 2.6, 4, .075), bodyMaterial); body.position.y = -.095; body.receiveShadow = true; deck.add(body);
@@ -130,7 +136,23 @@ export async function createCinemaScene(host: HTMLElement, initial: CinemaState,
     if (!state.paused && !motion.matches) elapsed += dt;
     const goal = state.started ? 1 : 0;
     enter += (goal - enter) * (motion.matches ? 1 : Math.min(1, dt * 3.5));
-    camera.position.set(0, 6.6 - enter * 1.0, 6.6 + enter * 2.1); camera.lookAt(0, .3 - enter * .2, -.8 - enter * .2);
+    frameCinemaCamera(camera, viewportWidth, viewportHeight, enter);
+    if (screen) {
+      const placement = cinemaScreenRect(camera, viewportWidth, viewportHeight);
+      screen.style.setProperty("--cinema-screen-left", `${placement.left}px`);
+      screen.style.setProperty("--cinema-screen-top", `${placement.top}px`);
+      screen.style.setProperty("--cinema-screen-width", `${placement.width}px`);
+      screen.dataset.projected = "true";
+      // The physical frame is camera-facing too. The visible vertical edges
+      // are exact, while its width still matches the keyboard's rear edge.
+      const depth = new Vector3(0, 1.8, cinemaScreen.z).project(camera).z;
+      const frameTop = new Vector3(placement.left / viewportWidth * 2 - 1, 1 - placement.top / viewportHeight * 2, depth).unproject(camera);
+      const frameBottom = new Vector3((placement.left + placement.width) / viewportWidth * 2 - 1, 1 - (placement.top + screen.offsetHeight) / viewportHeight * 2, depth).unproject(camera);
+      screenFrame.position.copy(frameTop).add(frameBottom).multiplyScalar(.5);
+      screenFrame.quaternion.copy(camera.quaternion);
+      const frameDiagonal = frameBottom.sub(frameTop).applyQuaternion(camera.quaternion.clone().invert());
+      screenFrame.scale.set(Math.abs(frameDiagonal.x) / (cinemaScreen.width + .16), Math.abs(frameDiagonal.y) / (cinemaScreen.top - cinemaScreen.bottom + .16), 1);
+    }
     const code = state.pressed ?? (state.hint ? state.code : null);
     const fingerId = code ? fingerForCode[code] ?? null : null;
     const press = state.pressed ? 1 : state.hint && !motion.matches && !state.paused ? Math.max(0, Math.sin(Math.min(1, Math.max(0, (elapsed % 1.9 - .6) / .9)) * Math.PI)) * .55 : 0;
@@ -202,15 +224,11 @@ export async function createCinemaScene(host: HTMLElement, initial: CinemaState,
   const resize = () => {
     const rect = host.getBoundingClientRect(); if (!rect.width || !rect.height) return;
     viewportWidth = rect.width; viewportHeight = rect.height;
-    renderer.setSize(rect.width, rect.height); camera.aspect = rect.width / rect.height;
-    // Keep the same foreground width on laptops, not just ultra-wide displays.
-    camera.fov = 2 * Math.atan(Math.tan(49 * Math.PI / 360) / camera.aspect) * 180 / Math.PI;
-    // Reframe upwards without shrinking the keyboard or changing the HTML screen.
-    const framing = Math.min(.12, Math.max(0, (camera.aspect - 1.4) * .2));
-    camera.setViewOffset(rect.width, rect.height, 0, rect.height * framing, rect.width, rect.height);
-    camera.updateProjectionMatrix(); wake();
+    renderer.setSize(rect.width, rect.height);
+    frameCinemaCamera(camera, viewportWidth, viewportHeight, enter); wake();
   };
   const observer = new ResizeObserver(resize); observer.observe(host);
+  const screenObserver = new ResizeObserver(wake); if (screen) screenObserver.observe(screen);
   const visibility = new IntersectionObserver(entries => {
     visible = entries.some(entry => entry.isIntersecting); wake();
   }); visibility.observe(host);
@@ -220,7 +238,8 @@ export async function createCinemaScene(host: HTMLElement, initial: CinemaState,
     update(next) { if (state.pressed !== next.pressed) elapsed = 0; state = next; wake(); },
     dispose() {
       if (disposed) return;
-      disposed = true; renderer.setAnimationLoop(null); observer.disconnect(); visibility.disconnect(); document.removeEventListener("visibilitychange", wake); motion.removeEventListener("change", wake);
+      disposed = true; renderer.setAnimationLoop(null); observer.disconnect(); screenObserver.disconnect(); visibility.disconnect(); document.removeEventListener("visibilitychange", wake); motion.removeEventListener("change", wake);
+      if (screen) { delete screen.dataset.projected; for (const variable of ["--cinema-screen-left", "--cinema-screen-top", "--cinema-screen-width"]) screen.style.removeProperty(variable); }
       renderer.domElement.removeEventListener("webglcontextlost", lost);
       legendLeader.geometry.dispose(); legendLeader.material.dispose(); disposeMeshes();
     },
