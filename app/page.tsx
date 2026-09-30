@@ -5,7 +5,7 @@ import { type KeyboardEvent as ReactKeyboardEvent, lazy, Suspense, useCallback, 
 import { ActivityPreview } from "./ActivityPreview";
 import { CommunityPulse } from "./CommunityPulse";
 import { InstallAppButton } from "./InstallAppButton";
-import { OnScreenKeyboard } from "./OnScreenKeyboard";
+import { HangulInput, HangulTextarea } from "./HangulTypingField";
 import { FirstMinuteWarmup } from "./FirstMinuteWarmup";
 import { SyllableGuide } from "./SyllableGuide";
 import { firstMinuteToolsReleased } from "./release-features";
@@ -15,6 +15,7 @@ import { cloneContentDeck, createContentDeck, takeContentBatch, type ContentDeck
 // synthesizer too — see staticSpeechAudioByText below.
 import koreanAudioLines from "../scripts/korean-audio-lines.json";
 import { comparableJamo, decomposeHangulCharacter } from "./hangul-keyboard";
+import { isImeKey } from "./browser-hangul-input";
 import { hangulNameOffer, toHangulName } from "./hangul-name";
 import { KoreanNameCard } from "./KoreanNameCard";
 import { koreanBindings, type CharRange } from "./korean-line-break";
@@ -32,7 +33,6 @@ import {
   practiceStageOrder,
   type PracticeKind,
 } from "./practice-curriculum";
-import { DesktopOptimizedNotice } from "./DesktopOptimizedNotice";
 import { SignupModal } from "./SignupModal";
 import { signOutEverywhere } from "./sign-out";
 import { applyTheme, readResolvedTheme } from "./theme";
@@ -706,15 +706,8 @@ const localeGroups: Array<{ label: string; options: Array<{ value: Locale; label
 
 const rtlLocales = new Set<Locale>(["ar", "fa", "ur"]);
 
-/** Remembers that someone has already been offered the install walkthrough, so a
- *  learner who is happy clicking is not asked again every session. */
-const INSTALL_NUDGE_KEY = "seoulkeys-install-nudge";
-/** Remembers that this device has produced Hangul from its own keyboard. */
-const IME_CONFIRMED_KEY = "seoulkeys-ime-confirmed";
 /** Remembers that the Hangul-name card has been shown and dismissed. */
 const NAME_CARD_KEY = "seoulkeys-name-card";
-/** Lines to finish on the on-screen keyboard before the install offer appears. */
-const INSTALL_NUDGE_AFTER_LINES = 3;
 
 
 const koreanKeyRows: Array<{ row: KeyboardRow; keys: KoreanKey[] }> = [
@@ -1651,33 +1644,6 @@ export default function Home() {
   const [neuralTtsAvailable, setNeuralTtsAvailable] = useState(true);
   const [voiceGender, setVoiceGender] = useState<VoiceGender>("female");
   const [advanceQueued, setAdvanceQueued] = useState(false);
-  /* Whether this visitor has a Korean IME. Decided from what they actually type,
-     never guessed from the platform: if Latin letters arrive while the target is
-     Hangul, the keyboard is producing "sarang" where 사랑 was wanted, and no
-     amount of practice will match. Watching recordings, those people reach for
-     the mouse and try to click the jamo drawn on the card — so they are given a
-     keyboard rather than installation instructions. */
-  const [imeMissing, setImeMissing] = useState(false);
-  const [oskOpen, setOskOpen] = useState(false);
-  /* Lines finished on the on-screen keyboard. Clicking jamo works, but it is slow
-     and it does not build the muscle memory the lessons are for — so once someone
-     has proven the keyboard is usable by finishing a few lines with it, they are
-     shown how to get a real one. Not before: an install prompt to somebody who has
-     not typed anything yet is just a wall. */
-  const [oskLinesDone, setOskLinesDone] = useState(0);
-  const [installNudgeDismissed, setInstallNudgeDismissed] = useState(true);
-  const oskUsedThisLineRef = useRef(false);
-  /* The last text the on-screen keyboard produced, so Hangul it wrote is never
-     mistaken for Hangul the physical keyboard produced. */
-  const oskValueRef = useRef("");
-  /* Set once Hangul has actually arrived from the physical keyboard. Remembered,
-     because the question "do you have a Korean keyboard" only needs answering
-     once per device, and re-asking someone who already answered is what turned
-     the on-screen board into a permanent fixture. */
-  const [imeConfirmed, setImeConfirmed] = useState(false);
-  /* Shown right after the setup modal closes: one line telling them to try their
-     own keys now, which is the step people were skipping. */
-  const [justInstalled, setJustInstalled] = useState(false);
   /* Set once we know the member has a name worth showing them in Hangul. */
   const [nameOffer, setNameOffer] = useState<{ hangul: string; original: string } | null>(null);
   const [nameCardPreview, setNameCardPreview] = useState(false);
@@ -1692,24 +1658,6 @@ export default function Home() {
     if (!hangul) return;
     setNameCardPreview(true);
     setNameOffer({ hangul, original: requested });
-  }, []);
-  useEffect(() => {
-    if (window.localStorage.getItem(IME_CONFIRMED_KEY) === "yes") setImeConfirmed(true);
-  }, []);
-  const confirmKeyboard = useCallback(() => {
-    setImeConfirmed(true);
-    setImeMissing(false);
-    setOskOpen(false);
-    try {
-      window.localStorage.setItem(IME_CONFIRMED_KEY, "yes");
-    } catch {
-      // Confirmed for this session even when storage is unavailable.
-    }
-  }, []);
-  /* Read on the client only. The default above is "dismissed" so the nudge can
-     never flash into the server-rendered page before we know the answer. */
-  useEffect(() => {
-    setInstallNudgeDismissed(window.localStorage.getItem(INSTALL_NUDGE_KEY) === "dismissed");
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -2196,13 +2144,6 @@ export default function Home() {
     // A passed attempt means the whole line was typed, so its length is the honest
     // count — keystrokes would double-count the jamo an IME composes.
     typedCharsRef.current += targetChars.filter((character) => !/\s/.test(character)).length;
-    // Counted per line, not per tap: a line the learner mostly typed physically
-    // and only patched up with one click is not evidence they need an install.
-    if (oskUsedThisLineRef.current) {
-      oskUsedThisLineRef.current = false;
-      oskValueRef.current = "";
-      setOskLinesDone((lines) => lines + 1);
-    }
     const kind = currentPracticeItem.kind;
     // Mark this step as genuinely completed (advanceLesson only runs after a pass).
     setCompletedStepIndices((prev) => {
@@ -3002,7 +2943,7 @@ export default function Home() {
   // Stage-level keyboard handler so Esc/Enter behave the same across every game.
   function handleGameStageKeys(event: ReactKeyboardEvent<HTMLDivElement>) {
     if (activeActivity === "home") return;
-    if (event.nativeEvent.isComposing) return;
+      if (isImeKey(event.nativeEvent)) return;
     if (exitPromptOpen) {
       if (event.key === "Enter") {
         event.preventDefault();
@@ -3250,6 +3191,7 @@ export default function Home() {
           <article
             className={`practice-card stage-${currentPracticeItem.kind} ${lessonPaused ? "is-paused" : ""} ${masteryPrompt ? "is-mastered" : ""}`}
             onKeyDownCapture={(event) => {
+              if (isImeKey(event.nativeEvent)) return;
               if (!lessonStarted || lessonFinished || masteryPrompt) return;
               if (event.key === "Escape") {
                 event.preventDefault();
@@ -3378,44 +3320,17 @@ export default function Home() {
               {firstMinuteToolsReleased && (currentPracticeItem.kind === "home" || currentPracticeItem.kind === "syllable" || currentPracticeItem.kind === "batchim") && (
                 <SyllableGuide target={targetSentence} typed={typed} locale={locale} />
               )}
-              <input
+              <HangulInput
                 id="hero-typing-input"
+                locale={locale}
+                onScreenSubmit={submitPracticeAttempt}
+                keyHint={activePracticeKey ? `${practiceKeyLegend(keyboardLayout, activePracticeKey)} → ${activePracticeKey.jamo}` : undefined}
                 className="typing-input"
                 lang="ko"
                 ref={practiceInputRef}
                 value={typed}
                 disabled={lessonFinished || lessonAccepted || lessonPaused || Boolean(masteryPrompt)}
-                onChange={(event) => {
-                  const nextValue = event.target.value;
-                  /* Latin letters where Hangul was asked for means no Korean
-                     input method. Composition events are ignored — a working IME
-                     shows Latin briefly while composing — so this only fires for
-                     text that settled as Latin. */
-                  /* Whatever the on-screen keyboard put there is not evidence about
-                     the physical one, so it is subtracted before judging. Comparing
-                     against the previous value instead would miss a replacement —
-                     "sa" swapped for a single "사" is shorter, not longer. */
-                  const fromKeyboard = nextValue.startsWith(oskValueRef.current)
-                    ? nextValue.slice(oskValueRef.current.length)
-                    : nextValue;
-                  if (practiceComposing || /[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(fromKeyboard)) {
-                    /* Hangul arrived from the physical keyboard — they installed one,
-                       or switched to it. Everything below is for people who cannot. */
-                    if (!imeConfirmed) confirmKeyboard();
-                  } else if (
-                    !imeConfirmed
-                    && /[a-z]{2}/i.test(nextValue)
-                    && /[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(targetSentence)
-                  ) {
-                    /* Notice only. Opening the on-screen keyboard here was a
-                       mistake: it put a working keyboard on the screen the moment
-                       anything went wrong, and learners simply used it — one of
-                       them installed a real Korean keyboard and went on clicking
-                       jamo with the mouse anyway, because the board was still
-                       sitting there. The board is now something you ask for. */
-                    setImeMissing(true);
-                  }
-                  if (justInstalled && nextValue.length > 0) setJustInstalled(false);
+                onValueChange={(nextValue) => {
                   practiceSessionStartedRef.current = true;
                   setLessonStarted(true);
                   if (nextValue.length > 0) beginPracticeFocusTransition();
@@ -3487,13 +3402,11 @@ export default function Home() {
                   : masteryPrompt
                     ? tr(locale, "Stage target cleared · Enter advances, R repeats this stage", "단계 기준을 통과했습니다 · Enter로 다음 단계, R로 현재 단계 반복")
                   : advanceQueued
-                    ? currentPracticeItem.speak
-                      ? "↵ 타자기 줄바꿈 소리 후 발음을 읽고 다음 연습으로 이동합니다."
-                      : "↵ 타자기 줄바꿈 소리 후 다음 자리 연습으로 이동합니다."
+                    ? tr(locale, "Completed", "입력 확인 완료") + "…"
                     : sentenceComplete
-                      ? currentPracticeItem.kind === "sentence"
-                        ? "✓ 문장 입력 완료 · Enter ↵를 눌러 정확도를 검사하세요."
-                        : "✓ 단어 입력 완료 · Enter ↵를 눌러 정확도를 검사하세요."
+                      ? "✓ " + tr(locale, "Complete — press Enter.", currentPracticeItem.kind === "sentence"
+                        ? "문장 입력 완료 · Enter ↵를 눌러 정확도를 검사하세요."
+                        : "단어 입력 완료 · Enter ↵를 눌러 정확도를 검사하세요.")
                       : continueNudge > 0
                         ? tr(locale, "Not yet — this line keeps going. Stay on the keys.", "아직이에요 — 이 줄은 계속 이어집니다. 손을 그대로 두고 이어서 입력하세요.")
                       : atInnerSentenceEnd
@@ -3503,120 +3416,6 @@ export default function Home() {
                         : tr(locale, "Follow the highlighted key position below.", "아래 강조된 키와 손가락 위치를 따라 입력하세요.")}
               </p>
 
-              {justInstalled && !imeMissing && (
-                <div className="ime-try" role="status">
-                  <b>{tr(locale, "Now try your own keys", "이제 직접 자판으로 쳐 보세요")}</b>
-                  <p>
-                    {tr(
-                      locale,
-                      "Still coming out as Latin letters? Press the switch key — Win + Space on Windows, Ctrl + Space on Mac — and type again.",
-                      "아직 로마자가 나오나요? 전환 키를 누르세요 — 윈도우는 Win + Space, 맥은 Ctrl + Space — 그리고 다시 입력해 보세요.",
-                    )}
-                  </p>
-                </div>
-              )}
-
-              {imeMissing && (
-                <div className="ime-missing" role="status">
-                  <div className="ime-missing-head">
-                    <b>{tr(locale, "Your keyboard is not typing Hangul yet", "지금 자판이 한글을 입력하지 못하고 있습니다")}</b>
-                    <p>
-                      {tr(
-                        locale,
-                        "Turning on your own Korean keyboard takes about a minute and nothing to download — and it is the whole point of practising here. Already added it? Press the switch key: Windows Win + Space, Mac Ctrl + Space.",
-                        "내 키보드에 한글을 켜는 데는 1분이면 되고 내려받을 것도 없습니다. 연습의 목적 자체가 손가락으로 치는 것입니다. 이미 추가하셨다면 전환 키를 누르세요 — 윈도우 Win + Space, 맥 Ctrl + Space.",
-                      )}
-                    </p>
-                  </div>
-                  <div className="ime-missing-actions">
-                    <button
-                      type="button"
-                      className="button button-primary"
-                      onClick={() => setKeyboardModalOpen(true)}
-                    >
-                      {tr(locale, "Turn on my Korean keyboard", "내 한글 키보드 켜기")}
-                    </button>
-                    <button
-                      type="button"
-                      className="button button-secondary"
-                      onClick={() => confirmKeyboard()}
-                    >
-                      {tr(locale, "It types Hangul now", "이제 한글이 됩니다")}
-                    </button>
-                    <button
-                      type="button"
-                      className="ime-missing-fallback"
-                      onClick={() => setOskOpen((open) => !open)}
-                    >
-                      ⌨ {oskOpen
-                        ? tr(locale, "Hide the on-screen keyboard", "화면 키보드 닫기")
-                        : tr(locale, "I cannot install one — use the on-screen keyboard", "설치할 수 없어요 — 화면 키보드 쓰기")}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {imeMissing && oskOpen && (
-                <OnScreenKeyboard
-                  locale={locale}
-                  onInput={(transform) => {
-                    setTyped((previous) => {
-                      const next = transform(previous);
-                      // Derived only from `previous`, so React re-running this
-                      // updater produces the same value rather than a different one.
-                      oskValueRef.current = next;
-                      if (!attemptStartedAtRef.current && next.length > 0) {
-                        attemptStartedAtRef.current = performance.now();
-                      }
-                      return next;
-                    });
-                    oskUsedThisLineRef.current = true;
-                    setLessonStarted(true);
-                    practiceSessionStartedRef.current = true;
-                  }}
-                  onSubmit={submitPracticeAttempt}
-                  onSetUpRealKeyboard={() => setKeyboardModalOpen(true)}
-                />
-              )}
-
-              {imeMissing
-                && oskLinesDone >= INSTALL_NUDGE_AFTER_LINES
-                && !installNudgeDismissed && (
-                <div className="ime-upgrade" role="status">
-                  <div className="ime-upgrade-body">
-                    <b>{tr(
-                      locale,
-                      "You are typing Hangul. Now make it fast.",
-                      "한글을 입력하고 계십니다. 이제 빠르게 만들 차례입니다.",
-                    )}</b>
-                    <p>{tr(
-                      locale,
-                      "Your computer already has a Korean keyboard built in — nothing to download. Switching it on takes about a minute, and the key positions you have been clicking are the same ones your fingers will use.",
-                      "이 컴퓨터에는 한글 키보드가 이미 들어 있습니다. 내려받을 것은 없고, 켜는 데 1분이면 됩니다. 지금 클릭하신 자리가 그대로 손가락이 쓸 자리입니다.",
-                    )}</p>
-                  </div>
-                  <div className="ime-upgrade-actions">
-                    <button
-                      type="button"
-                      className="button button-primary"
-                      onClick={() => setKeyboardModalOpen(true)}
-                    >
-                      {tr(locale, "Switch mine on", "내 키보드 켜기")}
-                    </button>
-                    <button
-                      type="button"
-                      className="button button-secondary"
-                      onClick={() => {
-                        setInstallNudgeDismissed(true);
-                        window.localStorage.setItem(INSTALL_NUDGE_KEY, "dismissed");
-                      }}
-                    >
-                      {tr(locale, "Keep clicking for now", "지금은 그냥 클릭할게요")}
-                    </button>
-                  </div>
-                </div>
-              )}
-
               {practiceCoachMessage && !masteryPrompt && (
                 <p className="practice-coach-message" role="status"><span aria-hidden="true">⚡</span>{practiceCoachMessage}</p>
               )}
@@ -3624,14 +3423,14 @@ export default function Home() {
               {lessonEvaluation && (
                 <div className={`lesson-evaluation ${lessonEvaluation.accepted ? "accepted" : "rejected"}`} aria-live="assertive">
                   <div>
-                    <small>{locale === "ko" ? lessonEvaluation.accepted ? "입력 검사 통과" : "다시 확인 필요" : lessonEvaluation.accepted ? "TYPING CHECK PASSED" : "CHECK NEEDED"}</small>
-                    <b>{lessonEvaluation.label}</b>
-                    <p>{lessonEvaluation.message}</p>
+                    <small>{lessonEvaluation.accepted ? tr(locale, "Completed", "입력 검사 통과") : tr(locale, "Check", "다시 확인 필요")}</small>
+                    <b>{lessonEvaluation.accepted ? lessonEvaluation.label : tr(locale, "Check", lessonEvaluation.label)}</b>
+                    <p>{lessonEvaluation.accepted ? tr(locale, "Completed", lessonEvaluation.message) : tr(locale, "Not quite. Your word stays—correct it and press Enter again.", lessonEvaluation.message)}</p>
                   </div>
                   <dl>
-                    <div><dt>완성도</dt><dd>{lessonEvaluation.completeness}%</dd></div>
-                    <div><dt>입력 정확도</dt><dd>{lessonEvaluation.accuracy}%</dd></div>
-                    {lastAttemptCpm > 0 && <div><dt>속도</dt><dd>{lastAttemptCpm} 타/분</dd></div>}
+                    <div><dt>{tr(locale, "Completed", "완성도")}</dt><dd>{lessonEvaluation.completeness}%</dd></div>
+                    <div><dt>{tr(locale, "Accuracy", "입력 정확도")}</dt><dd>{lessonEvaluation.accuracy}%</dd></div>
+                    {lastAttemptCpm > 0 && <div><dt>{tr(locale, "CPM", "타/분")}</dt><dd>{lastAttemptCpm}</dd></div>}
                   </dl>
                   {!lessonEvaluation.accepted && sentenceComplete && <button className="retry-practice" type="button" onClick={resetCurrentPractice}>↻ 다시 연습</button>}
                 </div>
@@ -3992,11 +3791,13 @@ export default function Home() {
                 <h3>{tr(locale, "Type it, then say it.", "입력하고, 소리 내어 말해보세요.")}</h3>
                 <p>{tr(locale, "Copy the Korean phrase to build typing memory and hear the natural pronunciation.", "한국어 표현을 그대로 입력해 타자 기억을 만들고 자동 발음으로 자연스러운 소리를 확인하세요.")}</p>
                 <label htmlFor="travel-phrase-input">{tr(locale, "Korean phrase", "한국어 표현")}</label>
-                <input
+                <HangulInput
                   id="travel-phrase-input"
+                  locale={locale}
+                  onScreenSubmit={() => { if (travelComplete) confirmAndAdvance(advanceTravelPhrase, currentTravelPhrase.korean); }}
                   lang="ko"
                   value={travelInput}
-                  onChange={(event) => setTravelInput(event.target.value)}
+                  onValueChange={setTravelInput}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" && !event.nativeEvent.isComposing && travelComplete) {
                       event.preventDefault();
@@ -4052,11 +3853,13 @@ export default function Home() {
                   </div>
                   <div className="kpop-live-card">
                     <label htmlFor="kpop-line-input">{tr(locale, "Type the Korean line", "한국어 가사 입력")}</label>
-                    <textarea
+                    <HangulTextarea
                       id="kpop-line-input"
+                      locale={locale}
+                      onScreenSubmit={() => { if (kpopComplete) confirmAndAdvance(advanceKpopLine, currentKpopItem.koreanText); }}
                       lang="ko"
                       value={kpopInput}
-                      onChange={(event) => setKpopInput(event.target.value)}
+                      onValueChange={setKpopInput}
                       onKeyDown={(event) => {
                         if (event.key === "Enter" && !event.nativeEvent.isComposing && kpopComplete) {
                           event.preventDefault();
@@ -4131,11 +3934,13 @@ export default function Home() {
                     : tr(locale, "Practice with original dialogue now. Quotes from real dramas and movies are added only after official permission.", "지금은 창작 대사로 연습합니다. 실제 작품 대사는 사용 가능한 콘텐츠만 등록됩니다.")}
                 </p>
                 <label htmlFor="screen-line-input">{tr(locale, "Korean dialogue", "한국어 대사")}</label>
-                <textarea
+                <HangulTextarea
                   id="screen-line-input"
+                  locale={locale}
+                  onScreenSubmit={() => { if (screenComplete) confirmAndAdvance(advanceScreenLine, currentScreenLine.korean); }}
                   lang="ko"
                   value={screenInput}
-                  onChange={(event) => setScreenInput(event.target.value)}
+                  onValueChange={setScreenInput}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" && !event.nativeEvent.isComposing && screenComplete) {
                       event.preventDefault();
@@ -4353,17 +4158,7 @@ export default function Home() {
 
       <KoreanKeyboardSetupModal
         isOpen={keyboardModalOpen}
-        onClose={() => {
-          setKeyboardModalOpen(false);
-          /* Clear the notice and put the on-screen board away, so the next thing
-             they do is try their own keys. If it still types Latin the notice
-             comes straight back; if it types Hangul they never see it again.
-             Leaving the board up here is what let someone install a keyboard and
-             carry on clicking anyway. */
-          setImeMissing(false);
-          setOskOpen(false);
-          setJustInstalled(true);
-        }}
+        onClose={() => setKeyboardModalOpen(false)}
         locale={locale}
       />
       <ContactModal
@@ -4376,7 +4171,6 @@ export default function Home() {
         onClose={() => setSignupOpen(false)}
         locale={locale}
       />
-      <DesktopOptimizedNotice locale={locale} />
     </main>
   );
 }

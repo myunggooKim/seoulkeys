@@ -13,6 +13,8 @@ import {
 } from "./ProgressivePuzzles";
 import type { Locale } from "./locale-detection";
 import { tr } from "./ui-i18n";
+import { HangulInput } from "./HangulTypingField";
+import { isImeKey } from "./browser-hangul-input";
 
 type CrosswordStatus = "playing" | "incomplete" | "wrong" | "correct" | "solved";
 
@@ -327,6 +329,7 @@ export function CrosswordGame({ locale, soundEnabled, onSuccessSound, onKeySound
       ref={gameRootRef}
       tabIndex={-1}
       onKeyDownCapture={(event) => {
+        if (isImeKey(event.nativeEvent)) return;
         if (status !== "solved" || event.key !== "Enter" || event.nativeEvent.isComposing) return;
         event.preventDefault();
         event.stopPropagation();
@@ -395,14 +398,16 @@ export function CrosswordGame({ locale, soundEnabled, onSuccessSound, onKeySound
         <form className={`crossword-word-entry ${status}`} onSubmit={submit}>
           <label htmlFor="crossword-word-input">{tr(locale, "Type the whole answer", "정답 단어 전체 입력")}</label>
           <div>
-            <input
+            <HangulInput
               id="crossword-word-input"
+              locale={locale}
+              onScreenSubmit={checkActiveWord}
               ref={answerInputRef}
               lang="ko"
               value={activeDraft}
               disabled={status === "solved" || solvedEntries.has(activeEntry.id)}
               maxLength={Array.from(activeEntry.answer).length}
-              onChange={(event) => updateActiveDraft(event.target.value)}
+              onValueChange={updateActiveDraft}
               onKeyDown={handleInputKeys}
               onBlur={(event) => {
                 // Release focus when the user moves to another control; only

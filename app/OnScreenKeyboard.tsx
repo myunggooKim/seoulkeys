@@ -37,6 +37,7 @@ export function OnScreenKeyboard({
   onInput,
   onSubmit,
   onSetUpRealKeyboard,
+  disabled = false,
 }: {
   locale: Locale;
   /* Sends a transform rather than a finished string. Somebody hunting for jamo
@@ -48,6 +49,7 @@ export function OnScreenKeyboard({
   onSubmit?: () => void;
   /** Opens the setup walkthrough. The board always offers a way off itself. */
   onSetUpRealKeyboard?: () => void;
+  disabled?: boolean;
 }) {
   const [shift, setShift] = useState(false);
 
@@ -67,6 +69,7 @@ export function OnScreenKeyboard({
             {index === 2 && (
               <button
                 type="button"
+                disabled={disabled}
                 className={`osk-key osk-mod${shift ? " is-on" : ""}`}
                 onClick={() => setShift((on) => !on)}
                 aria-pressed={shift}
@@ -79,6 +82,7 @@ export function OnScreenKeyboard({
               return (
                 <button
                   type="button"
+                  disabled={disabled}
                   key={base}
                   className={`osk-key${VOWELS.has(base) ? " is-vowel" : ""}`}
                   onClick={() => press(base)}
@@ -90,6 +94,7 @@ export function OnScreenKeyboard({
             {index === 2 && (
               <button
                 type="button"
+                disabled={disabled}
                 className="osk-key osk-mod"
                 onClick={() => onInput(deleteJamo)}
                 aria-label={tr(locale, "Backspace", "지우기")}
@@ -103,13 +108,14 @@ export function OnScreenKeyboard({
         <div className="osk-row">
           <button
             type="button"
+            disabled={disabled}
             className="osk-key osk-space"
             onClick={() => onInput((previous) => `${previous} `)}
           >
             {tr(locale, "space", "띄어쓰기")}
           </button>
           {onSubmit && (
-            <button type="button" className="osk-key osk-enter" onClick={onSubmit}>
+            <button type="button" disabled={disabled} className="osk-key osk-enter" onClick={onSubmit}>
               ↵ Enter
             </button>
           )}

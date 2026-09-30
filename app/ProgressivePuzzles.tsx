@@ -1,5 +1,7 @@
 "use client";
 
+import { HangulInput } from "./HangulTypingField";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cloneContentDeck, createContentDeck, drawFromContentDeck, type ContentDeck } from "./content-deck";
 import { getTheme, type ThemeId, type ThemeWord } from "./content-themes";
@@ -717,15 +719,17 @@ export function MissingLetterGame({ koreanUi, locale, soundEnabled, onSuccessSou
           : <b key={index}>{character}</b>)}
       </div>
       <label className="missing-input-label" htmlFor="missing-letter-input">{tr(locale, "Missing syllable", "빠진 글자")}</label>
-      <input
+      <HangulInput
         id="missing-letter-input"
+        locale={locale}
+        onScreenSubmit={checkAnswer}
         className={answer && answer !== expected ? "pending" : ""}
         lang="ko"
         ref={inputRef}
         value={answer}
         disabled={locked}
         maxLength={2}
-        onChange={(event) => setAnswer(Array.from(event.target.value).slice(-1)[0] ?? "")}
+        onValueChange={(value) => setAnswer(Array.from(value).slice(-1)[0] ?? "")}
         onKeyDown={(event) => {
           if (soundEnabled && !event.repeat && (event.key.length === 1 || event.key === "Backspace")) onKeySound(event.code);
           if (event.key === "Enter" && !event.nativeEvent.isComposing) {

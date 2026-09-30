@@ -1,5 +1,7 @@
 "use client";
 
+import { HangulTextarea } from "./HangulTypingField";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cloneContentDeck, createContentDeck, takeContentBatch, type ContentDeck } from "./content-deck";
 import type { ProverbEntry } from "./expanded-content";
@@ -127,13 +129,15 @@ export function ProverbTypingGame({
         <h3>{proverbTr(locale, "heading")}</h3>
         <p>{proverbTr(locale, "instructions")}</p>
         <label htmlFor="proverb-line-input">{proverbTr(locale, "inputLabel")}</label>
-        <textarea
+        <HangulTextarea
           ref={inputRef}
+          locale={locale}
+          onScreenSubmit={submit}
           id="proverb-line-input"
           lang="ko"
           value={input}
           disabled={locked}
-          onChange={(event) => setInput(event.target.value.replace(/\r?\n/g, ""))}
+          onValueChange={(value) => setInput(value.replace(/\r?\n/g, ""))}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.nativeEvent.isComposing) {
               event.preventDefault();

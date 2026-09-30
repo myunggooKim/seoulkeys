@@ -9,7 +9,7 @@
 // v2 rule: cache only build assets and static media. Anything that varies per
 // user or per deploy (documents, RSC payloads, API calls) always hits the
 // network.
-const CACHE_NAME = "seoul-keys-v2";
+const CACHE_NAME = "seoul-keys-v3";
 const STATIC_ASSETS = ["/favicon.svg", "/og.png", "/manifest.json"];
 
 self.addEventListener("install", (event) => {
@@ -26,7 +26,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        keys.filter((key) => key.startsWith("seoul-keys-") && key !== CACHE_NAME).map((key) => caches.delete(key))
       )
     )
   );
@@ -35,11 +35,17 @@ self.addEventListener("activate", (event) => {
 
 /** Hashed assets and static media are safe to serve from cache. Nothing else is. */
 function isCacheableAsset(request, url) {
+  // Development URLs are not content-hashed. Cache-first kept old CSS even
+  // after reload, making new controls appear unstyled during verification.
+  if (["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) return false;
   if (request.mode === "navigate") return false;
   if (request.destination === "document") return false;
   // The Next.js router asks for RSC payloads at ordinary page URLs.
   if (request.headers.get("RSC") || url.searchParams.has("_rsc")) return false;
   if (url.pathname.startsWith("/api/")) return false;
+  // Outside the build's hashed /assets/ directory, scripts/styles can change
+  // at the same URL. They must not freeze at a previous deployment.
+  if (/\.(?:css|js|mjs)$/i.test(url.pathname) && !url.pathname.startsWith("/assets/")) return false;
   return (
     url.pathname.startsWith("/assets/") ||
     url.pathname.startsWith("/audio/") ||

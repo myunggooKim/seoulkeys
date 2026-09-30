@@ -1,5 +1,8 @@
 "use client";
 
+import { HangulInput } from "./HangulTypingField";
+import { isImeKey } from "./browser-hangul-input";
+
 import { type CSSProperties, FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ThemeWord } from "./content-themes";
 import { createContentDeck, drawFromContentDeck } from "./content-deck";
@@ -550,6 +553,7 @@ export function FallingWordsGame({ locale, soundEnabled, onSuccessSound, onKeySo
   }
 
   function handleGameKeys(event: KeyboardEvent<HTMLDivElement>) {
+    if (isImeKey(event.nativeEvent)) return;
     if (event.altKey && event.key.toLowerCase() === "m") {
       event.preventDefault();
       toggleGameAudio();
@@ -784,16 +788,18 @@ export function FallingWordsGame({ locale, soundEnabled, onSuccessSound, onKeySo
         </div>
         <label htmlFor="word-rain-input">{tr(locale, "Target console", "표적 한글 입력")}</label>
         <div className="inline-form">
-          <input
+          <HangulInput
             className={inputError ? "input-error" : ""}
+            locale={locale}
+            onScreenSubmit={submitWord}
             id="word-rain-input"
             key={inputEpoch}
             lang="ko"
             ref={inputRef}
             value={input}
             disabled={briefing || paused || gameOver}
-            onChange={(event) => {
-              setInput(event.target.value);
+            onValueChange={(value) => {
+              setInput(value);
               if (inputError) setInputError(false);
             }}
             onCompositionStart={() => { composingRef.current = true; }}

@@ -11133,6 +11133,30 @@ html[lang="ko"] .hangul-guide span {
    its own card, pushing the outermost keys past the edge. Capping the column at
    the container width is what keeps every row inside the board, at any size. */
 .osk-rows { grid-template-columns: minmax(0, 1fr); }
+
+/* Installation-free input helpers. Scoped to the typing field so admin,
+   authentication forms and the established exercise layouts are untouched. */
+.hangul-typing-field { min-width: 0; width: 100%; }
+.hangul-typing-field > input, .hangul-typing-field > textarea { width: 100%; min-width: 0; }
+.hangul-input-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-block: 8px; color: var(--ink); }
+.hangul-input-tools small { flex: 1 1 180px; font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
+.hangul-input-tools small b { display: inline-block; white-space: nowrap; }
+.hangul-input-tools button, .hangul-input-options summary { padding: 5px 8px; border: 1px solid var(--edge); border-radius: 8px; background: var(--paper); color: var(--ink); font-size: 11px; line-height: 1.5; cursor: pointer; }
+.hangul-input-tools button:focus-visible, .hangul-input-options summary:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+.hangul-input-options { flex: 0 1 auto; min-width: 0; font-size: 11px; }
+.hangul-input-options[open] { flex-basis: 100%; }
+.hangul-input-options label { display: flex; align-items: center; gap: 6px; margin-block-start: 6px; }
+.hangul-input-options label input { width: 16px; min-width: 16px; height: 16px; min-height: 0; padding: 0; flex: none; }
+.hangul-input-screen { min-width: 0; }
+.hangul-input-screen .osk { margin: 0; padding: 8px 5px; overflow-x: auto; }
+.hangul-input-screen .osk-key { flex: 1 1 0; min-width: 22px; max-width: 44px; padding-inline: 2px; }
+.hangul-input-screen .osk-space, .hangul-input-screen .osk-enter { max-width: none; }
+.inline-form > .hangul-typing-field { flex: 1; }
+.inline-form > .hangul-typing-field + .button { align-self: flex-start; }
+.crossword-word-entry > div:first-of-type > .button { align-self: start; }
+.crossword-word-entry > div:first-of-type > span { align-self: start; display: grid; place-items: center; min-height: 48px; }
+.word-rain-console .hangul-input-tools { color: #f0eefb; }
+.word-rain-console .hangul-input-tools button { background: #17142c; color: #f0eefb; }
 .osk-row { min-width: 0; }
 
 /* ==========================================================================
