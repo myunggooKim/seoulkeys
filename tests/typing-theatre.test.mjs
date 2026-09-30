@@ -26,6 +26,18 @@ test("every supported language has explicit view and clear-input labels", () => 
   assert.equal(typingViewCopy("es").theatre, "Teatro");
 });
 
+test("Enter results and coaching cannot create a scrollbar inside the theatre screen", async () => {
+  const [page, css] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.equal((page.match(/const lessonEvaluationPanel = lessonEvaluation &&/g) ?? []).length, 1);
+  assert.match(page, /\{!theatreActive && lessonEvaluationPanel\}/);
+  assert.match(page, /<div className="practice-guidance-column">\s*\{theatreActive && practiceCoachPanel\}\s*\{theatreActive && lessonEvaluationPanel\}/);
+  assert.match(css, /\.practice-workspace\.is-theatre \.lesson-evaluation \{[^}]*max-height: none; overflow: visible;/s);
+  assert.match(css, /\.practice-workspace\.is-theatre \.lesson-evaluation dl \{[^}]*minmax\(0, 1fr\)/s);
+});
+
 test("optional 3D is lazy, self-hosted, disposable and cannot mutate typing or stored progress", async () => {
   const [component, scene, rig, license] = await Promise.all([
     readFile(new URL("../app/TypingTheatre.tsx", import.meta.url), "utf8"),

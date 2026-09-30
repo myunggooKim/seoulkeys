@@ -11722,6 +11722,17 @@ html[lang="ko"] .hangul-guide span {
 .practice-workspace.is-theatre .typing-panel > details { color: #edf4ff; background: #223552; border-color: #819bbd; }
 .practice-workspace.is-theatre .practice-pause-banner { color: var(--ink); }
 .practice-workspace.is-theatre .finger-callout { margin: 0; font-size: 15px; }
+.practice-workspace.is-theatre .practice-guidance-column { gap: 12px; }
+.practice-workspace.is-theatre .lesson-evaluation {
+  grid-template-columns: minmax(0, 1fr); min-width: 0; max-height: none; overflow: visible;
+  margin: 0; padding: 12px; gap: 10px;
+}
+.practice-workspace.is-theatre .lesson-evaluation dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 0; }
+.practice-workspace.is-theatre .lesson-evaluation dl div { min-width: 0; padding: 8px 5px; }
+.practice-workspace.is-theatre .lesson-evaluation small,
+.practice-workspace.is-theatre .lesson-evaluation p,
+.practice-workspace.is-theatre .lesson-evaluation dt { font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.practice-workspace.is-theatre .practice-coach-message { margin: 0; font-size: 13px; line-height: 1.5; }
 .practice-workspace.is-theatre .finger-callout small { font-size: 13px; }
 .practice-workspace.is-theatre .finger-callout b { font-size: 16px; }
 .practice-workspace.is-theatre .meter-copy > div:first-child { font-size: 15px; }

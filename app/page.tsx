@@ -2972,6 +2972,26 @@ export default function Home() {
     }
   }
 
+  const theatreActive = practiceView === "theatre" && !lessonFinished && !masteryPrompt;
+  const lessonEvaluationPanel = lessonEvaluation && (
+                <div className={`lesson-evaluation ${lessonEvaluation.accepted ? "accepted" : "rejected"}`} aria-live="assertive">
+                  <div>
+                    <small>{lessonEvaluation.accepted ? tr(locale, "Completed", "입력 검사 통과") : tr(locale, "Check", "다시 확인 필요")}</small>
+                    <b>{lessonEvaluation.accepted ? lessonEvaluation.label : tr(locale, "Check", lessonEvaluation.label)}</b>
+                    <p>{lessonEvaluation.accepted ? tr(locale, "Completed", lessonEvaluation.message) : tr(locale, "Not quite. Your word stays—correct it and press Enter again.", lessonEvaluation.message)}</p>
+                  </div>
+                  <dl>
+                    <div><dt>{tr(locale, "Completed", "완성도")}</dt><dd>{lessonEvaluation.completeness}%</dd></div>
+                    <div><dt>{tr(locale, "Accuracy", "입력 정확도")}</dt><dd>{lessonEvaluation.accuracy}%</dd></div>
+                    {lastAttemptCpm > 0 && <div><dt>{tr(locale, "CPM", "타/분")}</dt><dd>{lastAttemptCpm}</dd></div>}
+                  </dl>
+                  {!lessonEvaluation.accepted && sentenceComplete && <button className="retry-practice" type="button" onClick={resetCurrentPractice}>{viewText.clear}</button>}
+                </div>
+  );
+  const practiceCoachPanel = practiceCoachMessage && !masteryPrompt && (
+                <p className="practice-coach-message" role="status"><span aria-hidden="true">⚡</span>{practiceCoachMessage}</p>
+  );
+
   return (
     <main className="site-shell" dir={rtlLocales.has(locale) ? "rtl" : "ltr"}>
       <a className="skip-link" href="#practice">{tr(locale, "Skip to practice", "연습으로 바로 가기")}</a>
@@ -3436,25 +3456,9 @@ export default function Home() {
                         : tr(locale, "Follow the highlighted key position below.", "아래 강조된 키와 손가락 위치를 따라 입력하세요.")}
               </p>
 
-              {practiceCoachMessage && !masteryPrompt && (
-                <p className="practice-coach-message" role="status"><span aria-hidden="true">⚡</span>{practiceCoachMessage}</p>
-              )}
+              {!theatreActive && practiceCoachPanel}
 
-              {lessonEvaluation && (
-                <div className={`lesson-evaluation ${lessonEvaluation.accepted ? "accepted" : "rejected"}`} aria-live="assertive">
-                  <div>
-                    <small>{lessonEvaluation.accepted ? tr(locale, "Completed", "입력 검사 통과") : tr(locale, "Check", "다시 확인 필요")}</small>
-                    <b>{lessonEvaluation.accepted ? lessonEvaluation.label : tr(locale, "Check", lessonEvaluation.label)}</b>
-                    <p>{lessonEvaluation.accepted ? tr(locale, "Completed", lessonEvaluation.message) : tr(locale, "Not quite. Your word stays—correct it and press Enter again.", lessonEvaluation.message)}</p>
-                  </div>
-                  <dl>
-                    <div><dt>{tr(locale, "Completed", "완성도")}</dt><dd>{lessonEvaluation.completeness}%</dd></div>
-                    <div><dt>{tr(locale, "Accuracy", "입력 정확도")}</dt><dd>{lessonEvaluation.accuracy}%</dd></div>
-                    {lastAttemptCpm > 0 && <div><dt>{tr(locale, "CPM", "타/분")}</dt><dd>{lastAttemptCpm}</dd></div>}
-                  </dl>
-                  {!lessonEvaluation.accepted && sentenceComplete && <button className="retry-practice" type="button" onClick={resetCurrentPractice}>{viewText.clear}</button>}
-                </div>
-              )}
+              {!theatreActive && lessonEvaluationPanel}
 
                 </div>
                 </div>
@@ -3560,6 +3564,8 @@ export default function Home() {
 
               {!lessonFinished && !masteryPrompt && (
                 <div className="practice-guidance-column">
+                  {theatreActive && practiceCoachPanel}
+                  {theatreActive && lessonEvaluationPanel}
                   <div className="finger-callout" aria-live="polite">
                     <span aria-hidden="true">☝</span>
                     <div>
