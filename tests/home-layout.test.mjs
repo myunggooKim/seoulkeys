@@ -22,10 +22,11 @@ test("compact home spacing is desktop-only and cannot shrink expanded practice o
   assert.match(css, /\.header-navigation \.live-board \{[^}]*max-width: 100%;[^}]*flex-wrap: wrap;/s);
 });
 
-test("desktop categories retain their original header centre while the wider board hangs below", async () => {
+test("desktop board edges follow the menu without extending beyond its final auth button", async () => {
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(css, /@media \(min-width: 901px\) \{\s*\.topbar > \.header-navigation \{ padding-block: 0; \}/);
-  assert.match(css, /\.header-navigation > \.live-board \{[^}]*position: absolute;[^}]*inset-block-start: calc\(50% \+ 18px\);[^}]*width: max\(100%, 400px\);[^}]*padding-block: 3px;/s);
+  assert.match(css, /\.header-navigation > \.live-board \{[^}]*position: absolute;[^}]*inset-inline-start: 0;[^}]*inset-block-start: calc\(50% \+ 18px\);[^}]*width: 100%;[^}]*max-width: 100%;[^}]*padding-block: 3px;/s);
+  assert.doesNotMatch(css, /width: max\(100%, 400px\)/);
   assert.match(css, /\.header-navigation \.live-board-cell \{ flex: 0 0 auto;/);
   assert.match(css, /\.header-navigation \.live-board-digits \{ flex: 0 0 auto;/);
   assert.match(css, /\.header-navigation \.live-board \{[^}]*width: 400px;[^}]*max-width: 100%;/s);

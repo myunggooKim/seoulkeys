@@ -11373,7 +11373,7 @@ html[lang="ko"] .hangul-guide span {
 }
 
 /* The board hangs below the categories without moving their original centre.
-   Its reserved width allows more digits without resizing the desktop header. */
+   On desktop its edges follow the menu, including the shared auth button. */
 .topbar > .header-navigation {
   position: relative;
   display: flex;
@@ -11419,8 +11419,8 @@ html[lang="ko"] .hangul-guide span {
     position: absolute;
     inset-inline-start: 0;
     inset-block-start: calc(50% + 18px);
-    width: max(100%, 400px);
-    max-width: none;
+    width: 100%;
+    max-width: 100%;
     padding-block: 3px;
   }
 }
