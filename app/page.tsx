@@ -8,7 +8,7 @@ import { InstallAppButton } from "./InstallAppButton";
 import { HangulInput, HangulTextarea } from "./HangulTypingField";
 import { WordMeaningText } from "./WordMeaningText";
 import { HandGuide } from "./HandGuide";
-import { TypingTheatre } from "./TypingTheatre";
+import { TypingTheatre, preloadTypingTheatre } from "./TypingTheatre";
 import { typingViewCopy } from "./typing-view-copy";
 import { playRecordedTypingKey } from "./typing-key-audio";
 import { FirstMinuteWarmup } from "./FirstMinuteWarmup";
@@ -1618,6 +1618,17 @@ export default function Home() {
   const [continueNudge, setContinueNudge] = useState(0);
   const [keyboardLayout, setKeyboardLayout] = useState<KeyboardLayout>("qwerty");
   const [practiceView, setPracticeView] = useState<"basic" | "theatre">("basic");
+  useEffect(() => {
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    if (connection?.saveData || /^(slow-)?2g$/.test(connection?.effectiveType ?? "")) return;
+    const warm = () => { if (document.visibilityState === "visible") preloadTypingTheatre(); };
+    if (typeof window.requestIdleCallback === "function") {
+      const idle = window.requestIdleCallback(warm, { timeout: 1500 });
+      return () => window.cancelIdleCallback(idle);
+    }
+    const timer = window.setTimeout(warm, 1000);
+    return () => window.clearTimeout(timer);
+  }, []);
   const [theatreUnavailable, setTheatreUnavailable] = useState(false);
   const theatreKeyLegend = useCallback((code: string) => keyboardLegend(keyboardLayout, code), [keyboardLayout]);
   const restoreBasicView = useCallback(() => { setTheatreUnavailable(true); setPracticeView("basic"); }, []);
@@ -3286,8 +3297,8 @@ export default function Home() {
               </div>
               <div className="practice-view-picker" role="group" aria-label={viewText.view}>
                 <span>{viewText.view}</span>
-                <button type="button" aria-pressed={practiceView === "basic"} onClick={() => setPracticeView("basic")}>{viewText.basic}</button>
-                <button type="button" aria-pressed={practiceView === "theatre"} onClick={() => { setTheatreUnavailable(false); setPracticeView("theatre"); beginPracticeFocusTransition(); }}>{viewText.theatre}</button>
+                <button type="button" aria-pressed={practiceView === "basic"} onClick={() => { setPracticeView("basic"); beginPracticeFocusTransition(); }}>{viewText.basic}</button>
+                <button type="button" aria-pressed={practiceView === "theatre"} onPointerEnter={preloadTypingTheatre} onFocus={preloadTypingTheatre} onClick={() => { preloadTypingTheatre(); setTheatreUnavailable(false); setPracticeView("theatre"); beginPracticeFocusTransition(); }}>{viewText.theatre}</button>
               </div>
               {theatreUnavailable && <p className="practice-view-notice" role="status">{locale === "ko" ? "극장 그래픽을 열 수 없어 기본 화면으로 돌아왔습니다. 연습은 계속할 수 있어요." : `${viewText.theatre} (3D) → ${viewText.basic}`}</p>}
             </div>

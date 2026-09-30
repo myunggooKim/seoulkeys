@@ -2,6 +2,7 @@ import { Bone, Color, Float32BufferAttribute, Group, Matrix4, MeshPhysicalMateri
 import { GLTFLoader, type GLTF } from "three/addons/loaders/GLTFLoader.js";
 import type { GuideFinger } from "./HandGuide";
 import { fingerPointerColor } from "./cinema-guide-layout";
+import { loadCinemaHandData } from "./cinema-assets";
 
 type FingerPose = { hover: Quaternion[]; down: Quaternion[]; reach: Vector3 };
 type RigFinger = { id: GuideFinger; base: Bone; baseRest: Quaternion; basePose: Quaternion; joints: Bone[]; tip: Bone; rests: Quaternion[]; tipVertices: { index: number; strength: number }[]; current: Quaternion[]; idle: Quaternion[]; poses: Map<string, FingerPose> };
@@ -11,9 +12,13 @@ type RigHand = { mesh: SkinnedMesh; holder: Group; anchor: Vector3; reach: Vecto
 export async function createCinemaHands(loadAsset?: (side: "left" | "right") => Promise<GLTF>) {
   const root = new Group(), hands: RigHand[] = [];
   const loader = new GLTFLoader();
+  const sides = ["left", "right"] as const;
+  const assets = await Promise.all(sides.map(side => loadAsset
+    ? loadAsset(side)
+    : loadCinemaHandData(side).then(data => loader.parseAsync(data, ""))));
   const skinColor = new Color("#c6a087"), tipColor = new Color(fingerPointerColor), translucentAlpha = .44;
-  for (const side of ["left", "right"] as const) {
-    const asset = loadAsset ? await loadAsset(side) : await loader.loadAsync(`/images/typing-theatre/${side}.glb`);
+  for (const [index, side] of sides.entries()) {
+    const asset = assets[index];
     const mesh = asset.scene.getObjectByProperty("type", "SkinnedMesh") as SkinnedMesh;
     mesh.frustumCulled = false; mesh.castShadow = false; mesh.receiveShadow = false;
     const wrist = asset.scene.getObjectByName("wrist") as Bone;

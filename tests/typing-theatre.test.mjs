@@ -79,9 +79,29 @@ test("optional 3D is lazy, self-hosted, disposable and cannot mutate typing or s
   assert.match(scene, /IntersectionObserver/);
   assert.match(scene, /prefers-reduced-motion/);
   assert.match(scene, /renderer\.dispose\(\)/);
-  assert.match(rig, /\/images\/typing-theatre\/\$\{side\}\.glb/);
+  assert.match(rig, /loadCinemaHandData\(side\)\.then\(data => loader\.parseAsync\(data, ""\)\)/);
   assert.match(license, /MIT License/);
   assert.doesNotMatch(component + scene + rig, /localStorage|keydown|keyup|\/api\/|https:\/\//);
+});
+
+test("both home view buttons expand without resetting typing, and warm-up never starts a renderer", async () => {
+  const [page, component, rig] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/TypingTheatre.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/cinema-hand-rig.ts", import.meta.url), "utf8"),
+  ]);
+  const picker = page.slice(page.indexOf('<div className="practice-view-picker"'), page.indexOf('{theatreUnavailable &&'));
+  assert.match(picker, /setPracticeView\("basic"\); beginPracticeFocusTransition\(\)/);
+  assert.match(picker, /setPracticeView\("theatre"\); beginPracticeFocusTransition\(\)/);
+  assert.doesNotMatch(picker, /setTyped|setLessonIndex|startTodayLesson/);
+  assert.match(page, /if \(nextValue.length > 0\) beginPracticeFocusTransition\(\)/);
+  assert.match(picker, /onPointerEnter=\{preloadTypingTheatre\} onFocus=\{preloadTypingTheatre\}/);
+  assert.match(page, /connection\?\.saveData/);
+  const warm = component.slice(component.indexOf('export function preloadTypingTheatre'), component.indexOf('/** Decoration only.'));
+  assert.match(warm, /loadCinemaHandData\("left"\)/);
+  assert.match(warm, /loadCinemaHandData\("right"\)/);
+  assert.doesNotMatch(warm, /createCinemaScene\(|new WebGLRenderer|requestAnimationFrame/);
+  assert.match(rig, /const assets = await Promise\.all\(sides\.map/);
 });
 
 test("both practice views fit the visual viewport and never reset the lesson when exiting focus", async () => {

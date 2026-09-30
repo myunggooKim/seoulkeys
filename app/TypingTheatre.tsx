@@ -2,7 +2,23 @@
 
 import { useEffect, useLayoutEffect, useRef } from "react";
 import type { CinemaScene, CinemaState } from "./cinema-scene";
+import { loadCinemaHandData } from "./cinema-assets";
 type Props = { state: CinemaState; legend: (code: string) => string; onFailure: () => void };
+
+let sceneModule: Promise<typeof import("./cinema-scene")> | null = null;
+function loadSceneModule() {
+  return sceneModule ??= import("./cinema-scene").catch(error => { sceneModule = null; throw error; });
+}
+
+/** Warm code and model bytes, without allocating a canvas or running animations. */
+export function preloadTypingTheatre() {
+  void Promise.all([
+    loadSceneModule(),
+    import("three/src/renderers/WebGLRenderer.js"),
+    loadCinemaHandData("left"),
+    loadCinemaHandData("right"),
+  ]).catch(() => {}); // A failed warm-up must not affect basic typing; entry retries.
+}
 
 /** Decoration only. The one existing HangulInput owns IME, grading and progress. */
 export function TypingTheatre({ state, legend, onFailure }: Props) {
@@ -21,7 +37,7 @@ export function TypingTheatre({ state, legend, onFailure }: Props) {
     let disposed = false;
     let instance: CinemaScene | null = null;
     const fail = () => { if (!disposed) failed.current(); };
-    void import("./cinema-scene").then(async ({ createCinemaScene }) => {
+    void loadSceneModule().then(async ({ createCinemaScene }) => {
       if (disposed) return;
       instance = await createCinemaScene(element, latest.current, legend, fail,
         element.parentElement?.querySelector<HTMLElement>(".typing-panel") ?? null);
