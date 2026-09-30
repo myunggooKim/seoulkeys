@@ -34,11 +34,24 @@ test("Enter results and coaching cannot create a scrollbar inside the theatre sc
   assert.equal((page.match(/const lessonEvaluationPanel = lessonEvaluation &&/g) ?? []).length, 1);
   assert.match(page, /const externalPracticeFeedback = theatreActive \|\| practiceFocusMode/);
   assert.match(page, /\{!externalPracticeFeedback && lessonEvaluationPanel\}/);
-  assert.match(page, /<div className="practice-feedback-dock">\s*\{typingFeedbackPanel\}\s*\{practiceCoachPanel\}\s*\{lessonEvaluationPanel\}/);
+  assert.match(page, /<div className="practice-feedback-dock">\s*\{typingFeedbackPanel\}\s*\{practiceCoachPanel\}\s*\{!theatreActive && lessonEvaluationPanel\}/);
   assert.match(page, /\{!externalPracticeFeedback && typingFeedbackPanel\}/);
   assert.doesNotMatch(page, /<div className="practice-guidance-column">\s*\{/);
   assert.match(css, /\.practice-workspace\.is-theatre \.lesson-evaluation \{[^}]*max-height: none; overflow: visible;/s);
   assert.match(css, /\.practice-workspace\.is-theatre \.lesson-evaluation dl \{[^}]*minmax\(0, 1fr\)/s);
+});
+
+test("theatre completion appears below today's practice, never over the keyboard", async () => {
+  const [page, css] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  const meter = page.slice(page.indexOf('<div className="daily-meter" id="progress">'), page.indexOf('<section className="activity-section"'));
+  assert.match(meter, /className="meter-copy"[\s\S]*className="practice-meter-feedback">\s*\{lessonEvaluationPanel\}/);
+  assert.match(page, /externalPracticeFeedback && \(!theatreActive \|\| !lessonEvaluation\)/);
+  assert.equal((page.match(/className="practice-meter-feedback"/g) ?? []).length, 1);
+  assert.match(css, /\.practice-workspace\.is-theatre \.practice-meter-feedback \{ flex: 0 0 100%; min-width: 0; width: 100%; \}/);
+  assert.match(css, /\.practice-workspace\.is-theatre \.practice-meter-feedback:empty \{ display: none; \}/);
 });
 
 test("completion feedback cannot resize the right keyboard and focus hides the homepage", async () => {

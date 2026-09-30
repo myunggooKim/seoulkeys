@@ -3536,11 +3536,11 @@ export default function Home() {
 
                 </>
               )}
-              {externalPracticeFeedback && (
+              {externalPracticeFeedback && (!theatreActive || !lessonEvaluation) && (
                 <div className="practice-feedback-dock">
                   {typingFeedbackPanel}
                   {practiceCoachPanel}
-                  {lessonEvaluationPanel}
+                  {!theatreActive && lessonEvaluationPanel}
                 </div>
               )}
             </div>
@@ -3621,6 +3621,11 @@ export default function Home() {
                   <em>{locale === "ko" ? `목표 ${currentMasteryTarget.accuracy}% · ${currentMasteryTarget.cpm}타/분 · ${sessionRounds + 1}회차` : `${tr(locale, "Target")} ${currentMasteryTarget.accuracy}% · ${currentMasteryTarget.cpm} ${tr(locale, "CPM")} · ${tr(locale, "round")} ${sessionRounds + 1}`}</em>
                 </div>
               </div>
+              {theatreActive && (
+                <div className="practice-meter-feedback">
+                  {lessonEvaluationPanel}
+                </div>
+              )}
             </div>
             </div>
           </article>
