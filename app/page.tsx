@@ -2991,6 +2991,7 @@ export default function Home() {
 
   return (
     <main className="site-shell" dir={rtlLocales.has(locale) ? "rtl" : "ltr"}>
+      {practiceFocusMode && <div className="practice-isolation-backdrop" aria-hidden="true" />}
       <a className="skip-link" href="#practice">{tr(locale, "Skip to practice", "연습으로 바로 가기")}</a>
 
       <header className="topbar" aria-label={tr(locale, "Primary navigation", "주요 메뉴")}>
@@ -3191,7 +3192,7 @@ export default function Home() {
               onClick={practiceFocusMode || practicePreparing ? showHeroIntroduction : startTodayLesson}
               aria-label={practiceFocusMode || practicePreparing ? (tr(locale, "Expand the introduction", "소개 영역 다시 펼치기")) : t.start}
             >
-              <span className="hero-focus-label">{practiceFocusMode ? (tr(locale, "Show intro", "소개 보기")) : practicePreparing ? (tr(locale, "Preparing", "준비 중")) : t.start}</span>
+              <span className="hero-focus-label">{practiceFocusMode ? (tr(locale, "Go home", "홈으로")) : practicePreparing ? (tr(locale, "Preparing", "준비 중")) : t.start}</span>
               <span className="hero-focus-arrow" aria-hidden="true">{practiceFocusMode || practicePreparing ? "←" : "→"}</span>
             </button>
             <a className="button button-secondary" href="#games">{t.explore}</a>
@@ -3210,7 +3211,7 @@ export default function Home() {
             <div className="theme-picker-row">
               {renderThemeChips()}
             </div>
-            {practiceFocusMode && <button className="practice-focus-exit" type="button" onClick={() => setPracticeFocusMode(false)}>{tr(locale, "Show intro", "소개 보기")} ↗</button>}
+            {practiceFocusMode && <button className="practice-focus-exit" type="button" onClick={() => setPracticeFocusMode(false)}>{tr(locale, "Go home", "홈으로")} ↗</button>}
           </div>
 
           <div className="stage-orbit orbit-one" aria-hidden="true" />
@@ -3429,7 +3430,7 @@ export default function Home() {
                 spellCheck={false}
                 aria-describedby="typing-feedback"
               />
-              {!theatreActive && typingFeedbackPanel}
+              {!externalPracticeFeedback && typingFeedbackPanel}
 
               {!externalPracticeFeedback && practiceCoachPanel}
 
@@ -3535,20 +3536,24 @@ export default function Home() {
 
                 </>
               )}
+              {externalPracticeFeedback && (
+                <div className="practice-feedback-dock">
+                  {typingFeedbackPanel}
+                  {practiceCoachPanel}
+                  {lessonEvaluationPanel}
+                </div>
+              )}
             </div>
 
               {!lessonFinished && !masteryPrompt && (
                 <div className="practice-guidance-column">
-                  {theatreActive && typingFeedbackPanel}
-                  {externalPracticeFeedback && practiceCoachPanel}
-                  {externalPracticeFeedback && lessonEvaluationPanel}
                   <div className="finger-callout" aria-live="polite">
                     <span aria-hidden="true">☝</span>
                     <div>
                       <small>{tr(locale, "USE THIS FINGER", "지금 사용할 손가락")}</small>
                       <b>{activeFingerGuide ? tr(locale, activeFingerGuide.en, activeFingerGuide.ko) : keyboardText.complete}</b>
                     </div>
-                    {activePracticeKey && <kbd>{practiceKeyLegend(keyboardLayout, activePracticeKey)}</kbd>}
+                    {activePracticeKey && <kbd className={practiceKeyLegend(keyboardLayout, activePracticeKey).length === 1 ? "single-key" : undefined}>{practiceKeyLegend(keyboardLayout, activePracticeKey)}</kbd>}
                   </div>
                   {practiceView !== "theatre" && <div className={`keyboard-map has-3d-guide ${currentPracticeItem.kind === "home" ? "home-row-only" : ""}`} aria-label={keyboardText.mapTitle}>
                     <div className="keyboard-map-legend">

@@ -34,10 +34,22 @@ test("Enter results and coaching cannot create a scrollbar inside the theatre sc
   assert.equal((page.match(/const lessonEvaluationPanel = lessonEvaluation &&/g) ?? []).length, 1);
   assert.match(page, /const externalPracticeFeedback = theatreActive \|\| practiceFocusMode/);
   assert.match(page, /\{!externalPracticeFeedback && lessonEvaluationPanel\}/);
-  assert.match(page, /<div className="practice-guidance-column">\s*\{theatreActive && typingFeedbackPanel\}\s*\{externalPracticeFeedback && practiceCoachPanel\}\s*\{externalPracticeFeedback && lessonEvaluationPanel\}/);
-  assert.match(page, /\{!theatreActive && typingFeedbackPanel\}/);
+  assert.match(page, /<div className="practice-feedback-dock">\s*\{typingFeedbackPanel\}\s*\{practiceCoachPanel\}\s*\{lessonEvaluationPanel\}/);
+  assert.match(page, /\{!externalPracticeFeedback && typingFeedbackPanel\}/);
+  assert.doesNotMatch(page, /<div className="practice-guidance-column">\s*\{/);
   assert.match(css, /\.practice-workspace\.is-theatre \.lesson-evaluation \{[^}]*max-height: none; overflow: visible;/s);
   assert.match(css, /\.practice-workspace\.is-theatre \.lesson-evaluation dl \{[^}]*minmax\(0, 1fr\)/s);
+});
+
+test("completion feedback cannot resize the right keyboard and focus hides the homepage", async () => {
+  const [page, css] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /practiceFocusMode && <div className="practice-isolation-backdrop" aria-hidden="true"/);
+  assert.match(css, /\.practice-isolation-backdrop \{ position: fixed; inset: 0; z-index: 39; background: var\(--ivory\); \}/);
+  assert.match(css, /\.practice-feedback-dock \{ position: absolute; inset-inline: 0; bottom: 0;/);
+  assert.doesNotMatch(css, /\.practice-workspace:has\(\.lesson-evaluation\) \.(keyboard-tools|next-key-card|key-guide|finger-callout|keyboard-map)/);
 });
 
 test("optional 3D is lazy, self-hosted, disposable and cannot mutate typing or stored progress", async () => {
@@ -70,4 +82,22 @@ test("both practice views fit the visual viewport and never reset the lesson whe
   assert.match(css, /\.hero\.practice-focus-mode \.practice-stage \{[^}]*position: fixed/s);
   assert.match(css, /height: calc\(var\(--practice-viewport-height, 100dvh\) - 28px - var\(--practice-notice-height, 0px\)\)/);
   assert.match(css, /\.practice-focus-mode \.is-theatre \.practice-screen-stage \{[^}]*height: 100%; min-height: 0/s);
+});
+
+test("the current key is high contrast in theatre and the existing exit is named home", async () => {
+  const [page, css] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.equal((page.match(/tr\(locale, "Go home", "홈으로"\)/g) ?? []).length, 2);
+  assert.doesNotMatch(page, /tr\(locale, "Show intro", "소개 보기"\)/);
+  assert.match(page, /className="practice-focus-exit"[^>]*onClick=\{\(\) => setPracticeFocusMode\(false\)\}/);
+  assert.match(css, /\.practice-card\.has-theatre \.finger-callout kbd \{[^}]*background: #ffe16b; color: #152032;/s);
+  assert.match(css, /\.practice-card\.has-theatre \.finger-callout kbd\.single-key \{ font-size: 22px; \}/);
+  const luminance = hex => {
+    const channels = hex.match(/.{2}/g).map(n => parseInt(n, 16) / 255)
+      .map(n => n <= .04045 ? n / 12.92 : ((n + .055) / 1.055) ** 2.4);
+    return channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722;
+  };
+  assert.ok((luminance("ffe16b") + .05) / (luminance("152032") + .05) > 12);
 });

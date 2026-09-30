@@ -11816,6 +11816,12 @@ body:has(.hero.practice-focus-mode) { overflow: hidden; }
 .has-theatre .practice-guidance-column { background: #1a2233; border: 1px solid #56657f; box-shadow: none; }
 .has-theatre .finger-callout { background: #242f45; color: #ecf3ff; border-color: #7188ac; box-shadow: none; }
 .has-theatre .finger-callout small { color: #c5d2e8; }
+.practice-card.has-theatre .finger-callout kbd {
+  background: #ffe16b; color: #152032; border-color: #fff0b1;
+  text-shadow: none; opacity: 1; font-size: 16px; line-height: 1;
+  box-shadow: 0 2px 0 #6d591b;
+}
+.practice-card.has-theatre .finger-callout kbd.single-key { font-size: 22px; }
 .has-theatre .daily-meter { background: #161f30; border: 1px solid #4a5b79; border-radius: 13px; }
 .has-theatre .meter-copy small, .has-theatre .mastery-target-line { color: #bdcce2; }
 .practice-workspace.is-theatre .typing-panel {
@@ -11921,16 +11927,39 @@ body:has(.hero.practice-focus-mode) { overflow: hidden; }
 .practice-focus-mode .is-theatre .key-guide kbd.active { background: #b4a1ed; color: #171525; }
 .practice-focus-mode .is-theatre > .daily-meter { grid-column: 2; grid-row: 4; }
 .practice-focus-mode .has-theatre .finger-callout b { color: #edf4ff; }
-.practice-focus-mode .practice-workspace:has(.lesson-evaluation) .keyboard-tools,
-.practice-focus-mode .practice-workspace:has(.lesson-evaluation) .next-key-card,
-.practice-focus-mode .practice-workspace:has(.lesson-evaluation) .key-guide,
-.practice-focus-mode .practice-workspace:has(.lesson-evaluation) .finger-callout,
-.practice-focus-mode .practice-workspace:has(.lesson-evaluation) .keyboard-map { display: none; }
 .practice-focus-mode .lesson-evaluation { margin: 0; padding: 10px; gap: 8px; grid-template-columns: 1fr; }
 .practice-focus-mode .lesson-evaluation p { margin-top: 4px; font-size: 12px; line-height: 1.4; }
 .practice-focus-mode .lesson-evaluation dl { gap: 5px; margin: 0; }
 .practice-focus-mode .lesson-evaluation dl div { padding: 6px 4px; }
 .practice-focus-mode .lesson-evaluation dd { font-size: 19px; }
+/* Feedback floats in the unused lower-left area; it never adds a row to the
+   hand guide or changes the room/camera height when an attempt is graded. */
+.practice-isolation-backdrop { position: fixed; inset: 0; z-index: 39; background: var(--ivory); }
+.practice-focus-mode .practice-workspace { position: relative; }
+.practice-focus-mode .practice-workspace:not(.is-theatre) .practice-input-column { position: relative; }
+.practice-feedback-dock { position: absolute; inset-inline: 0; bottom: 0; z-index: 6; }
+.practice-focus-mode .is-theatre .practice-feedback-dock { inset-inline: 12px calc(230px + 22px); bottom: 12px; }
+.practice-feedback-dock .typing-feedback { margin: 0 0 5px; font-size: 12px; }
+.practice-feedback-dock .typing-feedback.initial-hint { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip-path: inset(50%); }
+.practice-feedback-dock:has(.lesson-evaluation) .typing-feedback,
+.practice-feedback-dock:has(.lesson-evaluation) .practice-coach-message { display: none; }
+.practice-feedback-dock .lesson-evaluation { grid-template-columns: minmax(0, 1fr) auto; margin: 0; padding: 8px 10px; gap: 8px; }
+.practice-feedback-dock .lesson-evaluation small { font-size: 11px; }
+.practice-feedback-dock .lesson-evaluation b { font-size: 15px; }
+.practice-feedback-dock .lesson-evaluation p { font-size: 12px; line-height: 1.35; margin: 3px 0 0; }
+.practice-feedback-dock .lesson-evaluation dl { grid-template-columns: repeat(3, minmax(45px, 1fr)); align-self: center; }
+.practice-feedback-dock .lesson-evaluation dt { font-size: 11px; line-height: 1.3; }
+.practice-feedback-dock .lesson-evaluation dd { font-size: 19px; }
+@media (min-width: 1101px) {
+  .practice-focus-mode .is-theatre .practice-feedback-dock { inset-inline-end: 282px; }
+}
+@media (max-width: 1100px) and (min-width: 761px) {
+  .practice-focus-mode .is-theatre .practice-feedback-dock { inset-inline-end: 212px; }
+}
+@media (max-width: 760px) {
+  .practice-focus-mode .is-theatre .practice-feedback-dock { inset-inline: 12px; }
+  .practice-feedback-dock .lesson-evaluation { grid-template-columns: 1fr; }
+}
 /* Compact chrome, not the 3D keyboard or the input mechanics. */
 .practice-focus-mode .practice-choice-row button { min-height: 30px; padding-block: 5px; }
 .practice-focus-mode .keyboard-tools > p { display: none; }
