@@ -1771,6 +1771,81 @@ button {
   font-weight: 950;
 }
 
+/* Compact practice results only: keep every score visible in narrow panels.
+   The later view-specific rules are overridden by this scoped specificity. */
+.practice-card .practice-workspace .lesson-evaluation.compact {
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  max-width: 100%;
+  padding: 8px 10px;
+  gap: 6px;
+  border-radius: 10px;
+  box-shadow: 1px 1px 0 var(--shadow-ink);
+}
+.practice-card .practice-workspace .lesson-evaluation.compact > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 8px;
+  min-width: 0;
+}
+.practice-card .practice-workspace .lesson-evaluation.compact small {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: normal;
+}
+.practice-card .practice-workspace .lesson-evaluation.compact b {
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.practice-card .practice-workspace .lesson-evaluation.compact p {
+  flex: 0 0 100%;
+  min-width: 0;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.practice-card .practice-workspace .lesson-evaluation.compact.accepted p {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.practice-card .practice-workspace .lesson-evaluation.compact dl {
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  width: auto;
+  gap: 4px 8px;
+  margin: 0;
+}
+.practice-card .practice-workspace .lesson-evaluation.compact dl div {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: baseline;
+  min-width: 0;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  text-align: start;
+}
+.practice-card .practice-workspace .lesson-evaluation.compact dt {
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.practice-card .practice-workspace .lesson-evaluation.compact dd {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .inline-sound-control {
   display: inline-flex;
   align-items: center;

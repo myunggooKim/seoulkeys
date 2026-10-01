@@ -2971,7 +2971,7 @@ export default function Home() {
     </p>
   );
   const lessonEvaluationPanel = lessonEvaluation && (
-                <div className={`lesson-evaluation ${lessonEvaluation.accepted ? "accepted" : "rejected"}`} aria-live="assertive">
+                <div className={`lesson-evaluation ${lessonEvaluation.accepted ? "accepted" : "rejected"} compact`} aria-live="assertive">
                   <div>
                     <small>{lessonEvaluation.accepted ? tr(locale, "Completed", "입력 검사 통과") : tr(locale, "Check", "다시 확인 필요")}</small>
                     <b>{lessonEvaluation.accepted ? lessonEvaluation.label : tr(locale, "Check", lessonEvaluation.label)}</b>
@@ -2979,7 +2979,7 @@ export default function Home() {
                   </div>
                   <dl>
                     <div><dt>{tr(locale, "Completed", "완성도")}</dt><dd>{lessonEvaluation.completeness}%</dd></div>
-                    <div><dt>{tr(locale, "Accuracy", "입력 정확도")}</dt><dd>{lessonEvaluation.accuracy}%</dd></div>
+                    <div><dt>{tr(locale, "Accuracy", "정확도")}</dt><dd>{lessonEvaluation.accuracy}%</dd></div>
                     {lastAttemptCpm > 0 && <div><dt>{tr(locale, "CPM", "타/분")}</dt><dd>{lastAttemptCpm}</dd></div>}
                   </dl>
                   {!lessonEvaluation.accepted && sentenceComplete && <button className="retry-practice" type="button" onClick={resetCurrentPractice}>{viewText.clear}</button>}
