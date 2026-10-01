@@ -1,4 +1,14 @@
 // Local CC0 recordings: no third-party runtime calls or synthesized beeps.
+type TypingSoundKey = Pick<KeyboardEvent, "key" | "code" | "repeat" | "ctrlKey" | "metaKey" | "altKey">;
+
+export function shouldPlayTypingKeySound(event: TypingSoundKey): boolean {
+  if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return false;
+  // Native IMEs can report "Process" instead of the character. Use physical
+  // typing keys, not composition commits or Enter, to trigger one strike.
+  return event.key.length === 1 || event.key === "Backspace"
+    || /^(?:Key[A-Z]|Digit[0-9]|Numpad(?:[0-9]|Decimal|Add|Subtract|Multiply|Divide)|Space|Backspace|Minus|Equal|BracketLeft|BracketRight|Backslash|Semicolon|Quote|Comma|Period|Slash|IntlBackslash|IntlRo|IntlYen)$/.test(event.code);
+}
+
 const files = ["key-a", "key-b", "key-wide"] as const;
 const buffers = new WeakMap<AudioContext, Promise<(AudioBuffer | null)[]>>();
 const voices = new WeakMap<AudioContext, Set<AudioBufferSourceNode>>();

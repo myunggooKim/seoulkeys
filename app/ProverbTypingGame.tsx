@@ -1,6 +1,7 @@
 "use client";
 
 import { HangulTextarea } from "./HangulTypingField";
+import { shouldPlayTypingKeySound } from "./typing-key-audio";
 import { WordMeaningText } from "./WordMeaningText";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -139,13 +140,15 @@ export function ProverbTypingGame({
           value={input}
           disabled={locked}
           onValueChange={(value) => setInput(value.replace(/\r?\n/g, ""))}
+          onKeyDownCapture={(event) => {
+            if (soundEnabled && shouldPlayTypingKeySound(event)) onKeySound(event.code);
+          }}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.nativeEvent.isComposing) {
               event.preventDefault();
               submit();
               return;
             }
-            if (soundEnabled && !event.ctrlKey && !event.metaKey && !event.altKey) onKeySound(event.code);
           }}
           autoComplete="off"
           spellCheck={false}

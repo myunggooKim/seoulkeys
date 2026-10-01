@@ -15,6 +15,7 @@ import type { Locale } from "./locale-detection";
 import { tr } from "./ui-i18n";
 import { HangulInput } from "./HangulTypingField";
 import { isImeKey } from "./browser-hangul-input";
+import { shouldPlayTypingKeySound } from "./typing-key-audio";
 
 type CrosswordStatus = "playing" | "incomplete" | "wrong" | "correct" | "solved";
 
@@ -300,7 +301,6 @@ export function CrosswordGame({ locale, soundEnabled, onSuccessSound, onKeySound
   }
 
   function handleInputKeys(event: KeyboardEvent<HTMLInputElement>) {
-    if (soundEnabled && !event.repeat && (event.key.length === 1 || event.key === "Backspace")) onKeySound(event.code);
     if (event.key === "Enter" && !event.nativeEvent.isComposing) {
       event.preventDefault();
       checkActiveWord();
@@ -408,6 +408,9 @@ export function CrosswordGame({ locale, soundEnabled, onSuccessSound, onKeySound
               disabled={status === "solved" || solvedEntries.has(activeEntry.id)}
               maxLength={Array.from(activeEntry.answer).length}
               onValueChange={updateActiveDraft}
+              onKeyDownCapture={(event) => {
+                if (soundEnabled && shouldPlayTypingKeySound(event)) onKeySound(event.code);
+              }}
               onKeyDown={handleInputKeys}
               onBlur={(event) => {
                 // Release focus when the user moves to another control; only

@@ -1,6 +1,7 @@
 "use client";
 
 import { HangulInput } from "./HangulTypingField";
+import { shouldPlayTypingKeySound } from "./typing-key-audio";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cloneContentDeck, createContentDeck, drawFromContentDeck, type ContentDeck } from "./content-deck";
@@ -730,8 +731,10 @@ export function MissingLetterGame({ koreanUi, locale, soundEnabled, onSuccessSou
         disabled={locked}
         maxLength={2}
         onValueChange={(value) => setAnswer(Array.from(value).slice(-1)[0] ?? "")}
+        onKeyDownCapture={(event) => {
+          if (soundEnabled && shouldPlayTypingKeySound(event)) onKeySound(event.code);
+        }}
         onKeyDown={(event) => {
-          if (soundEnabled && !event.repeat && (event.key.length === 1 || event.key === "Backspace")) onKeySound(event.code);
           if (event.key === "Enter" && !event.nativeEvent.isComposing) {
             event.preventDefault();
             checkAnswer();

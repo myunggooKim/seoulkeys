@@ -2,6 +2,7 @@
 
 import { HangulInput } from "./HangulTypingField";
 import { isImeKey } from "./browser-hangul-input";
+import { shouldPlayTypingKeySound } from "./typing-key-audio";
 
 import { type CSSProperties, FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ThemeWord } from "./content-themes";
@@ -804,9 +805,11 @@ export function FallingWordsGame({ locale, soundEnabled, onSuccessSound, onKeySo
             }}
             onCompositionStart={() => { composingRef.current = true; }}
             onCompositionEnd={() => { composingRef.current = false; }}
+            onKeyDownCapture={(event) => {
+              if (soundEnabled && shouldPlayTypingKeySound(event)) onKeySound(event.code);
+            }}
             onKeyDown={(event) => {
               if (soundEnabled) ensureRetroAudio();
-              if (soundEnabled && !event.repeat && (event.key.length === 1 || event.key === "Backspace")) onKeySound(event.code);
               if (event.key !== "Enter" || event.nativeEvent.isComposing || composingRef.current) return;
               event.preventDefault();
               submitWord();

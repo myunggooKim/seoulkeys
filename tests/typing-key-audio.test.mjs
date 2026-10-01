@@ -1,6 +1,48 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { shouldPlayTypingKeySound } from "../app/typing-key-audio";
+
+const keyEvent = (overrides = {}) => ({
+  key: "g", code: "KeyG", repeat: false, ctrlKey: false, metaKey: false, altKey: false,
+  ...overrides,
+});
+
+test("native Korean IME physical strikes and Latin layout strikes produce the same sound decision", () => {
+  for (const letter of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+    assert.equal(shouldPlayTypingKeySound(keyEvent({ key: "Process", code: `Key${letter}`, isComposing: true, keyCode: 229 })), true);
+    assert.equal(shouldPlayTypingKeySound(keyEvent({ key: letter.toLowerCase(), code: `Key${letter}` })), true);
+  }
+  for (const code of ["Space", "Backspace", "Digit1", "Semicolon", "Quote", "IntlBackslash"]) {
+    assert.equal(shouldPlayTypingKeySound(keyEvent({ key: "Process", code, isComposing: true })), true);
+  }
+  assert.equal(shouldPlayTypingKeySound(keyEvent({ key: "ㅎ", code: "" })), true);
+  assert.equal(shouldPlayTypingKeySound(keyEvent({ key: "q", code: "KeyA" })), true);
+  assert.equal(shouldPlayTypingKeySound(keyEvent({ key: "R", code: "KeyR", shiftKey: true })), true);
+});
+
+test("composition commits, control keys, repeated events and shortcuts do not add key sounds", () => {
+  for (const code of ["Enter", "NumpadEnter", "ShiftLeft", "ControlLeft", "AltRight", "MetaLeft", "ArrowLeft", "Escape", "Tab", "Lang1", "CapsLock"]) {
+    assert.equal(shouldPlayTypingKeySound(keyEvent({ key: "Process", code, isComposing: true, keyCode: 229 })), false, code);
+  }
+  for (const flag of ["repeat", "ctrlKey", "metaKey", "altKey"]) {
+    assert.equal(shouldPlayTypingKeySound(keyEvent({ [flag]: true })), false, flag);
+  }
+  assert.equal(shouldPlayTypingKeySound(keyEvent({ key: "Enter", code: "Enter" })), false);
+  assert.equal(shouldPlayTypingKeySound(keyEvent({ key: "Unidentified", code: "" })), false);
+});
+
+test("sound capture bypasses the shared IME guard without altering its input or submit protection", async () => {
+  const field = await readFile(new URL("../app/HangulTypingField.tsx", import.meta.url), "utf8");
+  assert.match(field, /if \(composing\.current \|\| isImeKey\(event\.nativeEvent\)\) \{[\s\S]*?return;\s*\}\s*props\.onKeyDown\?\.\(event\);/);
+  assert.match(field, /<input \{\.\.\.props\}/);
+  assert.match(field, /<textarea \{\.\.\.props\}/);
+  for (const file of ["page.tsx", "CrosswordGame.tsx", "FallingWordsGame.tsx", "ProgressivePuzzles.tsx", "ProverbTypingGame.tsx"]) {
+    const source = await readFile(new URL(`../app/${file}`, import.meta.url), "utf8");
+    assert.match(source, /onKeyDownCapture=\{\(event\) => \{\s*if \((?:returnSoundEnabled|soundEnabled) && shouldPlayTypingKeySound\(event\)\)/, file);
+    assert.doesNotMatch(source, /event\.key\.length === 1 \|\| event\.key === "Backspace"/, file);
+  }
+});
 
 test("recorded key sounds are small, mono, short, non-clipping PCM files", async () => {
   let total = 0;

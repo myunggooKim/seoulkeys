@@ -10,7 +10,7 @@ import { WordMeaningText } from "./WordMeaningText";
 import { HandGuide } from "./HandGuide";
 import { TypingTheatre, preloadTypingTheatre } from "./TypingTheatre";
 import { typingViewCopy } from "./typing-view-copy";
-import { playRecordedTypingKey } from "./typing-key-audio";
+import { playRecordedTypingKey, shouldPlayTypingKeySound } from "./typing-key-audio";
 import { FirstMinuteWarmup } from "./FirstMinuteWarmup";
 import { SyllableGuide } from "./SyllableGuide";
 import { firstMinuteToolsReleased } from "./release-features";
@@ -3371,17 +3371,12 @@ export default function Home() {
                   setTyped(nextValue);
                   setGuideStep(Math.min(sentenceToPracticeSequence(nextValue).length, practiceSequence.length));
                 }}
-                onKeyDown={(event) => {
-                  if (
-                    returnSoundEnabled
-                    && !event.repeat
-                    && (event.key.length === 1 || event.key === "Backspace")
-                    && !event.ctrlKey
-                    && !event.metaKey
-                    && !event.altKey
-                  ) {
+                onKeyDownCapture={(event) => {
+                  if (returnSoundEnabled && shouldPlayTypingKeySound(event)) {
                     playTypingKeySound(event.code);
                   }
+                }}
+                onKeyDown={(event) => {
                   const physicalFinger = fingerByCode[event.code];
                   if (physicalFinger && event.key !== "Enter") {
                     if (fingerReleaseTimerRef.current) window.clearTimeout(fingerReleaseTimerRef.current);
