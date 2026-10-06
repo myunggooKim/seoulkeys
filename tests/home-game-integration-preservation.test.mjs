@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import test from 'node:test';
-import {applyHomeGameIntegrationDelta,withoutCommunityAuthorizedHeader} from './helpers/home-game-integration-delta.mjs';
+import {applyHomeGameIntegrationDelta,withoutCommunityAuthorizedHeader,withoutGameActivityProps} from './helpers/home-game-integration-delta.mjs';
 
-const home=(await readFile(new URL('../app/page.tsx',import.meta.url),'utf8')).replace(/\r\n/g,'\n');
+const home=withoutGameActivityProps(await readFile(new URL('../app/page.tsx',import.meta.url),'utf8'));
 const delta=JSON.parse(await readFile(new URL('./fixtures/home-game-integration-delta.json',import.meta.url),'utf8'));
 const baseline=JSON.parse(await readFile(new URL('./fixtures/community-preservation.json',import.meta.url),'utf8'));
 const sha256=(source)=>createHash('sha256').update(source).digest('hex');

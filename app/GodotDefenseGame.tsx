@@ -9,6 +9,7 @@ import { tr } from "./ui-i18n";
 import { loadDefenseMeaningPack, type DefenseMeaningPack } from "./defense-meaning-pack";
 import { createDefenseConfig, GODOT_DEFENSE_URL, isDefenseReadyMessage, postDefenseConfig } from "./godot-defense-bridge";
 import { DefenseAudioSwitch } from "./DefenseAudioSwitch";
+import { useGameActivity } from "./use-game-activity";
 
 type LoadState = "idle" | "loading" | "ready" | "delayed" | "unsupported" | "error";
 
@@ -23,6 +24,7 @@ type GodotDefenseGameProps = {
   onSuccessSound: () => void;
   onKeySound: (code: string) => void;
   suspended?: boolean;
+  activityTracking?: boolean;
   themeWords?: ThemeWord[];
   /** Optional fixed 160 × 600 desktop creatives. No publisher or ad request is created here.
    * Slots mount only when both the viewport and measured stage can safely contain them.
@@ -46,7 +48,7 @@ function supportsGame(): boolean {
 }
 
 /** The Godot runtime owns gameplay and audio; legacy sound callbacks are retained for API compatibility. */
-export function GodotDefenseGame({ locale, soundEnabled, musicEnabled = true, onSoundEnabledChange, onMusicEnabledChange, onRequestExit, suspended = false, themeWords, desktopStartAd, desktopEndAd }: GodotDefenseGameProps) {
+export function GodotDefenseGame({ locale, soundEnabled, musicEnabled = true, onSoundEnabledChange, onMusicEnabledChange, onRequestExit, suspended = false, activityTracking = false, themeWords, desktopStartAd, desktopEndAd }: GodotDefenseGameProps) {
   const text = (en: string, ko: string) => tr(locale, en, ko);
   const titleId = useId();
   const helpId = useId();
@@ -92,6 +94,9 @@ export function GodotDefenseGame({ locale, soundEnabled, musicEnabled = true, on
   const launched = session > 0;
   const ready = loadState === "ready";
   const loading = loadState === "loading" || loadState === "delayed";
+  // The accepted Godot pack is unchanged. Its internal phase is not exported;
+  // this is focused recent-input time, not an exact engine play-session timer.
+  useGameActivity(rootRef, "falling-words", ready && !blocked && !hidden, activityTracking, frameRef);
 
   const sendConfig = useCallback(() => {
     if (config) postDefenseConfig(frameRef.current?.contentWindow ?? null, window.location.origin, config);

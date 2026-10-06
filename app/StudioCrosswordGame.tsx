@@ -3,19 +3,22 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { CROSSWORD_BRIDGE_CHANNEL, CROSSWORD_BRIDGE_VERSION, CROSSWORD_RUNTIME_PATH, validCrosswordEnvelope, type CrosswordHostState, type CrosswordLocale } from './crossword-studio-contract';
 import './studio-crossword-host.css';
+import { useGameActivity } from './use-game-activity';
+import { isCrosswordActivityRunning } from './frame-game-activity';
 
 type Props = {
   koreanUi: boolean; locale: CrosswordLocale; soundEnabled: boolean;
   onSuccessSound: () => void; onKeySound: (code: string) => void;
   onSoundEnabledChange?: (enabled: boolean) => void;
   onRequestExit?: () => void;
-  themeId?: string; suspended?: boolean;
+  themeId?: string; suspended?: boolean; activityTracking?: boolean;
 };
 
 /** Keeps the accepted studio game's CSS/renderer isolated from the main site. */
-export function StudioCrosswordGame({ locale, soundEnabled, onSuccessSound, onKeySound, onSoundEnabledChange, onRequestExit, themeId, suspended = false }: Props) {
+export function StudioCrosswordGame({ locale, soundEnabled, onSuccessSound, onKeySound, onSoundEnabledChange, onRequestExit, themeId, suspended = false, activityTracking = false }: Props) {
   const session = useId();
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const activityRootRef = useRef<HTMLElement>(null);
   const [ready, setReady] = useState(false);
   const [height, setHeight] = useState(960);
   const [failed, setFailed] = useState(false);
@@ -23,6 +26,7 @@ export function StudioCrosswordGame({ locale, soundEnabled, onSuccessSound, onKe
   const stateRef = useRef<CrosswordHostState>({ locale, soundEnabled, suspended, themeId });
   const callbacks = useRef({ onSuccessSound, onKeySound, onSoundEnabledChange, onRequestExit });
   const [boot, setBoot] = useState(() => ({ locale, soundEnabled, themeId }));
+  useGameActivity(activityRootRef, 'crossword', ready && !failed && !suspended, activityTracking, iframeRef, isCrosswordActivityRunning);
   const send = useCallback((type: string, payload: Record<string, unknown> = {}) => {
     iframeRef.current?.contentWindow?.postMessage({ channel: CROSSWORD_BRIDGE_CHANNEL, version: CROSSWORD_BRIDGE_VERSION, session, type, ...payload }, window.location.origin);
   }, [session]);
@@ -62,7 +66,7 @@ export function StudioCrosswordGame({ locale, soundEnabled, onSuccessSound, onKe
   }, [session, send, attempt]);
   const query = new URLSearchParams({ session, locale: boot.locale, sound: boot.soundEnabled ? '1' : '0' });
   if (boot.themeId) query.set('theme', boot.themeId);
-  return <section className="studio-crossword-game studio-crossword-host" aria-busy={!ready} data-runtime="studio-candidate-10c-music" inert={suspended}>
+  return <section ref={activityRootRef} className="studio-crossword-game studio-crossword-host" aria-busy={!ready} data-runtime="studio-candidate-10c-music" inert={suspended}>
     {(!ready || failed) && <div className="studio-crossword-loading" role="status">
       <span>{failed ? (locale === 'ko' ? '게임을 불러오지 못했어요.' : 'The game could not load.') : (locale === 'ko' ? '퍼즐을 준비하고 있어요…' : 'Preparing the puzzle…')}</span>
       {failed && <button type="button" onClick={() => { setBoot({ locale, soundEnabled, themeId }); setReady(false); setFailed(false); setAttempt(value => value + 1); }}>{locale === 'ko' ? '다시 시도' : 'Retry'}</button>}

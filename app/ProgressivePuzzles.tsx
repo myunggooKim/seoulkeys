@@ -2,6 +2,7 @@
 
 import { HangulInput } from "./HangulTypingField";
 import { shouldPlayTypingKeySound } from "./typing-key-audio";
+import { useGameActivity } from "./use-game-activity";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cloneContentDeck, createContentDeck, drawFromContentDeck, type ContentDeck } from "./content-deck";
@@ -565,8 +566,10 @@ export function buildCrossword(puzzle: CrosswordPuzzle) {
   return { cells, numberByStart, numberByEntry };
 }
 
-export function MissingLetterGame({ koreanUi, locale, soundEnabled, onSuccessSound, onKeySound, words }: {
+export function MissingLetterGame({ koreanUi, locale, soundEnabled, onSuccessSound, onKeySound, words, suspended = false, activityTracking = false }: {
   koreanUi: boolean; locale: Locale; soundEnabled: boolean; onSuccessSound: () => void; onKeySound: (code: string) => void;
+  suspended?: boolean;
+  activityTracking?: boolean;
   // Optional themed word bank used to generate endless puzzles.
   words?: ThemeWord[];
 }) {
@@ -596,6 +599,8 @@ export function MissingLetterGame({ koreanUi, locale, soundEnabled, onSuccessSou
   });
   const [message, setMessage] = useState(tr(locale, "Type the missing syllable and press Enter.", "빠진 한 글자를 입력하고 Enter를 누르세요."));
   const inputRef = useRef<HTMLInputElement>(null);
+  const activityRootRef = useRef<HTMLDivElement>(null);
+  useGameActivity(activityRootRef, "missing-letter", !locked && !suspended, activityTracking);
   const timerRef = useRef<number | null>(null);
   const puzzleStartedAt = useRef<number | null>(null);
   const didMountRef = useRef(false);
@@ -691,7 +696,7 @@ export function MissingLetterGame({ koreanUi, locale, soundEnabled, onSuccessSou
   }
 
   return (
-    <div className={`missing-demo progressive-puzzle level-${(levelIndex % 5) + 1}`} onKeyDownCapture={(event) => {
+    <div ref={activityRootRef} className={`missing-demo progressive-puzzle level-${(levelIndex % 5) + 1}`} onKeyDownCapture={(event) => {
       const choiceIndex = numberChoiceIndex(event);
       if (choiceIndex !== null && !locked) {
         event.preventDefault();

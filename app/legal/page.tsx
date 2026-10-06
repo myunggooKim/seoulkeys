@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://seoulkeys.com/legal" },
 };
 
-const effectiveDate = "October 4, 2026";
+const effectiveDate = "October 6, 2026";
 const contactEmail = "travels444@gmail.com";
 
 export default function LegalCenter() {
@@ -29,7 +29,7 @@ export default function LegalCenter() {
         <p>개인정보처리방침 · 이용약관 · 쿠키/광고 · 저작권 · 아동 안전 · 접근성</p>
         <div className="legal-status-row">
           <span>Effective {effectiveDate}</span>
-          <span>Policy version 1.3</span>
+          <span>Policy version 1.4</span>
           <span className="preview-status">Public learning service · no ads</span>
         </div>
       </section>
@@ -95,6 +95,7 @@ export default function LegalCenter() {
               <div role="row"><b role="columnheader">Information</b><b role="columnheader">Purpose and retention</b></div>
               <div role="row"><span role="cell">Authenticated email address and display name</span><span role="cell">Identify the learner, secure account-owned progress, and display the personal page. Retained while the learning account remains active or until a valid deletion request is completed.</span></div>
               <div role="row"><span role="cell">Lesson number, completed sentences, practice time, accuracy, XP, visit streak, benefit balance, and earned badges</span><span role="cell">Provide progress sync, the personal dashboard, and repeat-visit benefits. Retained with the learning account.</span></div>
+              <div role="row"><span role="cell">Game type, active play duration, and last played time for signed-in learners</span><span role="cell">Help the site operator understand game use and learning difficulties. Only the authorized operator can view per-account records. No typed answers or keystrokes are stored. Retained with the learning account and deleted with it.</span></div>
               <div role="row"><span role="cell">Interface language, keyboard layout, pronunciation and sound settings</span><span role="cell">Saved in browser storage until the learner clears site data.</span></div>
               <div role="row"><span role="cell">Daily lesson number and completion state</span><span role="cell">Saved on the device to resume the current day’s lesson; replaced as the lesson changes.</span></div>
               <div role="row"><span role="cell">Text typed into practice fields</span><span role="cell">Used in memory to score the exercise. The service does not submit or persist it on a Seoul Keys server.</span></div>

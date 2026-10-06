@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { MemberRow } from "./member-rows";
 import styles from "./MemberTable.module.css";
+import { MemberGameActivity } from "./MemberGameActivity";
 
 /**
  * The member directory, sortable by every field that means something.
@@ -114,10 +115,10 @@ function ClassSummary({ row }: { row: MemberRow }) {
     : <span className="owner-activity-flag">미소속</span>;
 }
 
-function AccountSummary({ row }: { row: MemberRow }) {
+function AccountSummary({ row, onSelect }: { row: MemberRow; onSelect: (row: MemberRow) => void }) {
   return (
     <div className={styles.account}>
-      <strong>{row.displayName}</strong>
+      <button type="button" className={styles.accountButton} onClick={() => onSelect(row)} title="게임 이용 기록 보기">{row.displayName}</button>
       <span className={styles.email}>{row.email}</span>
       <div className={styles.accountMeta}>
         <span>{row.isTeacher ? "선생님" : "학습자"}</span>
@@ -164,7 +165,7 @@ function RecentSummary({ row }: { row: MemberRow }) {
   );
 }
 
-function MemberRows({ rows, title }: { rows: MemberRow[]; title: string }) {
+function MemberRows({ rows, title, onSelect }: { rows: MemberRow[]; title: string; onSelect: (row: MemberRow) => void }) {
   return (
     <>
       <table className={`${styles.table} ${styles.desktopTable}`}>
@@ -182,7 +183,7 @@ function MemberRows({ rows, title }: { rows: MemberRow[]; title: string }) {
         <tbody>
           {rows.map((row) => (
             <tr className={row.idleDays !== null && row.idleDays > 7 ? styles.idle : undefined} key={row.email}>
-              <th scope="row"><AccountSummary row={row} /></th>
+              <th scope="row"><AccountSummary row={row} onSelect={onSelect} /></th>
               <td><ProgressSummary row={row} /></td>
               <td><PracticeSummary row={row} /></td>
               <td><VisitSummary row={row} /></td>
@@ -210,7 +211,7 @@ function MemberRows({ rows, title }: { rows: MemberRow[]; title: string }) {
         {rows.map((row) => (
           <tbody className={row.idleDays !== null && row.idleDays > 7 ? styles.idle : undefined} key={row.email}>
             <tr className={styles.mobileMainRow}>
-              <th scope="row"><AccountSummary row={row} /></th>
+              <th scope="row"><AccountSummary row={row} onSelect={onSelect} /></th>
               <td><ProgressSummary row={row} /></td>
               <td><RecentSummary row={row} /></td>
             </tr>
@@ -244,6 +245,7 @@ export function MemberTable({
   const [sortKey, setSortKey] = useState<SortKey>("lastLoginAt");
   const [direction, setDirection] = useState<Direction>("desc");
   const [grouped, setGrouped] = useState(true);
+  const [selectedMember, setSelectedMember] = useState<MemberRow | null>(null);
 
   const me = rows.find((r) => r.email === ownerEmail) ?? null;
   const others = useMemo(() => rows.filter((r) => r.email !== ownerEmail), [rows, ownerEmail]);
@@ -270,7 +272,7 @@ export function MemberTable({
       {list.length === 0 ? (
         <p className="owner-activity-empty">{empty}</p>
       ) : (
-        <MemberRows rows={list} title={title} />
+        <MemberRows rows={list} title={title} onSelect={setSelectedMember} />
       )}
     </section>
   );
@@ -281,7 +283,7 @@ export function MemberTable({
         <section className="owner-me">
           <p className="section-label">내 계정</p>
           <div className="owner-me-body">
-            <b>{me.displayName}</b>
+            <button type="button" className={styles.accountButton} onClick={() => setSelectedMember(me)} title="게임 이용 기록 보기">{me.displayName}</button>
             <span>{me.email}</span>
             <dl>
               <div><dt>가입</dt><dd>{day(me.createdAt)}</dd></div>
@@ -356,6 +358,7 @@ export function MemberTable({
           </div>
         </div>
       </details>
+      {selectedMember && <MemberGameActivity key={selectedMember.email} email={selectedMember.email} name={selectedMember.displayName} onClose={() => setSelectedMember(null)} />}
     </div>
   );
 }

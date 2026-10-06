@@ -5,11 +5,17 @@ import assert from 'node:assert/strict';
 // entire game, audio, state, or keyboard-handler sections from the digest.
 export const withoutCommunityAuthorizedHeader=(source)=>source.replace(/\r\n/g,'\n').replace(/      <header\b[\s\S]*?<\/header>/,'').replace(/^import (?:headerStyles|\{ HomeHeaderIcon \}|\{ homeGuideLabel, homeNavigation \}).*\n/gm,'').replace('          <Link href="/community">{tr(locale, "Community", "커뮤니티")}</Link>\n','');
 
+// Oct 7: the authorized account-only time recording adds exactly these three
+// call-site props. No input, audio, progress or gameplay handler is excluded.
+export const withoutGameActivityProps=(source)=>source.replace(/\r\n/g,'\n')
+  .replace(/(<(?:FallingWordsGame|CrosswordGame)[^\n]*?) activityTracking=\{signedIn === true\}(?= \/>)/g,'$1')
+  .replace(/(<MissingLetterGame[^\n]*?) suspended=\{exitPromptOpen\} activityTracking=\{signedIn === true\}(?= \/>)/g,'$1');
+
 export function applyHomeGameIntegrationDelta(source, delta, direction = 'reverse') {
   assert.ok(direction === 'forward' || direction === 'reverse', 'Unknown home integration delta direction');
   assert.equal(delta.version, 1, 'Unsupported home integration delta version');
   assert.ok(Array.isArray(delta.hunks) && delta.hunks.length > 0, 'Home integration delta must have explicit hunks');
-  const normalized = source.replace(/\r\n/g, '\n');
+  const normalized = withoutGameActivityProps(source);
   const ids = new Set();
   const edits = delta.hunks.map((hunk) => {
     assert.ok(typeof hunk.id === 'string' && hunk.id.length > 0 && !ids.has(hunk.id), 'Home integration hunk IDs must be unique');

@@ -1,3 +1,9 @@
 
 # Preserve binary game asset pieces on every checkout.
 /game-assets/seoul-defense/*.pckpart* -text -diff
+
+# Accepted exports carry SHA-256 integrity contracts; Windows must not rewrite
+# their line endings. Keep authoring text reproducible with the same LF input.
+/public/games/** text=auto eol=lf
+/public/_headers text eol=lf
+/game-assets/crossword-studio/source/** text=auto eol=lf

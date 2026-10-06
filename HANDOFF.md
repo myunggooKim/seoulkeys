@@ -1,5 +1,7 @@
 # Seoul Keys — 작업 인계 문서
 
+> **2026-10-07 운영 배포:** 사용자가 새 게임 커밋을 확인한 뒤 이번 기능을 배포하도록 명시적으로 승인했습니다. `02ddc1f`의 새 게임을 보존한 게임별 이용 시간 기능을 운영 버전 `8372d4db-cd41-419d-b5e4-bfd5edcbac44`에 100% 적용했습니다. 아래 `Released change — game activity` 절이 현재 상태이며, 이후의 과거 날짜 기록보다 우선합니다.
+
 > **2026-10-06 GitHub 인계 업데이트:** 저장소는 `https://github.com/myunggooKim/seoulkeys`, 기본 브랜치는 `main`입니다.
 > 최신 학습 안내 번역·커뮤니티·좋아요·헤더·애드센스 확인 코드·게임 화면 변경을 함께 보관합니다.
 > 아래 8월·9월 기록과 과거 감사 파일의 미배포·테스트 실패·GitHub 없음 표시는 당시 기록입니다.
@@ -442,3 +444,66 @@ done
 - **키보드 우선.** 마우스 없이 계속 사용 가능해야 함 (Esc → 확인 → Enter 식).
 - 존댓말로 보고할 것.
 - **추측으로 "고쳤다"고 말하지 말 것.** 측정값으로만 보고.
+# Released change — game activity (2026-10-07)
+
+The owner explicitly approved this deployment after committing replacement games.
+The working tree was safely fast-forwarded to `02ddc1f` before reapplying this
+feature. Defense16-integration17-responsive4, all 1,024 crossword puzzles,
+33-language game meanings, game controls, and accepted frozen asset hashes are
+preserved. A recovery stash named `codex-game-activity-before-02ddc1f` remains.
+
+- Member names in the existing directory open a compact game-detail dialog.
+- Three games: city defense (legacy ID `falling-words`), missing letters,
+  crossword. Signed-in members only. Recording starts with this release; zero
+  historical recorded time does not mean the member never played before.
+- Independent passive telemetry; no answers, keystroke contents, XP, scores,
+  typing-progress totals, translations, or AI calls are added or changed.
+- Excludes exit confirmation, unfocused/hidden tabs, and idle time beyond
+  60 seconds. Crossword loading/pause/solved states and missing-letter locked
+  states are also excluded. Godot does not export its internal pause, briefing,
+  wave/result state: waits or manual pause can count for up to 60 seconds after
+  the last interaction. The admin dialog explicitly calls this an input-activity
+  estimate, not exact engine play time. Minute batches and best-effort exit flush;
+  offline/forced closure can lose some activity.
+- New additive migration: `migrations/0004_game_activity.sql`, applied to the
+  existing production DB before this deployment and recorded in `d1_migrations`.
+  It only adds two tables and two indexes. Existing users (70), learning progress
+  rows (70), and forum entries (2) were unchanged immediately after application.
+  Do not blindly apply all older unrecorded migrations to this production DB.
+- `game_activity_totals` keeps at most three rows per account. Short-lived,
+  immutable batch receipts are transactionally summed exactly once and pruned
+  in bounded indexed cleanup after 48 hours, on subsequent activity writes.
+  Both tables cascade on account deletion. No existing records are reset.
+- Existing owner authorization protects the detail API; no public member
+  histories. Same-origin bounded JSON and authenticated identity protect writes.
+- The local preview at `http://127.0.0.1:5182/` uses fictitious members and mocked
+  APIs only. It does not connect to production or perform real sign-in.
+- Final `npm test`: typecheck, all five build steps, and 288 tests passed with
+  zero failures/skips. Frame observation, bounded time accounting, deduplication,
+  authentication, account cascades, crossword persistence/variety, audio, typing,
+  translations, and original integration preservation are covered.
+- Same-origin iframe observation is passive and reads no key values or answers.
+  The actual new local game engines were opened; a mocked crossword activity
+  batch was observed. This is not an exhaustive physical-IME/device test.
+- Windows export checks now use LF via `.gitattributes`; two crossword source
+  files have line-ending-only changes. Runtime/source reproducibility and the
+  accepted original game hashes passed without regenerating game graphics.
+- Worker `hangeul-pop` version `8372d4db-cd41-419d-b5e4-bfd5edcbac44`
+  was uploaded with `--keep-vars`, then activated at 100%. Existing domains,
+  D1 binding, AI binding, secrets, and dashboard variables were preserved.
+  No AI calls, billing changes, or AdSense application/activation were performed.
+- Production checks: home/learn/community returned 200; private detail GET
+  returned 403, valid unauthenticated activity POST returned 401, and foreign
+  Origin POST returned 403. The new hook, defense JS/HTML, and crossword HTML/JS
+  matched the tested build byte-for-byte. Defense WASM returned 200 with the
+  expected WASM/gzip headers. Live crossword controls, board, and input rendered;
+  the read-only running predicate was true, without horizontal page overflow.
+  Real authenticated production recording/admin readback was not exercised using
+  a member account; database logic was exercised in the regression suite and
+  frame recording in the mocked local preview.
+- Observed existing iframe console warnings: an aborted static-locale fetch
+  during game entry and a Cloudflare analytics beacon blocked by the accepted
+  game export's self-only CSP. The Korean game rendered. Frozen game files and
+  security policies were not changed to suppress these warnings in this release.
+- Rollback: deploy previous version `d9076b4b-10d8-4a48-bc60-06774c929d61`
+  at 100% if needed. Leave the new additive tables intact; do not reset the DB.

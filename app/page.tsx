@@ -3735,15 +3735,15 @@ export default function Home() {
           )}>
             <Suspense fallback={<p role="status">{tr(locale, "Loading...", "불러오는 중…")}</p>}>
               {activeActivity === "tetris" && (
-                <FallingWordsGame koreanUi={locale === "ko"} locale={locale} soundEnabled={returnSoundEnabled} onSoundEnabledChange={setReturnSoundEnabled} musicEnabled={defenseMusicEnabled} onMusicEnabledChange={setDefenseMusicEnabled} onRequestExit={() => setExitPromptOpen(true)} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} suspended={exitPromptOpen} themeWords={themeWords} />
+                <FallingWordsGame koreanUi={locale === "ko"} locale={locale} soundEnabled={returnSoundEnabled} onSoundEnabledChange={setReturnSoundEnabled} musicEnabled={defenseMusicEnabled} onMusicEnabledChange={setDefenseMusicEnabled} onRequestExit={() => setExitPromptOpen(true)} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} suspended={exitPromptOpen} themeWords={themeWords} activityTracking={signedIn === true} />
               )}
 
               {activeActivity === "missing" && (
-                <MissingLetterGame koreanUi={locale === "ko"} locale={locale} soundEnabled={returnSoundEnabled} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} words={themeWords} />
+                <MissingLetterGame koreanUi={locale === "ko"} locale={locale} soundEnabled={returnSoundEnabled} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} words={themeWords} suspended={exitPromptOpen} activityTracking={signedIn === true} />
               )}
 
               {activeActivity === "crossword" && (
-                <CrosswordGame koreanUi={locale === "ko"} locale={locale} soundEnabled={returnSoundEnabled} onSoundEnabledChange={setReturnSoundEnabled} onRequestExit={() => setExitPromptOpen(true)} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} suspended={exitPromptOpen} themeId={themeId} />
+                <CrosswordGame koreanUi={locale === "ko"} locale={locale} soundEnabled={returnSoundEnabled} onSoundEnabledChange={setReturnSoundEnabled} onRequestExit={() => setExitPromptOpen(true)} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} suspended={exitPromptOpen} themeId={themeId} activityTracking={signedIn === true} />
               )}
             </Suspense>
           </GameLoadBoundary>

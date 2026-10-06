@@ -55,11 +55,48 @@
 }
 
 .account strong,
+.accountButton,
 .stack strong,
 .stack b {
   font-size: 12px;
   font-weight: 800;
 }
+
+.accountButton {
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  line-height: inherit;
+  text-align: start;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.accountButton:hover { text-decoration: underline; text-underline-offset: 3px; }
+.accountButton:focus-visible { outline: 2px solid var(--purple); outline-offset: 3px; }
+.gameDialog {
+  box-sizing: border-box;
+  margin: auto;
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 20px;
+  border: 2px solid var(--edge);
+  border-radius: 16px;
+  color: var(--ink);
+  background: var(--paper);
+  overflow: auto;
+}
+.gameDialog::backdrop { background: rgb(15 23 42 / .45); }
+.gameDialog header { display: flex; gap: 12px; align-items: start; justify-content: space-between; }
+.gameDialog h2 { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
+.gameDialog button { flex: 0 0 auto; cursor: pointer; padding: 5px 10px; border: 1px solid var(--edge); border-radius: 8px; background: var(--paper); color: var(--ink); }
+.gameDialog button:focus-visible { outline: 3px solid var(--purple); outline-offset: 2px; }
+.gameNote { margin-block: 12px; font-size: 12px; line-height: 1.65; }
+.gameList { display: grid; gap: 12px; margin: 16px 0; padding: 0; list-style: none; }
+.gameList li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; padding: 12px; border: 1px solid var(--edge); border-radius: 10px; }
+.gameList li > span { grid-column: 1 / -1; font-size: 12px; line-height: 1.5; }
 
 .email {
   color: color-mix(in srgb, var(--ink) 76%, var(--paper));
