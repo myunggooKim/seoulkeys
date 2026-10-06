@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "description": "Exact, reversible app/page.tsx changes for the authorized Studio crossword and Godot defense integration. Reverse only these uniquely matched hunks before the original community preservation digest check. Do not refresh the original community fixture to accommodate unrelated changes.",
+  "upstream": {
+    "repository": "https://github.com/myunggooKim/seoulkeys",
+    "commit": "86491f5f218e2cbba1db680aded59e9868e2a0e8",
+    "path": "app/page.tsx",
+    "sha256": "1152a5b52b8c1eee543d78ccea06eb2149bf133abe76a61cd3036f68f96db874",
+    "gitBlobSha1": "037963f9bf445998fa20e0c86a52bcb05598a01e"
+  },
+  "integratedSha256": "afc59afba53305cccab021fb4503596e1bb9b5bcc1b06896ddb5b1cf8e550129",
+  "communityBaselineFixture": "tests/fixtures/community-preservation.json",
+  "lineEndings": "LF; CRLF is normalized exactly as in the original preservation check.",
+  "hunks": [
+    {
+      "id": "game-dialog-focus-import",
+      "description": "Import the keyboard focus trap for the shared game-exit dialog.",
+      "upstreamStartLine": 1,
+      "integratedStartLine": 1,
+      "before": "\"use client\";\n\nimport Link from \"next/link\";\nimport headerStyles from \"./home-header.module.css\";\n",
+      "after": "\"use client\";\n\nimport { trapGameDialogTab } from \"./game-dialog-focus\";\n\nimport Link from \"next/link\";\nimport headerStyles from \"./home-header.module.css\";\n"
+    },
+    {
+      "id": "integrated-game-loaders",
+      "description": "Load the Studio crossword and Godot defense game only when selected.",
+      "upstreamStartLine": 65,
+      "integratedStartLine": 67,
+      "before": "\n// Games are not mounted on the initial practice screen. Fetch their code only\n// when selected, keeping the first visit focused on the usable typing lesson.\nconst CrosswordGame = lazy(() => import(\"./CrosswordGame\").then((module) => ({ default: module.CrosswordGame })));\nconst FallingWordsGame = lazy(() => import(\"./FallingWordsGame\").then((module) => ({ default: module.FallingWordsGame })));\nconst MissingLetterGame = lazy(() => import(\"./ProgressivePuzzles\").then((module) => ({ default: module.MissingLetterGame })));\n\ntype ActivityId = \"home\" | \"tetris\" | \"missing\" | \"crossword\" | \"travel\" | \"kpop\" | \"screen\" | \"proverb\";\n",
+      "after": "\n// Games are not mounted on the initial practice screen. Fetch their code only\n// when selected, keeping the first visit focused on the usable typing lesson.\nconst CrosswordGame = lazy(() => import(\"./StudioCrosswordGame\").then((module) => ({ default: module.StudioCrosswordGame })));\nconst FallingWordsGame = lazy(() => import(\"./GodotDefenseGame\").then((module) => ({ default: module.GodotDefenseGame })));\nconst MissingLetterGame = lazy(() => import(\"./ProgressivePuzzles\").then((module) => ({ default: module.MissingLetterGame })));\n\ntype ActivityId = \"home\" | \"tetris\" | \"missing\" | \"crossword\" | \"travel\" | \"kpop\" | \"screen\" | \"proverb\";\n"
+    },
+    {
+      "id": "defense-music-state",
+      "description": "Keep the defense music preference separate from shared sound effects.",
+      "upstreamStartLine": 1585,
+      "integratedStartLine": 1587,
+      "before": "  }, []);\n  const [autoSpeak, setAutoSpeak] = useState(true);\n  const [returnSoundEnabled, setReturnSoundEnabled] = useState(true);\n  const [speechSupported, setSpeechSupported] = useState(true);\n  const [neuralTtsAvailable, setNeuralTtsAvailable] = useState(true);\n  const [voiceGender, setVoiceGender] = useState<VoiceGender>(\"female\");\n",
+      "after": "  }, []);\n  const [autoSpeak, setAutoSpeak] = useState(true);\n  const [returnSoundEnabled, setReturnSoundEnabled] = useState(true);\n  const [defenseMusicEnabled, setDefenseMusicEnabled] = useState(true);\n  const [speechSupported, setSpeechSupported] = useState(true);\n  const [neuralTtsAvailable, setNeuralTtsAvailable] = useState(true);\n  const [voiceGender, setVoiceGender] = useState<VoiceGender>(\"female\");\n"
+    },
+    {
+      "id": "game-exit-dialog-focus",
+      "description": "Focus the shared game-exit dialog while a game is suspended.",
+      "upstreamStartLine": 2917,
+      "integratedStartLine": 2920,
+      "before": "    if (id) window.setTimeout(() => document.getElementById(id)?.focus(), 0);\n  }\n\n  function cancelGameExit() {\n    setExitPromptOpen(false);\n    focusActiveGameInput();\n",
+      "after": "    if (id) window.setTimeout(() => document.getElementById(id)?.focus(), 0);\n  }\n\n  useEffect(() => {\n    if (!exitPromptOpen) return;\n    const frame = window.requestAnimationFrame(() => {\n      document.querySelector<HTMLElement>(\".exit-confirm-card\")?.focus();\n    });\n    return () => window.cancelAnimationFrame(frame);\n  }, [exitPromptOpen]);\n\n  function cancelGameExit() {\n    setExitPromptOpen(false);\n    focusActiveGameInput();\n"
+    },
+    {
+      "id": "game-exit-dialog-keyboard",
+      "description": "Trap Tab in the dialog and retain native Enter behavior for focused buttons.",
+      "upstreamStartLine": 2927,
+      "integratedStartLine": 2938,
+      "before": "    if (activeActivity === \"home\") return;\n      if (isImeKey(event.nativeEvent)) return;\n    if (exitPromptOpen) {\n      if (event.key === \"Enter\") {\n        event.preventDefault();\n        event.stopPropagation();\n        exitGameToHome();\n",
+      "after": "    if (activeActivity === \"home\") return;\n      if (isImeKey(event.nativeEvent)) return;\n    if (exitPromptOpen) {\n      if (event.key === \"Tab\") {\n        trapGameDialogTab(event, document.querySelector<HTMLElement>(\".exit-confirm-card\"));\n        return;\n      }\n      if (event.key === \"Enter\") {\n        if (event.target instanceof HTMLElement && event.target.closest(\"button\")) return;\n        event.preventDefault();\n        event.stopPropagation();\n        exitGameToHome();\n"
+    },
+    {
+      "id": "game-exit-dialog-focus-target",
+      "description": "Make the dialog card programmatically focusable.",
+      "upstreamStartLine": 3687,
+      "integratedStartLine": 3703,
+      "before": "          )}\n          {activeActivity !== \"home\" && exitPromptOpen && (\n            <div className=\"exit-confirm-overlay\" role=\"alertdialog\" aria-modal=\"true\" aria-labelledby=\"exit-confirm-title\">\n              <div className=\"exit-confirm-card\">\n                <p className=\"demo-label\">{tr(locale, \"PAUSED\", \"일시정지됨\")}</p>\n                <h3 id=\"exit-confirm-title\">{tr(locale, \"Return to home?\", \"홈으로 가시겠습니까?\")}</h3>\n                <p>{tr(locale, \"You will leave the current game.\", \"진행 중인 게임에서 나갑니다.\")}</p>\n",
+      "after": "          )}\n          {activeActivity !== \"home\" && exitPromptOpen && (\n            <div className=\"exit-confirm-overlay\" role=\"alertdialog\" aria-modal=\"true\" aria-labelledby=\"exit-confirm-title\">\n              <div className=\"exit-confirm-card\" tabIndex={-1}>\n                <p className=\"demo-label\">{tr(locale, \"PAUSED\", \"일시정지됨\")}</p>\n                <h3 id=\"exit-confirm-title\">{tr(locale, \"Return to home?\", \"홈으로 가시겠습니까?\")}</h3>\n                <p>{tr(locale, \"You will leave the current game.\", \"진행 중인 게임에서 나갑니다.\")}</p>\n"
+    },
+    {
+      "id": "defense-host-controls",
+      "description": "Connect defense sound, music, and exit controls to the existing host state.",
+      "upstreamStartLine": 3719,
+      "integratedStartLine": 3735,
+      "before": "          )}>\n            <Suspense fallback={<p role=\"status\">{tr(locale, \"Loading...\", \"불러오는 중…\")}</p>}>\n              {activeActivity === \"tetris\" && (\n                <FallingWordsGame koreanUi={locale === \"ko\"} locale={locale} soundEnabled={returnSoundEnabled} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} suspended={exitPromptOpen} themeWords={themeWords} />\n              )}\n\n              {activeActivity === \"missing\" && (\n",
+      "after": "          )}>\n            <Suspense fallback={<p role=\"status\">{tr(locale, \"Loading...\", \"불러오는 중…\")}</p>}>\n              {activeActivity === \"tetris\" && (\n                <FallingWordsGame koreanUi={locale === \"ko\"} locale={locale} soundEnabled={returnSoundEnabled} onSoundEnabledChange={setReturnSoundEnabled} musicEnabled={defenseMusicEnabled} onMusicEnabledChange={setDefenseMusicEnabled} onRequestExit={() => setExitPromptOpen(true)} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} suspended={exitPromptOpen} themeWords={themeWords} />\n              )}\n\n              {activeActivity === \"missing\" && (\n"
+    },
+    {
+      "id": "crossword-host-controls",
+      "description": "Connect crossword sound and exit controls, and suspend during the exit prompt.",
+      "upstreamStartLine": 3727,
+      "integratedStartLine": 3743,
+      "before": "              )}\n\n              {activeActivity === \"crossword\" && (\n                <CrosswordGame koreanUi={locale === \"ko\"} locale={locale} soundEnabled={returnSoundEnabled} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} themeId={themeId} />\n              )}\n            </Suspense>\n          </GameLoadBoundary>\n",
+      "after": "              )}\n\n              {activeActivity === \"crossword\" && (\n                <CrosswordGame koreanUi={locale === \"ko\"} locale={locale} soundEnabled={returnSoundEnabled} onSoundEnabledChange={setReturnSoundEnabled} onRequestExit={() => setExitPromptOpen(true)} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} suspended={exitPromptOpen} themeId={themeId} />\n              )}\n            </Suspense>\n          </GameLoadBoundary>\n"
+    }
+  ]
+}

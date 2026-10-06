@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Seoul Defense | 한글시티</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#17131f;color:#f4ebd9}
+#canvas{position:fixed;inset:0;display:block;width:100%;height:100%;border:0;outline:0;touch-action:none}
+#status{position:fixed;inset:0;display:grid;place-content:center;gap:16px;padding:24px;font:16px/1.5 system-ui,sans-serif;background:#17131f;text-align:center}
+#status[hidden]{display:none}progress{width:min(300px,80vw);accent-color:#9fcdb0}
+</style>
+<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
+<link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
+
+<script id="seoulkeys-host-exit-bridge">
+window.addEventListener('keydown',function(event){
+ if(event.key!=='Escape'||event.isComposing||event.keyCode===229||window.parent===window)return;
+ var hostFullscreen=false;
+ try{hostFullscreen=Boolean(window.parent.document.fullscreenElement);}catch(_){return;}
+ if(hostFullscreen||document.fullscreenElement)return;
+ event.preventDefault();event.stopImmediatePropagation();
+ window.parent.postMessage({type:'seoulkeys-defense-request-exit'},location.origin);
+},true);
+</script>
+</head>
+<body>
+<canvas id="canvas" tabindex="0" aria-label="서울 방어전 게임"></canvas>
+<div id="status" role="status"><span id="message">서울 방어전을 준비하고 있어요…</span><progress id="progress"></progress></div>
+<noscript>JavaScript is required to play Seoul Defense.</noscript>
+<script id="ime-submit-controller">
+// One physical Enter means one submit intent, including the Enter which commits
+// an IME syllable. Preserve the browser's native commit, then replay once only
+// after the real Godot IME/VK handlers have received the final DOM data.
+(function () {
+  if (window.seoulDefenseIMEGuard) return;
+  const canvas = document.getElementById('canvas');
+  const replayEvents = new WeakSet();
+  const delivered = [];
+  // Only advanceStageJSON enables this quarantine. Ordinary play keeps the
+  // existing commit/replay algorithm, including its stable-frame handshake.
+  const retired = new Map(), cancelEvents = new WeakSet();
+  let epoch = 0, compositionTarget = null, compositionData = '', compositionBase = '', compositionCaret = 0, compositionEndSeen = false, compositionInputSeen = false;
+  function vkTarget(target) { return /^(INPUT|TEXTAREA)$/.test(target.tagName || ''); }
+  function staleEnd(event) {
+    const old = retired.get(event.target);
+    if (!old || cancelEvents.has(event)) return false;
+    const data = String(event.data || '');
+    if (old.freshComposition && (!old.data || data !== old.data || data === old.freshData)) return false;
+    old.endSeen = true;
+    if (old.inputSeen) retired.delete(event.target);
+    event.stopImmediatePropagation();
+    return true;
+  }
+  function staleInput(event) {
+    const old = retired.get(event.target);
+    if (!old) return false;
+    const data = String(event.data || '');
+    const value = String(event.target.value || '');
+    const appendedRetired = old.value.slice(0,old.caret)+old.data+old.value.slice(old.caret);
+    const fingerprint = old.data && (data === old.data || value === old.expectedValue || data === old.expectedValue || value === appendedRetired);
+    const isFreshComposition = old.freshComposition && (data === old.freshData || value.endsWith(old.freshData) && old.freshData);
+    const explicitPaste = old.pastePending && String(event.inputType || '') === old.pasteType && data === old.pasteData;
+    old.pastePending = false;
+    const stale = !explicitPaste && !isFreshComposition && (fingerprint || (!old.freshEdit && !old.freshComposition));
+    if (!stale) {
+      old.value = value;
+      old.caret = Number(event.target.selectionEnd) || 0;
+      return false;
+    }
+    // The DOM value has already changed by input-time. Restore only the latest
+    // accepted new-stage value, never clear legitimate newer typing.
+    if (vkTarget(event.target)) {
+      event.target.value = old.value;
+      event.target.setSelectionRange(old.caret, old.caret);
+    }
+    old.inputSeen = old.inputSeen || (!event.isComposing && (fingerprint || !old.data));
+    if (old.endSeen && old.inputSeen) retired.delete(event.target);
+    event.stopImmediatePropagation();
+    return true;
+  }
+  function advanceStageJSON() {
+    const target = compositionTarget;
+    const abandoned = state.composing || state.commitPending || pending && pending.composition || target && !compositionInputSeen;
+    epoch++;
+    pending = null;
+    // Keep delivered metadata until its already-forwarded engine key consumes
+    // it. The HUD rejects every pre-boundary id; draining here misaligns keys.
+    for (const intent of delivered) intent.cancelled = true;
+    if (target && abandoned) {
+      const data = compositionData || state.commitData;
+      retired.set(target,{data,expectedValue:compositionBase.slice(0,compositionCaret)+data+compositionBase.slice(compositionCaret),
+        freshComposition:false,freshData:'',freshEdit:false,value:'',caret:0,endSeen:compositionEndSeen,inputSeen:compositionInputSeen});
+      if (vkTarget(target)) { target.value = ''; target.setSelectionRange(0,0); }
+      else if (state.composing) {
+        // Clear Godot's preedit too, without committing abandoned text.
+        const cancel = new CompositionEvent('compositionend',{data:'',bubbles:true});
+        cancelEvents.add(cancel);
+        target.dispatchEvent(cancel);
+      }
+    }
+    state.composing = false;
+    state.commitPending = false;
+    state.commitData = '';
+    state.pointerCommit = false;
+    state.lastInputTarget = null;
+    state.revision++;
+    if (observer) observer('cancel');
+    // Retain enterDown until the actual physical release: a held Continue key
+    // must not become a fresh shot in the new stage.
+    return JSON.stringify({epoch,latestIntentId:serial});
+  }
+  let observer = null, pending = null, scheduled = false, serial = 0;
+  const state = {composing:false, commitPending:false, enterDown:false,
+    revision:0, endSerial:0, commitData:'', lastInputTarget:null,
+    lastInputValue:'', lastInputCaret:0, pointerCommit:false};
+  function owns(target) {
+    if (target === canvas) return true;
+    if (!target) return false;
+    if (target.closest && target.closest('.ime')) return true;
+    return /^(INPUT|TEXTAREA)$/.test(target.tagName || '') && target.parentElement === canvas.parentElement;
+  }
+  function enter(event) {
+    return event.key === 'Enter' || event.code === 'Enter' || event.code === 'NumpadEnter' || event.keyCode === 13;
+  }
+  function stop(event, composing) {
+    event.stopImmediatePropagation();
+    if (!composing && event.cancelable) event.preventDefault();
+  }
+  function changed() {
+    state.revision++;
+    schedule();
+  }
+  function schedule() {
+    if (!pending || scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(settle);
+  }
+  function settledVK(intent) {
+    if (!intent.composition || !/^(INPUT|TEXTAREA)$/.test(intent.target.tagName || '')) return true;
+    if (state.lastInputTarget !== intent.target || state.lastInputValue !== intent.target.value) return false;
+    const data = state.commitData;
+    const caret = state.lastInputCaret;
+    return !data || state.lastInputValue.slice(Math.max(0,caret-data.length),caret) === data;
+  }
+  function settle() {
+    scheduled = false;
+    if (!pending) return;
+    const intent = pending;
+    if (state.composing || state.endSerial < intent.requiredEnd || !settledVK(intent)) {
+      intent.stable = 0;
+      schedule();
+      return;
+    }
+    if (intent.revision !== state.revision) {
+      intent.revision = state.revision;
+      intent.stable = 0;
+      schedule();
+      return;
+    }
+    if (++intent.stable < 2) { schedule(); return; }
+    pending = null;
+    const vk = /^(INPUT|TEXTAREA)$/.test(intent.target.tagName || '');
+    delivered.push({id:intent.id, composition:intent.composition,
+      hasExpectedText:vk, expectedText:vk ? intent.target.value : ''});
+    for (const type of ['keydown','keyup']) {
+      const event = new KeyboardEvent(type,{key:'Enter',code:intent.code,
+        keyCode:13,which:13,bubbles:true,cancelable:true,repeat:false});
+      replayEvents.add(event);
+      canvas.dispatchEvent(event);
+    }
+  }
+  document.addEventListener('compositionstart', event => {
+    if (!owns(event.target)) return;
+    compositionTarget = event.target;
+    compositionEndSeen = false;
+    compositionInputSeen = false;
+    compositionData = '';
+    compositionBase = String(event.target.value || '');
+    compositionCaret = Number(event.target.selectionEnd) || 0;
+    const old = retired.get(event.target);
+    if (old) { old.freshComposition = true; old.freshEdit = true; old.freshData = ''; }
+    // A new edit must not be appended to an older queued submission.
+    if (pending && state.endSerial >= pending.requiredEnd) pending = null;
+    state.composing = true;
+    state.commitPending = false;
+    state.commitData = '';
+    state.pointerCommit = false;
+    state.lastInputTarget = null;
+    if (observer) observer('start');
+    changed();
+  },true);
+  document.addEventListener('compositionupdate', event => {
+    if (!owns(event.target)) return;
+    const old = retired.get(event.target);
+    if (old && !old.freshComposition) { event.stopImmediatePropagation(); return; }
+    compositionTarget = event.target;
+    compositionData = String(event.data || '');
+    if (old) old.freshData = compositionData;
+    state.composing = true;
+    if (observer) observer('update');
+    changed();
+  },true);
+  document.addEventListener('compositionend', event => {
+    if (!owns(event.target) || staleEnd(event)) return;
+    if (!cancelEvents.has(event)) compositionEndSeen = true;
+    compositionTarget = event.target;
+    compositionData = String(event.data || '');
+    state.composing = false;
+    state.endSerial++;
+    state.commitData = String(event.data || '');
+    const cancelled = state.commitData === '';
+    state.commitPending = !cancelled && !state.pointerCommit;
+    if (cancelled) pending = null;
+    if (observer) observer(cancelled ? 'cancel' : 'end');
+    changed();
+  },true);
+  document.addEventListener('input', event => {
+    if (!owns(event.target) || staleInput(event)) return;
+    if (event.target === compositionTarget && !event.isComposing) {
+      const value = vkTarget(event.target) ? String(event.target.value || '') : String(event.data || '');
+      const caret = vkTarget(event.target) ? Number(event.target.selectionEnd) || 0 : value.length;
+      compositionInputSeen = !compositionData || value.slice(Math.max(0,caret-compositionData.length),caret) === compositionData;
+    }
+    if (/^(INPUT|TEXTAREA)$/.test(event.target.tagName || '')) {
+      state.lastInputTarget = event.target;
+      state.lastInputValue = event.target.value;
+      state.lastInputCaret = Number(event.target.selectionEnd) || 0;
+    }
+    changed();
+  },true);
+  document.addEventListener('beforeinput', event => {
+    const old = retired.get(event.target);
+    if (old && !event.isComposing && !String(event.inputType || '').includes('Composition')) {
+      old.freshEdit = true;
+      if (event.inputType === 'insertFromPaste' || event.inputType === 'insertFromDrop') {
+        old.pastePending = true;
+        old.pasteType = event.inputType;
+        old.pasteData = String(event.data || '');
+      }
+    }
+  },true);
+  document.addEventListener('keydown', event => {
+    if (replayEvents.has(event) || !owns(event.target)) return;
+    const composing = state.composing || event.isComposing || event.keyCode === 229;
+    if (!enter(event)) {
+      const old = retired.get(event.target);
+      if (old && !composing && (event.key.length === 1 || event.key === 'Backspace' || event.key === 'Delete')) old.freshEdit = true;
+      if (pending && !composing && (event.key.length === 1 || event.key === 'Backspace' || event.key === 'Delete')) pending = null;
+      state.pointerCommit = false;
+      if (!composing) state.commitPending = false;
+      return;
+    }
+    stop(event,composing);
+    if (event.repeat || state.enterDown) return;
+    state.enterDown = true;
+    pending = {id:++serial,target:event.target,
+      code:event.code === 'NumpadEnter' ? 'NumpadEnter' : 'Enter',
+      composition:composing || state.commitPending,
+      requiredEnd:state.endSerial + (state.composing || event.isComposing ? 1 : 0),
+      revision:-1,stable:0};
+    changed();
+  },true);
+  document.addEventListener('keyup', event => {
+    if (replayEvents.has(event)) return;
+    // Refocus may move the release target away from the hidden IME element.
+    if (!enter(event)) {
+      if (owns(event.target) && !state.composing) state.commitPending = false;
+      return;
+    }
+    if (!state.enterDown && !owns(event.target)) return;
+    stop(event,state.composing || event.isComposing);
+    state.enterDown = false;
+    state.commitPending = false;
+    changed();
+  },true);
+  function pointer(event) {
+    if (!owns(event.target)) return;
+    state.pointerCommit = true;
+    state.commitPending = false;
+  }
+  document.addEventListener('pointerdown',pointer,true);
+  document.addEventListener('touchstart',pointer,true);
+  window.addEventListener('blur',() => {
+    pending = null;
+    delivered.length = 0;
+    state.enterDown = false;
+    state.composing = false;
+    state.commitPending = false;
+    state.revision++;
+    if (observer) observer('blur');
+  });
+  window.addEventListener('focus',() => { if (observer) observer('focus'); });
+  window.seoulDefenseIMEGuard = {
+    snapshot:() => ({composing:state.composing,enterDown:state.enterDown,
+      commitPending:state.commitPending,pending:!!pending,delivered:delivered.length,
+      latestIntentId:serial,pendingIntentId:pending ? pending.id : 0,epoch}),
+    advanceStageJSON,
+    setCompositionObserver:callback => {observer=callback;},
+    consumeIntentJSON:() => JSON.stringify(delivered.shift() || null)
+  };
+})();
+</script>
+<script id="viewport-controller">
+// One owner for CSS size and physical pixels. Godot's disabled resize policy
+// observes these attributes instead of imposing a second aspect or CSS size.
+(function () {
+  const canvas = document.getElementById('canvas');
+  let lastDpr = 0;
+  let dprQuery;
+  function syncCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.max(1, Number(window.devicePixelRatio) || 1);
+    const width = Math.max(1, Math.round(rect.width * dpr));
+    const height = Math.max(1, Math.round(rect.height * dpr));
+    if (canvas.width !== width) canvas.width = width;
+    if (canvas.height !== height) canvas.height = height;
+    window.seoulDefenseViewport = {cssWidth: rect.width, cssHeight: rect.height, pixelWidth: width, pixelHeight: height, dpr};
+    if (dpr !== lastDpr && window.matchMedia) {
+      if (dprQuery) dprQuery.removeEventListener('change', syncCanvas);
+      dprQuery = window.matchMedia('(resolution: ' + dpr + 'dppx)');
+      dprQuery.addEventListener('change', syncCanvas);
+      lastDpr = dpr;
+    }
+  }
+  new ResizeObserver(syncCanvas).observe(canvas);
+  window.addEventListener('resize', syncCanvas);
+  document.addEventListener('fullscreenchange', syncCanvas);
+  window.addEventListener('pageshow', syncCanvas);
+  syncCanvas();
+})();
+</script>
+<script src="index.js?audio=093b7ba57eea"></script>
+<script>
+const config = {"args":[],"canvasResizePolicy":0,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":false,"executable":"index","experimentalVK":true,"fileSizes":{"index.pck":20010228,"index.wasm":37700666},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const engine = new Engine(config);
+engine.startGame({
+  canvas: document.getElementById('canvas'),
+  canvasResizePolicy: 0,
+  onProgress(current, total) {
+    const progress = document.getElementById('progress');
+    if (total > 0) { progress.max = total; progress.value = current; }
+  }
+}).then(() => { document.getElementById('status').hidden = true; })
+.catch(error => {
+  document.getElementById('progress').hidden = true;
+  document.getElementById('message').textContent = '게임을 불러오지 못했습니다. 새로고침해 주세요. / Unable to load. Please refresh.';
+  console.error(error);
+});
+</script>
+</body>
+</html>
+

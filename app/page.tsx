@@ -1,5 +1,7 @@
 "use client";
 
+import { trapGameDialogTab } from "./game-dialog-focus";
+
 import Link from "next/link";
 import headerStyles from "./home-header.module.css";
 import { HomeHeaderIcon } from "./HomeHeaderIcon";
@@ -65,8 +67,8 @@ import { waitForInitialFonts } from "./initial-paint";
 
 // Games are not mounted on the initial practice screen. Fetch their code only
 // when selected, keeping the first visit focused on the usable typing lesson.
-const CrosswordGame = lazy(() => import("./CrosswordGame").then((module) => ({ default: module.CrosswordGame })));
-const FallingWordsGame = lazy(() => import("./FallingWordsGame").then((module) => ({ default: module.FallingWordsGame })));
+const CrosswordGame = lazy(() => import("./StudioCrosswordGame").then((module) => ({ default: module.StudioCrosswordGame })));
+const FallingWordsGame = lazy(() => import("./GodotDefenseGame").then((module) => ({ default: module.GodotDefenseGame })));
 const MissingLetterGame = lazy(() => import("./ProgressivePuzzles").then((module) => ({ default: module.MissingLetterGame })));
 
 type ActivityId = "home" | "tetris" | "missing" | "crossword" | "travel" | "kpop" | "screen" | "proverb";
@@ -1585,6 +1587,7 @@ export default function Home() {
   }, []);
   const [autoSpeak, setAutoSpeak] = useState(true);
   const [returnSoundEnabled, setReturnSoundEnabled] = useState(true);
+  const [defenseMusicEnabled, setDefenseMusicEnabled] = useState(true);
   const [speechSupported, setSpeechSupported] = useState(true);
   const [neuralTtsAvailable, setNeuralTtsAvailable] = useState(true);
   const [voiceGender, setVoiceGender] = useState<VoiceGender>("female");
@@ -2917,6 +2920,14 @@ export default function Home() {
     if (id) window.setTimeout(() => document.getElementById(id)?.focus(), 0);
   }
 
+  useEffect(() => {
+    if (!exitPromptOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      document.querySelector<HTMLElement>(".exit-confirm-card")?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [exitPromptOpen]);
+
   function cancelGameExit() {
     setExitPromptOpen(false);
     focusActiveGameInput();
@@ -2927,7 +2938,12 @@ export default function Home() {
     if (activeActivity === "home") return;
       if (isImeKey(event.nativeEvent)) return;
     if (exitPromptOpen) {
+      if (event.key === "Tab") {
+        trapGameDialogTab(event, document.querySelector<HTMLElement>(".exit-confirm-card"));
+        return;
+      }
       if (event.key === "Enter") {
+        if (event.target instanceof HTMLElement && event.target.closest("button")) return;
         event.preventDefault();
         event.stopPropagation();
         exitGameToHome();
@@ -3687,7 +3703,7 @@ export default function Home() {
           )}
           {activeActivity !== "home" && exitPromptOpen && (
             <div className="exit-confirm-overlay" role="alertdialog" aria-modal="true" aria-labelledby="exit-confirm-title">
-              <div className="exit-confirm-card">
+              <div className="exit-confirm-card" tabIndex={-1}>
                 <p className="demo-label">{tr(locale, "PAUSED", "일시정지됨")}</p>
                 <h3 id="exit-confirm-title">{tr(locale, "Return to home?", "홈으로 가시겠습니까?")}</h3>
                 <p>{tr(locale, "You will leave the current game.", "진행 중인 게임에서 나갑니다.")}</p>
@@ -3719,7 +3735,7 @@ export default function Home() {
           )}>
             <Suspense fallback={<p role="status">{tr(locale, "Loading...", "불러오는 중…")}</p>}>
               {activeActivity === "tetris" && (
-                <FallingWordsGame koreanUi={locale === "ko"} locale={locale} soundEnabled={returnSoundEnabled} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} suspended={exitPromptOpen} themeWords={themeWords} />
+                <FallingWordsGame koreanUi={locale === "ko"} locale={locale} soundEnabled={returnSoundEnabled} onSoundEnabledChange={setReturnSoundEnabled} musicEnabled={defenseMusicEnabled} onMusicEnabledChange={setDefenseMusicEnabled} onRequestExit={() => setExitPromptOpen(true)} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} suspended={exitPromptOpen} themeWords={themeWords} />
               )}
 
               {activeActivity === "missing" && (
@@ -3727,7 +3743,7 @@ export default function Home() {
               )}
 
               {activeActivity === "crossword" && (
-                <CrosswordGame koreanUi={locale === "ko"} locale={locale} soundEnabled={returnSoundEnabled} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} themeId={themeId} />
+                <CrosswordGame koreanUi={locale === "ko"} locale={locale} soundEnabled={returnSoundEnabled} onSoundEnabledChange={setReturnSoundEnabled} onRequestExit={() => setExitPromptOpen(true)} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} suspended={exitPromptOpen} themeId={themeId} />
               )}
             </Suspense>
           </GameLoadBoundary>

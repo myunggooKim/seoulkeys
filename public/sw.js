@@ -43,6 +43,8 @@ function isCacheableAsset(request, url) {
   // The Next.js router asks for RSC payloads at ordinary page URLs.
   if (request.headers.get("RSC") || url.searchParams.has("_rsc")) return false;
   if (url.pathname.startsWith("/api/")) return false;
+  // Integrated game engines, audio and meaning packs must revalidate as a unit.
+  if (url.pathname.startsWith("/games/") || url.pathname.startsWith("/i18n/defense/") || url.pathname.startsWith("/i18n/crossword/")) return false;
   // Outside the build's hashed /assets/ directory, scripts/styles can change
   // at the same URL. They must not freeze at a previous deployment.
   if (/\.(?:css|js|mjs)$/i.test(url.pathname) && !url.pathname.startsWith("/assets/")) return false;

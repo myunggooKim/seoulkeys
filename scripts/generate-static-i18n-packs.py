@@ -227,7 +227,7 @@ MANUAL_OVERRIDES = {
         "I made a reservation — please check it.": "Nagpareserba ako — pakisuri po.",
         "I'm studying Korean, please teach me more!": "Nag-aaral ako ng Korean, turuan mo pa ako!",
     },
-    "th": {"Home": "หน้าหลัก", "comma": "เครื่องหมายจุลภาค", "Correct!": "ถูกต้อง!"},
+    "th": {"Home": "หน้าหลัก", "comma": "เครื่องหมายจุลภาค", "Correct!": "ถูกต้อง!", "puppy": "ลูกสุนัข"},
     "id": {
         "Home": "Beranda", "comma": "koma", "Correct!": "Benar!",
         "Email": "Surel", "Subway": "kereta bawah tanah", "Target": "Sasaran",

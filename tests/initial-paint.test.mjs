@@ -27,7 +27,7 @@ test("home keeps localization, account and progress guards and lazily loads opti
   assert.match(page, /if \(!localeResolved \|\| !translationsReady \|\| !progressLoaded \|\| !themeResolved \|\| signedIn === null\) return/);
   assert.match(page, /waitForInitialFonts\(fontReady\)\.then\(reveal\)/);
   assert.doesNotMatch(page, /void fontReady\.then\(reveal\)/);
-  for (const game of ["CrosswordGame", "FallingWordsGame", "ProgressivePuzzles"]) {
+  for (const game of ["StudioCrosswordGame", "GodotDefenseGame", "ProgressivePuzzles"]) {
     assert.match(page, new RegExp(`lazy\\(\\(\\) => import\\("\\./${game}"\\)`));
     assert.doesNotMatch(page, new RegExp(`import \\{[^}]+\\} from "\\./${game}"`));
   }

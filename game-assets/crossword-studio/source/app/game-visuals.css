@@ -1,0 +1,156 @@
+/* Presentation only: the game coordinates, input and scoring remain in the games. */
+.word-rain-game .word-rain-board {
+  background:
+    radial-gradient(ellipse at 50% 90%, #08787c88, transparent 50%),
+    radial-gradient(ellipse at 85% 15%, #563fa85e, transparent 42%),
+    linear-gradient(180deg, #030b1d, #101e43 62%, #103b54);
+  box-shadow: inset 0 0 0 1px #98f6ff55, inset 0 0 80px #0008, 0 18px 35px #02081688;
+}
+.word-rain-game .retro-scanlines { opacity: .055; }
+.word-rain-game .defense-atmosphere { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.word-rain-game .orbital-halo {
+  position: absolute;
+  top: 8%;
+  right: 7%;
+  width: 140px;
+  aspect-ratio: 1;
+  border: 1px solid #a9caff33;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #8aa9e533, #52659118 50%, transparent 72%);
+  box-shadow: inset -12px -9px 22px #020917bb, 0 0 35px #729bf518;
+}
+.word-rain-game .orbital-halo::after {
+  position: absolute;
+  inset: 20px -22px;
+  border: 1px solid #b5d5ff55;
+  border-radius: 50%;
+  transform: rotate(-28deg) scaleY(.35);
+  content: "";
+}
+.word-rain-game .city-beacon {
+  position: absolute;
+  inset: 20% 10% 12%;
+  background: conic-gradient(from -16deg at 50% 100%, transparent, #5ee4f918 14deg, transparent 30deg);
+  transform-origin: 50% 100%;
+  animation: city-beacon-sweep 12s ease-in-out infinite alternate;
+}
+.word-rain-game .city-reflection {
+  position: absolute;
+  inset: auto 8% 0;
+  height: 11%;
+  background: repeating-linear-gradient(90deg, transparent 0 20px, #5fe6f72a 22px 26px, transparent 28px 48px);
+  mask-image: linear-gradient(black, transparent);
+  transform: perspective(200px) rotateX(40deg);
+}
+@keyframes city-beacon-sweep { from { transform: rotate(-20deg); } to { transform: rotate(20deg); } }
+.word-rain-game .defense-grid {
+  height: 42%;
+  opacity: .5;
+  background-size: 100% 100%;
+  animation: defense-horizon 6s linear infinite;
+}
+.word-rain-game .neon-city > span {
+  clip-path: none;
+  border-radius: 3px 3px 0 0;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 9px, #030c2299 10px 13px),
+    repeating-linear-gradient(180deg, transparent 0 9px, #96e7ff 10px 12px, transparent 13px 18px),
+    linear-gradient(100deg, #345b83, #152f52 65%, #09172c);
+  box-shadow: inset 3px 1px 0 #a5ecff66, inset -9px 0 0 #02091d88, 5px -5px 0 #193c59, 9px 0 12px #030a2388;
+}
+.word-rain-game .city-skyline-back { filter: blur(.5px); opacity: .45; }
+.word-rain-game .sea-water {
+  background: repeating-linear-gradient(180deg, #4ee6ed18 0 1px, transparent 2px 7px), linear-gradient(#123e5b, #020d25);
+  box-shadow: 0 -1px 0 #a4fbff99, 0 -12px 32px #20e0e52a;
+}
+.word-rain-game .rain-word {
+  border-radius: 10px;
+  background: linear-gradient(145deg, #23476a, #10253d 55%, #071a30);
+  box-shadow: inset 1px 1px 0 #c3f8ff66, inset -2px -3px 0 #020b20, 0 6px 0 #020b20aa, 0 12px 18px #0006;
+}
+.word-rain-game .rain-word > b { color: #fff; text-shadow: 0 2px 2px #000; }
+.word-rain-game .rain-word small { color: #c2d4ec; letter-spacing: .025em; }
+.word-rain-game .rain-word.targeted {
+  border-color: #dfff67;
+  box-shadow: inset 0 0 14px #ccff4233, 0 0 0 2px #dfff6755, 0 0 25px #ccff4255, 0 9px 14px #0008;
+}
+.word-rain-game .rain-word.critical:not(.targeted) {
+  border-color: #ff617f;
+  box-shadow: inset 0 0 12px #ff617f33, 0 0 0 2px #ff617f33, 0 0 22px #ff466c66, 0 9px 14px #0008;
+}
+.word-rain-game .missile-plume::before { animation: defense-thruster .28s ease-in-out infinite alternate; }
+.word-rain-game .capture-burst::before { border-width: 3px; box-shadow: 0 0 16px #fff9, inset 0 0 14px #79f7ff99; }
+.word-rain-game .blast-core { box-shadow: 0 0 25px 12px #fff8, 0 0 55px #58faff; }
+.word-rain-game .mission-emblem { box-shadow: inset 0 0 24px #a5faff66, 0 0 0 8px #7bf5ff0d, 0 0 50px #44dae755; }
+.word-rain-game:is(.is-paused, .is-briefing, .is-game-over, .is-wave-clear) .defense-grid,
+.word-rain-game:is(.is-paused, .is-briefing, .is-game-over, .is-wave-clear) .city-beacon,
+.word-rain-game:is(.is-paused, .is-briefing, .is-game-over, .is-wave-clear) .missile-plume::before { animation-play-state: paused; }
+@keyframes defense-horizon { to { background-position: 0 24px; } }
+@keyframes defense-thruster { from { transform: scaleX(.8) scaleY(.8); opacity: .7; } to { transform: scaleX(1.1) scaleY(1.2); opacity: 1; } }
+
+/* A shallow perspective keeps the original buttons and their hit targets readable. */
+.crossword-game-wrap .crossword-board-column { perspective: 1200px; gap: 20px; min-width: 0; }
+.crossword-game-wrap .crossword-copy { min-width: 0; }
+.crossword-game-wrap .crossword-grid {
+  position: relative;
+  gap: 5px;
+  padding: 13px;
+  border: 1px solid #70849c;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #34475c, #101e30 65%);
+  transform: rotateX(9deg);
+  transform-origin: 50% 55%;
+  box-shadow: 0 1px 0 #c9e4edaa, 0 8px 0 #162639, 0 11px 0 #071320, 0 25px 28px #101b3733;
+}
+.crossword-game-wrap .crossword-block {
+  border-radius: 6px;
+  background: linear-gradient(145deg, #17283b, #0a1625);
+  box-shadow: inset 1px 2px 5px #0008, inset 0 -1px 0 #9cc9e522;
+}
+.crossword-game-wrap .crossword-cell {
+  overflow: visible;
+  border: 1px solid #ffffff99;
+  border-radius: 7px;
+  background: linear-gradient(145deg, #fff, #e7edf2);
+  box-shadow: inset 1px 1px 0 #fff, inset -1px -2px 0 #b6c6d3, 0 3px 0 #8195a8, 0 5px 5px #0005;
+  transform: translateY(-2px);
+}
+.crossword-game-wrap .crossword-cell strong { color: #142637; text-shadow: 0 1px 0 #fff; }
+.crossword-game-wrap .crossword-cell small { color: #3c5062; }
+.crossword-game-wrap .crossword-cell.active-word {
+  background: linear-gradient(145deg, #fff9d3, #ffe397);
+  border-color: #ffda78;
+  box-shadow: inset 1px 1px 0 #fff8, 0 4px 0 #a9802f, 0 7px 7px #0005;
+  transform: translateY(-4px);
+}
+.crossword-game-wrap .crossword-cell.correct {
+  background: linear-gradient(145deg, #edffcb, #b5e577);
+  border-color: #cff39b;
+  box-shadow: inset 1px 1px 0 #fff8, 0 3px 0 #618b40, 0 5px 5px #0005;
+}
+.crossword-game-wrap .crossword-cell.wrong {
+  background: linear-gradient(145deg, #ffe9ec, #ffb2c0);
+  border-color: #db3b59;
+  box-shadow: inset 0 0 0 2px #d82f49, 0 3px 0 #a94255, 0 5px 5px #0005;
+}
+.crossword-game-wrap .crossword-cell:hover { filter: brightness(1.035); }
+.crossword-game-wrap.solved .crossword-grid {
+  transform: rotateX(9deg) translateY(-3px);
+  box-shadow: 0 8px 0 #162639, 0 11px 0 #071320, 0 20px 35px #8cce6255;
+}
+html[data-theme="dark"] .crossword-game-wrap .crossword-cell.correct { background: linear-gradient(145deg, #edffcb, #b5e577); }
+@media (max-width: 760px) {
+  .crossword-game-wrap { grid-template-columns: minmax(0, 1fr); }
+  .crossword-game-wrap .crossword-grid { gap: 3px; padding: 9px; transform: none; border-radius: 14px; }
+  .crossword-game-wrap.solved .crossword-grid { transform: translateY(-2px); }
+  .crossword-game-wrap .crossword-cell { border-radius: 4px; }
+  .word-rain-game .rain-word small { letter-spacing: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .word-rain-game *, .word-rain-game *::before, .word-rain-game *::after,
+  .crossword-game-wrap *, .crossword-game-wrap *::before, .crossword-game-wrap *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .crossword-game-wrap .crossword-grid, .crossword-game-wrap.solved .crossword-grid { transform: none; }
+}

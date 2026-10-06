@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated Godot engine/worklets; authored host code is still linted.
+    "public/games/seoul-defense/*.js",
+    "public/games/crossword-studio-v17/*.js",
   ]),
 ]);
 

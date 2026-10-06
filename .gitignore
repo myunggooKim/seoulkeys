@@ -58,3 +58,6 @@ __pycache__/
 
 # Empty accidental shell artifact (not application source).
 /tr(l
+
+# Reconstructed byte-identical game pack; source parts are tracked in game-assets.
+/public/games/seoul-defense/index.pck

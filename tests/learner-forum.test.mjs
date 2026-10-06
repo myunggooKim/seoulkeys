@@ -3,6 +3,7 @@ import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {DatabaseSync} from 'node:sqlite';
 import test from 'node:test';
+import {applyHomeGameIntegrationDelta,withoutCommunityAuthorizedHeader} from './helpers/home-game-integration-delta.mjs';
 import {createEntry,readFeed,readThread,removeOrModerate,reportEntry,moderationQueue,forumViewer} from '../db/forum.ts';
 import {reserveTranslation,cachedTranslation,finishTranslation,translationEntry} from '../db/forum-translations.ts';
 import {readForumRequest,validatePost} from '../app/community/model.ts';
@@ -88,9 +89,11 @@ test('community navigation remounts feed and individual threads rather than reta
 });
 test('community is isolated from existing typing UI and never calls Vertex or an arbitrary paid URL',async()=>{
  const home=await readFile(new URL('../app/page.tsx',import.meta.url),'utf8');const baseline=JSON.parse(await readFile(new URL('./fixtures/community-preservation.json',import.meta.url),'utf8'));
- // The separately authorized header redesign is deliberately excluded; every
- // existing practice, game, audio, progress and account handler stays identical.
- const withoutHeader=(source)=>source.replace(/\r\n/g,'\n').replace(/      <header\b[\s\S]*?<\/header>/,'').replace(/^import (?:headerStyles|\{ HomeHeaderIcon \}|\{ homeGuideLabel, homeNavigation \}).*\n/gm,'').replace('          <Link href="/community">{tr(locale, "Community", "커뮤니티")}</Link>\n','');
- assert.equal(createHash('sha256').update(withoutHeader(home)).digest('hex'),baseline.homeWithoutHeaderSha256);
+ // Reverse only the exact authorized game-integration hunks, then apply the
+ // original header exclusions and unchanged community-launch digest fixture.
+ // All other practice, game, audio, progress and account code stays protected.
+ const integrationDelta=JSON.parse(await readFile(new URL('./fixtures/home-game-integration-delta.json',import.meta.url),'utf8'));
+ const upstreamHome=applyHomeGameIntegrationDelta(home,integrationDelta);
+ assert.equal(createHash('sha256').update(withoutCommunityAuthorizedHeader(upstreamHome)).digest('hex'),baseline.homeWithoutHeaderSha256);
  const route=await readFile(new URL('../app/api/community/translate/route.ts',import.meta.url),'utf8');assert.doesNotMatch(route,/aiplatform|vertex|fetch\(/i);assert.match(route,/reserveTranslation[\s\S]*ai.run/);assert.match(route,/getAuthenticatedMember/);
 });

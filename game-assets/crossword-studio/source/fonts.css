@@ -1,0 +1,25 @@
+@font-face{font-family:"Studio Noto";src:url("./fonts/latin-400.28fd34a55934b60e.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap;unicode-range:U+0-52F,U+1D00-1FFF,U+2000-2BFF,U+A640-A69F}
+@font-face{font-family:"Studio Noto";src:url("./fonts/latin-700.63bd9b8bb8d555bf.woff2") format("woff2");font-style:normal;font-weight:700;font-display:swap;unicode-range:U+0-52F,U+1D00-1FFF,U+2000-2BFF,U+A640-A69F}
+@font-face{font-family:"Studio Noto";src:url("./fonts/cjk-400.9b1dde5f18debf50.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap;unicode-range:U+1100-11FF,U+2E80-D7FF,U+F900-FAFF,U+FF00-FFEF}
+@font-face{font-family:"Studio Noto";src:url("./fonts/cjk-700.27d68ef481240f10.woff2") format("woff2");font-style:normal;font-weight:700;font-display:swap;unicode-range:U+1100-11FF,U+2E80-D7FF,U+F900-FAFF,U+FF00-FFEF}
+@font-face{font-family:"Studio Noto";src:url("./fonts/arabic-400.4f9b3f716bae849b.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap;unicode-range:U+600-8FF,U+FB50-FDFF,U+FE70-FEFF}
+@font-face{font-family:"Studio Noto";src:url("./fonts/arabic-700.abafac15c2e3925f.woff2") format("woff2");font-style:normal;font-weight:700;font-display:swap;unicode-range:U+600-8FF,U+FB50-FDFF,U+FE70-FEFF}
+@font-face{font-family:"Studio Noto";src:url("./fonts/devanagari-400.9fada7dbb1374c85.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap;unicode-range:U+900-97F,U+1CD0-1CFF,U+A8E0-A8FF}
+@font-face{font-family:"Studio Noto";src:url("./fonts/devanagari-700.f28f080c1f7b2b3c.woff2") format("woff2");font-style:normal;font-weight:700;font-display:swap;unicode-range:U+900-97F,U+1CD0-1CFF,U+A8E0-A8FF}
+@font-face{font-family:"Studio Noto";src:url("./fonts/bengali-400.3094d3eb97f7441e.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap;unicode-range:U+980-9FF}
+@font-face{font-family:"Studio Noto";src:url("./fonts/bengali-700.0f4a6de03c828628.woff2") format("woff2");font-style:normal;font-weight:700;font-display:swap;unicode-range:U+980-9FF}
+@font-face{font-family:"Studio Noto";src:url("./fonts/tamil-400.f79063c3a65adc2b.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap;unicode-range:U+B80-BFF}
+@font-face{font-family:"Studio Noto";src:url("./fonts/tamil-700.8ccd2907c78724a5.woff2") format("woff2");font-style:normal;font-weight:700;font-display:swap;unicode-range:U+B80-BFF}
+@font-face{font-family:"Studio Noto";src:url("./fonts/sinhala-400.4ae7c6595b4b1630.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap;unicode-range:U+D80-DFF}
+@font-face{font-family:"Studio Noto";src:url("./fonts/sinhala-700.494b12b1693836ae.woff2") format("woff2");font-style:normal;font-weight:700;font-display:swap;unicode-range:U+D80-DFF}
+@font-face{font-family:"Studio Noto";src:url("./fonts/thai-400.5a420cbd018cd5de.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap;unicode-range:U+E00-E7F}
+@font-face{font-family:"Studio Noto";src:url("./fonts/thai-700.67baa10a0e8e1049.woff2") format("woff2");font-style:normal;font-weight:700;font-display:swap;unicode-range:U+E00-E7F}
+@font-face{font-family:"Studio Noto";src:url("./fonts/lao-400.128e2e812a544b89.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap;unicode-range:U+E80-EFF}
+@font-face{font-family:"Studio Noto";src:url("./fonts/lao-700.1054f9b53be9c720.woff2") format("woff2");font-style:normal;font-weight:700;font-display:swap;unicode-range:U+E80-EFF}
+@font-face{font-family:"Studio Noto";src:url("./fonts/myanmar-400.fb273ee9e399ac95.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap;unicode-range:U+1000-109F,U+A9E0-A9FF,U+AA60-AA7F}
+@font-face{font-family:"Studio Noto";src:url("./fonts/myanmar-700.5cca7e3174205526.woff2") format("woff2");font-style:normal;font-weight:700;font-display:swap;unicode-range:U+1000-109F,U+A9E0-A9FF,U+AA60-AA7F}
+@font-face{font-family:"Studio Noto";src:url("./fonts/khmer-400.750133255c97ad56.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap;unicode-range:U+1780-17FF,U+19E0-19FF}
+@font-face{font-family:"Studio Noto";src:url("./fonts/khmer-700.628e0efd5f1095d4.woff2") format("woff2");font-style:normal;font-weight:700;font-display:swap;unicode-range:U+1780-17FF,U+19E0-19FF}
+@font-face{font-family:"Studio Noto";src:url("./fonts/symbols-400.e3fb7c7a461857e3.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap;unicode-range:U+2000-2BFF}
+@font-face{font-family:"Studio Noto";src:url("./fonts/symbols-700.c82babd1f5ac02d9.woff2") format("woff2");font-style:normal;font-weight:700;font-display:swap;unicode-range:U+2000-2BFF}
+body,.atelier-review,.atelier-review button,.atelier-review select,.atelier-review input{font-family:"Studio Noto","Noto Sans KR",system-ui,sans-serif}

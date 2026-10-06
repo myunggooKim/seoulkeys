@@ -1,0 +1,12 @@
+# Mutable integrated game bundles are revalidated rather than frozen across releases.
+/games/seoul-defense/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/games/crossword-studio-v17/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/i18n/defense/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/i18n/crossword/*
+  Cache-Control: public, max-age=0, must-revalidate

@@ -1,0 +1,273 @@
+/* High-key precision tile workspace. No literal spaceship setting. */
+.crossword-game-wrap.crossword-expedition.crossword-atelier {
+ --cw-ink:#213340;--cw-muted:#71848e;--cw-line:#dae2e7;
+ grid-template-columns:minmax(0,1.6fr) minmax(320px,1fr);gap:20px 38px;padding:34px;
+ border:1px solid #e0e7eb;border-radius:23px;background:linear-gradient(135deg,#fff,#f7f9fa 70%,#f3f6f8);
+ color:#213340;box-shadow:0 15px 55px #2646570b,inset 0 1px 0 #fff;
+}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header{padding-bottom:24px;border-color:#dce4e8}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header p{color:#6d8796;letter-spacing:.18em;font-size:10px;font-family:ui-monospace,monospace;margin-bottom:9px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header p span{display:none}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header h3{color:#253b47;font-size:clamp(25px,2.5vw,35px);font-weight:500;letter-spacing:-.045em}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-score strong{font-size:30px;color:#607e8c;font-family:ui-monospace,monospace;font-weight:400}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-score span{font-size:9px;color:#8297a2;letter-spacing:.1em}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-heading{margin-bottom:0}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-heading>div:first-child>span{color:#698493;font-family:ui-monospace,monospace;font-size:10px;letter-spacing:.12em}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-heading small{color:#8597a1;font-size:10px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-view-controls{border:1px solid #d3dfe5;border-radius:7px;background:#edf2f5;box-shadow:inset 0 1px 0 #fff}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-view-controls button{color:#698190;font-size:10px;min-height:35px;border-radius:5px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-view-controls button.active{background:#fff;color:#2c4e5f;box-shadow:0 1px 4px #324f6420}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-view-controls .crossword-turn-view{border-color:#d0dce3}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-stage-scroll{width:100%;overflow:auto;border-radius:18px;scrollbar-width:thin;scrollbar-color:#b7c8d1 transparent}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-stage-scroll.is-zoomed{max-height:670px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-stage-scroll.is-zoomed>.crossword-diorama{width:145%;max-width:none}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama{aspect-ratio:1.08;background:radial-gradient(ellipse at 50% 65%,#c7d4dd23,transparent 66%)}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-garden-note{text-align:center;color:#8a9ba4;font-size:11px;letter-spacing:.025em;margin:-2px 0 18px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-caption{color:#8095a1;font-size:9px;letter-spacing:.08em;margin-top:0}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-caption span:first-child i{background:#c4a872}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-caption span:nth-child(2) i{background:#7baaa5}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-caption b{color:#688595}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-journey{margin-top:22px;padding-top:18px;border-color:#dce4e8}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-journey small{color:#79929f;font-family:ui-monospace,monospace;font-size:9px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-journey span{color:#81959e;font-size:11px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-journey li{background:#eef3f6;color:#93a7b3;border-color:#d6e1e7;border-radius:6px;font-family:ui-monospace,monospace}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-journey li.current{background:#dce8ec;color:#446b7b;border-color:#bacfd7;box-shadow:inset 0 1px 0 #fff}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-journey li.done{background:#c5dcd7;color:#496f68;border-color:#aecbc3}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-stats{padding:17px 0 8px;margin-top:10px;border:0}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-stats b{color:#5e7b8b;font-size:23px;font-weight:500;font-family:ui-monospace,monospace}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-stats small{color:#8a9da7;font-size:10px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-star-guide{color:#849aa6;font-size:10px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-star-guide p{color:#798e99;font-size:12px;line-height:1.65}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-copy{padding:25px;border:1px solid #dce5e9;border-radius:16px;background:#fff;box-shadow:0 8px 30px #47657808;align-self:start}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .puzzle-head .demo-label{color:#8ba0aa;font-size:9px;letter-spacing:.12em;font-family:ui-monospace,monospace}.crossword-game-wrap.crossword-expedition.crossword-atelier .puzzle-head>span{color:#99aab3;font-size:10px;font-family:ui-monospace,monospace}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-copy>h3{color:#506c7b;font-size:19px;font-weight:500;letter-spacing:-.025em;margin:12px 0 19px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .puzzle-progress{height:2px;background:#edf1f3;margin-bottom:25px}.crossword-game-wrap.crossword-expedition.crossword-atelier .puzzle-progress>span{background:#93b2bf}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner{padding:0;background:none;border:0;box-shadow:none;gap:12px;align-items:flex-start}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner>span{width:37px;min-width:37px;height:37px;border:1px solid #d9c59e;border-radius:8px;background:#f5eedc;color:#987846;font-size:13px;font-family:ui-monospace,monospace}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner small{color:#8aa1ad;font-size:8px;letter-spacing:.1em;margin-bottom:7px;font-family:ui-monospace,monospace}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner b{color:#2c4858;font-size:19px;font-weight:520;line-height:1.5}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner em{color:#91a6b0;font-size:9px;max-width:56px;padding-top:10px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-syllable-preview{margin:24px 0;gap:8px;justify-content:flex-start;padding:0}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-syllable-preview>span{width:42px;height:44px;border:1px solid #d3dfe5;border-radius:6px;background:linear-gradient(145deg,#fff,#eef3f6);color:#537687;font-size:24px;box-shadow:0 3px 0 #bfcfd7,0 5px 10px #4c6c8110}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-syllable-preview>span.filled{border-color:#c5af81;background:linear-gradient(145deg,#fff9e8,#efe3c7);color:#796541}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-syllable-preview i{background:#c2d2db}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry>label{color:#758f9d;font-size:11px;margin-bottom:8px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry .hangul-field>input{height:53px;border:1px solid #c1d3de;border-radius:7px;background:#f9fbfc;color:#294c5f;font-size:23px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry .hangul-field>input:focus{border-color:#90afc0;box-shadow:0 0 0 3px #a5c4d418}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry .hangul-field>input::placeholder{color:#a1b5c0;font-size:13px;font-weight:400}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry .button{min-height:53px;border:1px solid #6f91a4;border-radius:7px;background:#678ca1;color:#fff;box-shadow:inset 0 -2px 0 #4a7086;font-size:12px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry>div>span{color:#98aebc;font-family:ui-monospace,monospace;font-size:10px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .hangul-input-tools,.crossword-game-wrap.crossword-expedition.crossword-atelier .hangul-input-tools small{color:#8ca4b2;font-size:10px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .hangul-input-tools button,.crossword-game-wrap.crossword-expedition.crossword-atelier .hangul-input-options summary{background:#f5f9fb;border-color:#d7e3e9;color:#7896a6;font-size:9px;border-radius:4px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .hangul-input-options label{background:#f5f9fb;border-color:#d7e3e9;color:#688596}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-status{font-size:11px;line-height:1.65;color:#809aa8;min-height:38px;margin-top:13px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-status.correct{color:#5b9786}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-status.wrong{color:#b87769}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-status.incomplete{color:#a68d5e}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-actions{gap:6px;margin:12px 0 20px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-actions button{min-height:42px;padding:7px 9px;border:1px solid #d5e1e7;border-radius:6px;background:#f7fafb;color:#7895a4;font-size:10px;box-shadow:none}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-actions button:hover:not(:disabled){background:#edf4f7}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-actions kbd{display:none}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-answer-study{background:#f5f1e5;border-color:#e0d4b6;border-radius:8px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-answer-study strong{color:#8e7955}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-answer-study span{color:#a09279;font-size:11px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-speech-note{color:#8799a2;font-size:11px;line-height:1.6}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues{grid-template-columns:minmax(0,1fr);gap:13px;max-height:none;padding:17px 0 0;border-top:1px solid #e2e9ed;overflow:visible}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues h4{color:#91a8b3;font-size:10px;font-family:ui-monospace,monospace;margin-bottom:7px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button{min-height:44px;padding:9px;margin-bottom:5px;border:1px solid #dce6eb;border-radius:6px;background:#f7fafc;color:#728e9e}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button>span{font-size:12px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button>small{color:#9bb0bb}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button>b{border-radius:4px;background:#eaf1f5;color:#85a2b2;font-size:10px;font-family:ui-monospace,monospace}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button.active{background:#f9f5e9;border-color:#dccda8;color:#8d7d60;box-shadow:inset 2px 0 0 #d6c08d}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button.solved{background:#edf6f1;border-color:#cbddd1;color:#6e9883}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button.solved>b{background:#c7ded0;color:#5c8570}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button.solved strong{color:#5c8b78}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-key-help{color:#9aafb9;font-size:9px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-key-help kbd{color:#8ea9b7;border-color:#d5e2e8;background:#f9fbfc;font-size:9px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-finish{border-color:#c8dcd1;background:radial-gradient(ellipse at 50% 0,#e3f0e8,transparent 90%),#f6faf7;border-radius:12px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-finish h4{color:#5b8170}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-finish p{color:#81a08e}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-earned-stars{color:#dae7de}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-earned-stars span.earned{color:#baa16d;text-shadow:0 2px 0 #c2ab7e25}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-finish .crossword-continue{background:#769c89;border-color:#83a795;color:#fff;box-shadow:0 3px 0 #5d816e;border-radius:7px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-save-note{grid-column:1/-1;text-align:center;color:#a0b1ba;font-size:9px;line-height:1.6;margin:0}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-collection{grid-column:1/-1;border-color:#dce6eb;margin-top:0}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-collection summary{color:#8ba2ae}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-collection summary b{color:#718f9b}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-collection summary>span:last-child{color:#a1b4be}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-collection article{background:#f6fafb;border-color:#dce7ed}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-collection article strong{color:#6b8b9b}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-collection article span{color:#91a7b2}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-render-note{color:#92a8b4}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .is-flat .crossword-grid{background:#e4ecf1;border-color:#d2dfe6;box-shadow:0 6px 0 #c1d0da;border-radius:9px}.crossword-game-wrap.crossword-expedition.crossword-atelier .is-flat .crossword-cell{background:#fff;box-shadow:0 2px 0 #bacbd5;border-radius:4px}.crossword-game-wrap.crossword-expedition.crossword-atelier .is-flat .crossword-cell.active-word{background:#f2e4c4}.crossword-game-wrap.crossword-expedition.crossword-atelier .is-flat .crossword-cell.correct{background:#d4e8df}.crossword-game-wrap.crossword-expedition.crossword-atelier .is-flat .crossword-cell strong{color:#345b70}
+@media(max-width:1000px){.crossword-game-wrap.crossword-expedition.crossword-atelier{grid-template-columns:minmax(0,1fr);max-width:780px;margin-inline:auto;padding:24px;gap:20px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-column{max-width:none}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama{aspect-ratio:1.2}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-stats,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-star-guide{display:none}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-copy{padding:24px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-journey{margin-top:15px;padding-top:14px}}
+@media(max-width:540px){.crossword-game-wrap.crossword-expedition.crossword-atelier{padding:16px 12px;border-radius:15px;gap:18px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header{padding:0 2px 16px;gap:12px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header p{font-size:8px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header h3{font-size:23px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-score strong{font-size:23px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-score span{font-size:7px;max-width:60px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-heading small{font-size:9px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-view-controls button{min-height:38px;padding:5px 7px;min-width:30px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama{aspect-ratio:1.04}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-stage-scroll.is-zoomed{max-height:460px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-stage-scroll.is-zoomed>.crossword-diorama{width:175%}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-copy{padding:18px 14px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-copy>h3{font-size:18px}.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner b{font-size:18px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-status{font-size:12px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-actions button{font-size:11px;min-height:44px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button>span{font-size:13px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button{min-height:48px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-garden-note{font-size:10px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry .button{width:76px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry>div>span{right:89px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-journey span{font-size:10px;max-width:180px}}
+@media(prefers-reduced-motion:no-preference){.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-finish{animation:atelier-arrival .65s ease-out both}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-earned-stars .earned{animation:atelier-star .5s cubic-bezier(.2,.8,.3,1.3) both}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-earned-stars .earned:nth-child(2){animation-delay:.14s}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-earned-stars .earned:nth-child(3){animation-delay:.28s}@keyframes atelier-arrival{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes atelier-star{from{opacity:0;transform:scale(.3) rotate(-18deg)}to{opacity:1;transform:scale(1) rotate(0)}}}
+/* Learning text remains readable; light decorative chrome is not the only clue. */
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button>span{font-size:14px;color:#506f80}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button.active>span{color:#76633f}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button.solved>span{color:#4f7b68}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-status{font-size:13px;color:#5b7989}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-actions button{font-size:11px;color:#5d7b8c}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry>label{font-size:12px;color:#5d7a8a}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .hangul-input-tools,.crossword-game-wrap.crossword-expedition.crossword-atelier .hangul-input-tools small{font-size:11px;color:#6c8897}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .hangul-input-tools button,.crossword-game-wrap.crossword-expedition.crossword-atelier .hangul-input-options summary{font-size:11px;color:#658393}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-view-controls button{color:#5b7686;font-size:11px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier button:focus-visible,.crossword-game-wrap.crossword-expedition.crossword-atelier summary:focus-visible{outline:3px solid #557f97;outline-offset:3px}
+/* Private test Site: readable learning text and controls at normal browser zoom. */
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header p,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-score span,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-heading>div:first-child>span,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-heading small,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-caption,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-garden-note,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-journey small,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-journey span,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-stats small,.crossword-game-wrap.crossword-expedition.crossword-atelier .puzzle-head .demo-label,.crossword-game-wrap.crossword-expedition.crossword-atelier .puzzle-head>span,.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner small,.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner em,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-key-help,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-save-note{font-size:12px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-view-controls button,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry>label,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry .button,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-actions button,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues h4,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-collection summary{font-size:14px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-status,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button>span,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-answer-study span,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-speech-note,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-star-guide p{font-size:16px;line-height:1.5}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .hangul-input-tools,.crossword-game-wrap.crossword-expedition.crossword-atelier .hangul-input-tools small,.crossword-game-wrap.crossword-expedition.crossword-atelier .hangul-input-tools button,.crossword-game-wrap.crossword-expedition.crossword-atelier .hangul-input-options summary{font-size:12px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner em{max-width:66px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header p{letter-spacing:.12em}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-score span{letter-spacing:.02em}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-actions{flex-wrap:wrap}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-view-controls button{min-height:40px}
+/* Real-browser QA: keep the submit label intact beside the keyboard cue. */
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry .button{gap:4px;white-space:nowrap;flex-shrink:0;justify-content:center}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry .button span{margin-left:0;flex-shrink:0}
+@media(max-width:540px){.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry .button{width:84px;padding-inline:8px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry>div>span{right:97px}}
+/* Studio candidate: the modeled board is the primary working surface. */
+.crossword-game-wrap.crossword-expedition.crossword-atelier{grid-template-columns:minmax(0,1fr) 330px;gap:14px 24px;padding:18px 22px 20px;border:0;border-radius:0;background:#fafbfd;box-shadow:none}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header{padding-bottom:13px;border-color:#dce3e9;align-items:center}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header p{font-size:12px;letter-spacing:.11em;margin-bottom:4px;color:#607786}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header h3{font-size:22px;font-weight:570;color:#253c4a;line-height:1.25}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-score strong{font-size:22px;color:#4d6877}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-score span{font-size:12px;color:#738692}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-heading{padding:0 6px;margin-bottom:0}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-heading small{display:none}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-heading>div:first-child>span{font-size:13px;color:#5b7482}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-view-controls{background:#eef3f6;border:1px solid #d2dde4;box-shadow:none}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-view-controls button{min-height:36px;font-size:13px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-stage-scroll{border-radius:0}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama{aspect-ratio:1.35;background:#fafbfd;margin-top:0}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-stage-scroll.is-zoomed{max-height:680px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-garden-note{display:none}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-caption{margin-top:2px;font-size:12px;color:#647c8b}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-caption span:first-child i{background:#79aab8}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-caption span:nth-child(2) i{background:#83aa9c}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-journey{margin-top:12px;padding-top:12px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-journey span{display:none}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-stats{margin-top:3px;padding:12px 0 2px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-stats b{font-size:20px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-stats small{font-size:12px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-star-guide{margin-top:12px;font-size:12px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-copy{padding:19px 17px;border:1px solid #d6e1e7;border-radius:14px;background:#fff;box-shadow:0 8px 24px #294b5f08}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .puzzle-head .demo-label{font-size:12px;letter-spacing:.03em;color:#69828f}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .puzzle-head>span{font-size:12px;color:#718894}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-copy>h3{font-size:17px;margin:8px 0 13px;color:#4d6878}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .puzzle-progress{height:3px;border:0;border-radius:3px;background:#e6edf1;margin:0 0 18px;box-shadow:none}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .puzzle-progress>span{background:#82a9b7}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner>span{background:#eef5f6;border-color:#afc9d1;color:#476e7b}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner small{font-size:12px;letter-spacing:.02em;color:#6f8995}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner b{font-size:19px;color:#243f4f;line-height:1.4}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner em{font-size:12px;color:#687f8c;max-width:66px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-syllable-preview{margin:17px 0;gap:6px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-syllable-preview>span{height:38px;width:35px;font-size:22px;box-shadow:0 2px 0 #bccdd5,0 3px 7px #37566b10}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-syllable-preview>span.filled{background:linear-gradient(145deg,#fff,#e5eff3);border-color:#9ab9c7;color:#365e72}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry>label{font-size:14px;color:#506f80}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry .hangul-field>input{font-size:22px;background:#fbfdfe;border-color:#b9ccd8}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-status{font-size:14px;line-height:1.45;margin-top:10px;color:#597685;min-height:40px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-actions{margin:10px 0 16px;gap:6px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-actions button{font-size:13px;min-height:42px;padding:7px 9px;color:#4d7082}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues-drawer{padding-top:12px;border-top:1px solid #dce7ed}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues-drawer>summary{cursor:pointer;font-size:14px;font-weight:600;color:#4f6f80;min-height:32px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues-drawer>summary span{float:right;font-family:ui-monospace,monospace;font-weight:400;color:#7893a1;font-size:12px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues{padding-top:12px;border:0}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button.active{background:#eef5f7;border-color:#acc8d3;box-shadow:inset 2px 0 0 #7fa8b9}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button.active>span{color:#365f72}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-key-help{font-size:12px;gap:7px;margin-top:10px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-key-help kbd{font-size:12px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-save-note{font-size:12px;color:#8499a4;margin-top:5px}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-collection{padding-top:14px}
+@media(max-width:1000px){
+ .crossword-game-wrap.crossword-expedition.crossword-atelier{grid-template-columns:minmax(0,1fr);max-width:960px;margin-inline:auto;padding:12px 16px 18px;gap:12px}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header{grid-row:1}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-copy{display:contents}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-copy>.puzzle-head,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-copy>h3,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-copy>.puzzle-progress,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-syllable-preview{display:none}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner{grid-row:2;display:flex;padding:10px 12px;border:1px solid #d5e3ea;border-radius:10px;background:#fff;gap:12px;align-items:center}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner>div{flex:1}.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner small{display:none}.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner b{font-size:18px}.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner em{padding:0}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-column{grid-row:3;max-width:none;min-width:0}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama{aspect-ratio:1.6;max-height:calc(100dvh - 370px);min-height:220px}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-caption,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-journey,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-stats,.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-star-guide{display:none}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry{grid-row:4;margin:0}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry>label{display:none}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry .hangul-field>input{height:52px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry .button{min-height:52px}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-status{grid-row:5;min-height:0;margin:0;font-size:14px}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-actions{grid-row:6;margin:0}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-key-help{display:none}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues-drawer{margin-top:6px}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-finish{grid-row:2;margin:0}
+}
+@media(max-width:600px){
+ .crossword-game-wrap.crossword-expedition.crossword-atelier{padding:8px 10px 16px;gap:10px}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header{padding:0 0 10px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header p{font-size:12px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header h3{font-size:21px}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-score strong{font-size:20px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-score span{font-size:12px;max-width:70px}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner{padding:9px 10px}.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner b{font-size:17px}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-heading{padding:0 1px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-view-controls button{min-height:34px;font-size:12px;padding:5px 7px}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama{aspect-ratio:1.3}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry .button{width:84px}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry>div>span{right:97px}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-actions button{font-size:13px;min-height:44px}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-save-note{font-size:12px}
+}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama.is-flat{margin:10px auto;max-width:660px}
+@media(max-width:600px){.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama.is-flat{max-height:360px}}
+/* Actual Mac QA: fit the complete physical board into the available screen height. */
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama{height:clamp(240px,calc(100dvh - 230px),760px);max-height:none;aspect-ratio:auto}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama.is-flat{height:auto;max-height:min(660px,calc(100dvh - 230px))}
+@media(max-width:1000px){.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama{height:clamp(220px,calc(100dvh - 350px),540px);max-height:none}.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama.is-flat{height:auto;max-height:calc(100dvh - 350px)}}
+
+/* Readable studio UI: keep the ceramic board airy, give working text real contrast. */
+.crossword-game-wrap.crossword-expedition.crossword-atelier {
+  --cw-ink: #243d4b;
+  --cw-muted: #465e6b;
+  color: var(--cw-ink);
+  font-weight: 600;
+}
+.crossword-game-wrap.crossword-expedition.crossword-atelier :is(
+  .crossword-expedition-header p, .crossword-session-score span,
+  .crossword-board-heading>div:first-child>span, .crossword-board-heading small,
+  .crossword-board-caption, .crossword-garden-note, .crossword-journey small,
+  .crossword-journey span, .crossword-session-stats small, .crossword-star-guide,
+  .puzzle-head .demo-label, .puzzle-head>span, .active-clue-banner small,
+  .active-clue-banner em, .crossword-word-entry>div>span,
+  .hangul-input-tools, .hangul-input-tools small, .hangul-input-tools button,
+  .hangul-input-options summary, .hangul-input-options label,
+  .crossword-key-help, .crossword-key-help kbd, .crossword-save-note,
+  .crossword-clues-drawer>summary span, .crossword-clues button>small,
+  .crossword-collection summary>span:last-child, .crossword-collection article span,
+  .crossword-render-note
+) {
+  color: #465e6b;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header p { letter-spacing: .055em; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-score span { letter-spacing: 0; max-width: 120px; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-expedition-header h3 { color: #243d4b; font-weight: 750; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier :is(.crossword-session-score strong, .crossword-session-stats b) { color: #304f60; font-weight: 700; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-copy>h3 { color: #304f60; font-size: 18px; font-weight: 700; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner b { color: #203d4d; font-weight: 750; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner>span { color: #304f60; font-size: 14px; font-weight: 700; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .active-clue-banner em { flex-shrink: 0; max-width: 72px; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier :is(
+  .crossword-word-entry>label, .crossword-word-entry .button, .crossword-actions button,
+  .crossword-clues h4, .crossword-clues-drawer>summary, .crossword-collection summary
+) { font-size: 14px; font-weight: 700; color: #304f60; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier :is(
+  .crossword-status, .crossword-clues button>span, .crossword-answer-study span,
+  .crossword-speech-note, .crossword-star-guide p, .crossword-finish p
+) { color: #3f5968; font-size: 15px; font-weight: 600; line-height: 1.55; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-status.correct { color: #28624d; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-status.wrong { color: #97453b; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-status.incomplete { color: #79551f; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry .hangul-field>input { color: #243d4b; font-weight: 650; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry .hangul-field>input::placeholder { color: #5d7482; font-size: 14px; font-weight: 600; opacity: 1; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-word-entry .button { background: #3e657c; color: #fff; border-color: #3e657c; box-shadow: inset 0 -2px 0 #2d4f63; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-actions button { border-color: #c5d5df; min-height: 44px; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier :is(.hangul-input-tools button, .hangul-input-options summary) { min-height: 32px; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button { border-color: #cfdee6; min-height: 46px; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button>b { color: #38586b; font-size: 13px; font-weight: 700; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button.active>span { color: #254f65; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-clues button.solved :is(span, b, strong) { color: #2f644e; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier :is(.crossword-answer-study strong, .crossword-answer-study span) { color: #665129; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-answer-study strong { font-weight: 700; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-collection :is(summary b, article strong) { color: #304f60; font-weight: 700; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-journey li { color: #465e6b; font-size: 13px; font-weight: 700; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-journey li.current { color: #304f60; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-journey li.done { color: #2f604d; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-finish h4 { color: #2f604d; font-weight: 700; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-finish .crossword-continue { background: #376b55; border-color: #376b55; color: #fff; font-size: 15px; font-weight: 700; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-heading { gap: 8px 12px; align-items: flex-start; flex-wrap: wrap; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-heading>div:first-child { flex: 1 1 165px; min-width: 0; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-heading small { display: block; margin-top: 3px; white-space: normal; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-view-controls { display: flex; flex-wrap: wrap; flex-shrink: 1; max-width: 100%; gap: 2px; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-view-controls button { color: #365669; font-size: 13px; font-weight: 700; min-height: 38px; padding: 6px 8px; white-space: nowrap; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-view-controls button.active { color: #244d65; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier :is(button, summary, input):focus-visible { outline: 3px solid #3c728f; outline-offset: 3px; }
+@media (max-width: 600px) {
+  .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-heading>div:first-child { flex-basis: 100%; }
+  .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-view-controls { width: 100%; }
+  .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-view-controls button { min-height: 42px; flex-grow: 1; }
+  .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-session-score span { max-width: 82px; }
+  .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-actions { gap: 6px; }
+}
+/* Progress remains obvious in flat fallback as well as the jade ceramic scene. */
+.crossword-game-wrap.crossword-expedition.crossword-atelier .is-flat .crossword-cell.correct { background: #83d9bc; border-color: #469d81; box-shadow: 0 2px 0 #468d75; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .is-flat .crossword-cell.correct strong { color: #174e3d; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-caption span:nth-child(2) i { background: #389779; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-orbit-help { color: #465e6b; font-size: 13px; font-weight: 600; line-height: 1.5; margin: 6px 0 0; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama:not(.is-flat) button { cursor: inherit; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama:focus-visible { outline: 3px solid #3c728f; outline-offset: -3px; border-radius: 8px; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama.is-orbiting { cursor: grabbing; }
+/* Keep the larger controls from pushing the playable board below the viewport. */
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama{height:clamp(240px,calc(100dvh - 300px),690px)}
+@media(max-width:600px){
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-heading>div:first-child small,
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-orbit-keyboard-help{display:none}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-orbit-help{margin:6px 0;line-height:1.4}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama{height:clamp(220px,calc(100dvh - 550px),320px)}
+ .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama.is-flat{height:auto;max-height:300px}
+}

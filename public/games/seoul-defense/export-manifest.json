@@ -1,0 +1,62 @@
+{
+  "revision": "16-integration17",
+  "entry": "/games/seoul-defense/index.html?v=16-integration17",
+  "threads": false,
+  "delivery": "gzip-route",
+  "storedFiles": [
+    {
+      "filename": "index.apple-touch-icon.png",
+      "bytes": 16147,
+      "sha256": "9fffc991cbb28bb65b034d3881ee45b855017c7594454874ac6d7fe718c70447"
+    },
+    {
+      "filename": "index.audio.position.worklet.js",
+      "bytes": 2973,
+      "sha256": "be33985bc7160d6bf9646f259cd86b259cd67b02ccb297ee5c44f8ac84327bc8"
+    },
+    {
+      "filename": "index.audio.worklet.js",
+      "bytes": 7298,
+      "sha256": "5b476a9c9ce642c0ee4256436d1bc31d9c38f868aca0f9a8e2a57c18d2dec2a3"
+    },
+    {
+      "filename": "index.html",
+      "bytes": 16341,
+      "sha256": "40b2b550fe372c1db013d40566b6fb8e72b1f0f3df4d63ab24bf9da9494b38f0"
+    },
+    {
+      "filename": "index.icon.png",
+      "bytes": 7048,
+      "sha256": "5a50389d1a1bced160c3e4b21ce20d635886fb2a43df1d68e9e76b4d718ed5b3"
+    },
+    {
+      "filename": "index.js",
+      "bytes": 320101,
+      "sha256": "093b7ba57eea50b14aa548f6182be078229a15ccb8bfa059a5baad7976881460"
+    },
+    {
+      "filename": "index.pck",
+      "bytes": 20010228,
+      "sha256": "39c641a333933d8915d3b5d49b6ec9e678790f17d6bc09cdd9f4ea50a8c435f6"
+    },
+    {
+      "filename": "index.png",
+      "bytes": 21443,
+      "sha256": "3cb4495c0b98dfbe4b663cbf2b6836473572339beb66d902367893162a70be0e"
+    },
+    {
+      "filename": "index.wasm.gz",
+      "bytes": 9382282,
+      "sha256": "9352825a316f4449b81d326706e78be95ed5a81c0e797f35879ef8b39bc505bd"
+    },
+    {
+      "filename": "preview.png",
+      "bytes": 717976,
+      "sha256": "0fe614a9cbdfb1493b0f0142d6e5d307853b547d72660e2620b55b91a738bd84"
+    }
+  ],
+  "storedOverLimitFiles": [],
+  "wasmUncompressedBytes": 37700666,
+  "nativeRuntimeVerified": true,
+  "browserRuntimeVerified": false
+}

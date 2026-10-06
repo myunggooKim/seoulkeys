@@ -1,0 +1,3 @@
+
+# Preserve binary game asset pieces on every checkout.
+/game-assets/seoul-defense/*.pckpart* -text -diff
