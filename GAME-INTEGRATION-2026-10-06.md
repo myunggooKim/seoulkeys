@@ -4,7 +4,7 @@ Based on main commit 86491f5f218e2cbba1db680aded59e9868e2a0e8. The current learn
 
 ## Build and deployment
 
-Use Node >=22.13, `npm ci`, `npm run typecheck`, `npm run build`, and `npm test`. The defense pack is stored as two binary parts under game-assets/seoul-defense; prebuild and predev verify every SHA-256 and reconstruct public/games/seoul-defense/index.pck atomically. The reconstructed file is not committed. Its required SHA-256 is 39c641a333933d8915d3b5d49b6ec9e678790f17d6bc09cdd9f4ea50a8c435f6. Missing or corrupt parts fail the build. Do not deploy public directly without running the build. npm run deploy already calls npm run build before preparing/uploading the Worker version.
+Use Node >=22.13, `npm ci`, `npm run typecheck`, `npm run build`, and `npm test`. The defense pack is stored as two binary parts under game-assets/seoul-defense; prebuild and predev verify every SHA-256 and reconstruct public/games/seoul-defense/index.pck atomically. The reconstructed file is not committed. Its required SHA-256 is 62c683d0aa31bc3a25f3b3cc44279a31d710808a18af111b36c6b942641dd6a5. Missing or corrupt parts fail the build. Do not deploy public directly without running the build. npm run deploy already calls npm run build before preparing/uploading the Worker version.
 
 The existing deployment scripts name Worker `hangeul-pop`, not `seoulkeys`; the latest HANDOFF documents seoulkeys.com and www.seoulkeys.com. Before a production deployment, verify the signed-in Cloudflare account, this Worker, its domain routes and D1 bindings. This integration does not itself authorize or perform a production deployment. No ad publisher ID or account configuration has been added.
 
@@ -23,3 +23,7 @@ The shared Thai puppy entry and its generator override are corrected to ลู�
 Cloud checks: site typecheck and production build; 258 unit tests; defense packed/source locale, glyph, layout, bridge and pause checks; crossword source/export consistency, resource hashes, locale/keyboard/pointer/audio contracts. Native defense captures covered Korean, Arabic and Tamil desktop/mobile. Full hosted-browser/GPU, physical OS IME and audible music playback remain deployment smoke tests, not claimed passes. In the cloud sandbox the tsx CLI IPC pipe is unavailable; the same units run via `node --import tsx --test tests/*.test.mjs`.
 
 After a separately authorized deployment, check both menu entries, cached/reloaded game assets, all locale fetches, Arabic/Indic rendering, Korean composition, exit/cancel/back, music/effects toggles, narrow/mobile layouts, and reserved ad clearance on the actual site.
+
+## Responsive Defense follow-up
+
+Desktop 1440/1536 layouts show two 160×600 reserved ad placeholders, separated from gameplay by 150 px. Rails require a minimum 760 px game viewport and collapse on narrower layouts. The v4 safe overlay changes only HUD _layout against v3; music, models, main gameplay and 166 other packed resources remain identical. Native checks cover narrow result-card text and on-screen keyboard hit targets.

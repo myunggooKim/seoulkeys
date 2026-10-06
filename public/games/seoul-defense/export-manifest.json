@@ -1,6 +1,6 @@
 {
-  "revision": "16-integration17",
-  "entry": "/games/seoul-defense/index.html?v=16-integration17",
+  "revision": "16-integration17-responsive4",
+  "entry": "/games/seoul-defense/index.html?v=16-integration17-responsive4",
   "threads": false,
   "delivery": "gzip-route",
   "storedFiles": [
@@ -22,7 +22,7 @@
     {
       "filename": "index.html",
       "bytes": 16341,
-      "sha256": "40b2b550fe372c1db013d40566b6fb8e72b1f0f3df4d63ab24bf9da9494b38f0"
+      "sha256": "52a0a227824d062c4415c131702926d59fdb3f47db5420531c731b3a6305da5e"
     },
     {
       "filename": "index.icon.png",
@@ -36,8 +36,8 @@
     },
     {
       "filename": "index.pck",
-      "bytes": 20010228,
-      "sha256": "39c641a333933d8915d3b5d49b6ec9e678790f17d6bc09cdd9f4ea50a8c435f6"
+      "bytes": 20010292,
+      "sha256": "62c683d0aa31bc3a25f3b3cc44279a31d710808a18af111b36c6b942641dd6a5"
     },
     {
       "filename": "index.png",

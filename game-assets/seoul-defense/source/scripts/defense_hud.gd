@@ -605,8 +605,8 @@ func _layout ( ) -> void :
     var result_needed : float = _result_box . get_combined_minimum_size ( ) . y + _result_actions . get_combined_minimum_size ( ) . y + 10.0 + result_padding
     var result_top : float = card_top if _narrow or compact_clear else minf ( 156.0 , maxf ( card_top , card_bottom - result_needed ) )
     var result_bottom : float = card_bottom
-    if _screen == "wave_clear" and width < 900.0 :
-        result_bottom = minf ( result_bottom , height * ( 0.65 if compact_clear else 0.62 ) )
+    # Use the actual available height; a fractional viewport cap can leave only
+    # the result kicker visible while pushing the title/body behind the buttons.
     _result . position = Vector2 ( margin if _narrow else margin + 8 , result_top )
     _result . size = Vector2 ( result_w , minf ( result_bottom - result_top , maxf ( 100.0 if compact_clear else 180.0 , result_needed ) ) )
     _result_title . add_theme_font_size_override ( "font_size" , 21 if compact_clear else ( 25 if _narrow else 30 ) )
@@ -622,8 +622,15 @@ func _layout ( ) -> void :
     _keyboard_heading . visible = not _short
     _keyboard . add_theme_stylebox_override ( "panel" , _style ( Color ( 0.051 , 0.078 , 0.129 , 0.98 ) , LINE , 8 , 12 , 8 if _short else 10 ) )
     var keyboard_h : float = 191 if _narrow else ( 154 if _short else 166 )
-    _keyboard . position = Vector2 ( roundf ( margin if _narrow else maxf ( margin , width * 0.5 - 350 ) ) , roundf ( _console . position . y - keyboard_h - 10 ) )
+    # Below 760 px the auxiliary controls occupy their own row above input.
+    # Reserve that row instead of drawing the lower keyboard keys underneath it.
+    var keyboard_auxiliary_space : float = 56.0 if width < 760.0 else 0.0
+    _keyboard . position = Vector2 ( roundf ( margin if _narrow else maxf ( margin , width * 0.5 - 350 ) ) , roundf ( _console . position . y - keyboard_h - 10 - keyboard_auxiliary_space ) )
     _keyboard . size = Vector2 ( minf ( 700 , full ) , keyboard_h )
+    # At the minimum 320 px square viewport, keep Pause reachable too: the
+    # auxiliary row has a free centre while the expanded keyboard covers the top.
+    if _keyboard.visible and _pause_button.visible and _keyboard.get_rect().intersects(_pause_button.get_rect()):
+        _pause_button.position = Vector2(roundf((width - 44.0) * 0.5), auxiliary_y)
     for row : HBoxContainer in _keyboard_rows :
         row . add_theme_constant_override ( "separation" , 2 if _narrow else 5 )
     for data : Dictionary in _keyboard_keys :

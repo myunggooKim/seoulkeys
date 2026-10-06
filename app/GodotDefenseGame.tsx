@@ -162,10 +162,10 @@ export function GodotDefenseGame({ locale, soundEnabled, musicEnabled = true, on
     const stage = layoutRef.current;
     if (!stage) return;
     const measure = () => {
-      // 720 px minimum game + 2 × (160 px rail + 150 px safety gap) = 1340 px.
+      // 760 px minimum game + 2 × (160 px rail + 150 px safety gap) = 1380 px.
       // At a 1440 px viewport the full-site stage is 1380 px, leaving a 760 px game.
       // Reserved boxes remain visible without an ad provider; actual creatives keep the height guard.
-      const wide = !document.fullscreenElement && window.innerWidth >= 1400 && stage.clientWidth >= 1340;
+      const wide = !document.fullscreenElement && window.innerWidth >= 1400 && stage.clientWidth >= 1380;
       const tall = window.innerHeight >= 900 && stage.clientHeight >= 780;
       setSideRailSpace((previous) => previous.wide === wide && previous.tall === tall ? previous : { wide, tall });
     };

@@ -2,7 +2,7 @@ import type { ThemeWord } from "./content-themes";
 import type { Locale } from "./locale-detection";
 import { DEFENSE_FIGHTER_WORDS, type DefenseMeaningPack } from "./defense-meaning-pack";
 
-export const GODOT_DEFENSE_URL = "/games/seoul-defense/index.html?v=16-integration17";
+export const GODOT_DEFENSE_URL = "/games/seoul-defense/index.html?v=16-integration17-responsive4";
 export const GODOT_READY_MESSAGE = "seoulkeys-defense-ready";
 export const GODOT_CONFIG_MESSAGE = "seoulkeys-defense-config";
 

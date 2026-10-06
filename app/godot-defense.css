@@ -89,7 +89,8 @@
   .godot-defense-game:fullscreen .gd-viewport { min-height: 0; }
 }
 
-/* Integration 17: visible, independent reserved rails from 1400 px desktops.
+/* Integration 17: independent rails when the measured stage leaves a 760 px game.
+ * The breakout starts at 1400 px; the full site fits both rails from 1440 px.
  * AdSense game-page guidance recommends at least 150 px from all gameplay controls:
  * https://support.google.com/adsense/answer/2768340?hl=en
  * Empty 160 × 600 placeholders are shown without making any ad request.
