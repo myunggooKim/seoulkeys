@@ -63,7 +63,8 @@ export function GodotDefenseGame({ locale, soundEnabled, musicEnabled = true, on
   const [fullscreen, setFullscreen] = useState(false);
   const [fullscreenMessage, setFullscreenMessage] = useState("");
   const [sideRailSpace, setSideRailSpace] = useState({ wide: false, tall: false });
-  const showSideAds = sideRailSpace.wide && sideRailSpace.tall && !fullscreen && !suspended && !hidden;
+  const showSideRails = sideRailSpace.wide && !fullscreen;
+  const showSideAds = showSideRails && sideRailSpace.tall && !suspended && !hidden;
   const [meaningPack, setMeaningPack] = useState<DefenseMeaningPack | null>(null);
   const [meaningErrorRequest, setMeaningErrorRequest] = useState<string | null>(null);
   const [meaningRetry, setMeaningRetry] = useState(0);
@@ -161,9 +162,10 @@ export function GodotDefenseGame({ locale, soundEnabled, musicEnabled = true, on
     const stage = layoutRef.current;
     if (!stage) return;
     const measure = () => {
-      // 940 px game + 2 × (160 px creative + 150 px safety gap) = 1560 px.
-      // Height also protects the page-level controls above the stage and prevents clipping.
-      const wide = !document.fullscreenElement && window.innerWidth >= 1640 && stage.clientWidth >= 1560;
+      // 720 px minimum game + 2 × (160 px rail + 150 px safety gap) = 1340 px.
+      // At a 1440 px viewport the full-site stage is 1380 px, leaving a 760 px game.
+      // Reserved boxes remain visible without an ad provider; actual creatives keep the height guard.
+      const wide = !document.fullscreenElement && window.innerWidth >= 1400 && stage.clientWidth >= 1340;
       const tall = window.innerHeight >= 900 && stage.clientHeight >= 780;
       setSideRailSpace((previous) => previous.wide === wide && previous.tall === tall ? previous : { wide, tall });
     };
@@ -225,10 +227,12 @@ export function GodotDefenseGame({ locale, soundEnabled, musicEnabled = true, on
 
   return (
     <section ref={rootRef} className={`godot-defense-game${launched ? " is-launched" : ""}`} aria-labelledby={titleId}>
-      <div ref={layoutRef} className={`gd-layout${sideRailSpace.wide && !fullscreen ? " has-side-rails" : ""}`}>
-      {showSideAds && desktopStartAd != null && <aside className="gd-side-ad gd-side-ad-start" aria-label={text("Advertisements", "광고")}>
+      <div ref={layoutRef} className={`gd-layout${showSideRails ? " has-side-rails" : ""}`}>
+      {showSideRails && <aside className="gd-side-ad gd-side-ad-start" aria-label={text("Advertisements", "광고")}>
         <p className="gd-ad-label">{text("Advertisements", "광고")}</p>
-        <div className="gd-ad-slot">{desktopStartAd}</div>
+        <div className={`gd-ad-slot${showSideAds && desktopStartAd != null ? "" : " is-placeholder"}`}>
+          {showSideAds && desktopStartAd != null ? desktopStartAd : <span data-ad-placeholder="start" aria-hidden="true">160 × 600</span>}
+        </div>
       </aside>}
       <div ref={panelRef} className="gd-game-panel">
       <header className="gd-header">
@@ -296,9 +300,11 @@ export function GodotDefenseGame({ locale, soundEnabled, musicEnabled = true, on
         <span>Godot · Blender</span>
       </footer>
       </div>
-      {showSideAds && desktopEndAd != null && <aside className="gd-side-ad gd-side-ad-end" aria-label={text("Advertisements", "광고")}>
+      {showSideRails && <aside className="gd-side-ad gd-side-ad-end" aria-label={text("Advertisements", "광고")}>
         <p className="gd-ad-label">{text("Advertisements", "광고")}</p>
-        <div className="gd-ad-slot">{desktopEndAd}</div>
+        <div className={`gd-ad-slot${showSideAds && desktopEndAd != null ? "" : " is-placeholder"}`}>
+          {showSideAds && desktopEndAd != null ? desktopEndAd : <span data-ad-placeholder="end" aria-hidden="true">160 × 600</span>}
+        </div>
       </aside>}
       </div>
     </section>

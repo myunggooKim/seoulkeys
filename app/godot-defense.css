@@ -89,11 +89,11 @@
   .godot-defense-game:fullscreen .gd-viewport { min-height: 0; }
 }
 
-/* Integration 17: one centered, narrower game; reserved rails on genuinely wide desktops.
+/* Integration 17: visible, independent reserved rails from 1400 px desktops.
  * AdSense game-page guidance recommends at least 150 px from all gameplay controls:
  * https://support.google.com/adsense/answer/2768340?hl=en
- * No slot is requested by this component. Optional 160 × 600 creatives are mounted
- * only after width AND height checks pass; never load ads into CSS-hidden rails.
+ * Empty 160 × 600 placeholders are shown without making any ad request.
+ * Optional creatives still require width AND height checks; no CSS-hidden ads.
  */
 .godot-defense-game .gd-layout {
   flex: 1; min-width: 0; min-height: 0; width: 100%;
@@ -102,6 +102,7 @@
 .godot-defense-game .gd-game-panel {
   grid-area: game; width: 100%; max-width: 1040px; min-width: 0; min-height: 0;
   margin-inline: auto; display: flex; flex-direction: column;
+  container-type: inline-size; container-name: defense-panel;
 }
 .godot-defense-game .gd-layout.has-side-rails {
   grid-template-columns: 160px minmax(0, 1040px) 160px;
@@ -116,6 +117,14 @@
   margin: 0 0 8px; color: var(--defense-muted); font-family: inherit; font-size: 10px; font-weight: 400; line-height: 14px;
 }
 .godot-defense-game .gd-ad-slot { width: 160px; height: 600px; }
+.godot-defense-game .gd-ad-slot.is-placeholder {
+  display: grid; place-items: center; border: 1px dashed var(--defense-border); border-radius: 12px;
+  background: var(--defense-bg); color: var(--defense-muted); font-size: 12px; letter-spacing: .08em;
+}
+@container defense-panel (max-width: 900px) {
+  .godot-defense-game .gd-launch { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 24px; }
+  .godot-defense-game .gd-launch h3 { font-size: clamp(28px, 6cqi, 42px); }
+}
 .godot-defense-game:fullscreen .gd-layout {
   grid-template-columns: minmax(0, 1fr); grid-template-areas: "game"; column-gap: 0;
 }
@@ -123,13 +132,12 @@
 
 /* Only City Defense may break out of the full site's 1200 px activity column.
  * Other activities and their controls keep the site's existing card geometry. */
-@media (min-width: 1640px) {
+@media (min-width: 1400px) {
   .game-demo:has(> .godot-defense-game) {
     width: min(1800px, calc(100vw - 24px)); max-width: none;
     margin-inline: calc(50% - min(900px, calc(50vw - 12px))); padding: 8px;
   }
-  .game-demo > .godot-defense-game:not(:fullscreen) { padding: 16px; }
-}
-@media (min-width: 1640px) and (min-height: 900px) {
+  .game-demo > .godot-defense-game:not(:fullscreen) { padding: 6px; }
+  /* Reserve the whole box even on 768/864 px-tall laptops; this page scrolls normally. */
   .game-demo > .godot-defense-game:not(:fullscreen) .gd-layout.has-side-rails { min-height: 780px; }
 }
