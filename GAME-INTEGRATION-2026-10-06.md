@@ -27,3 +27,7 @@ After a separately authorized deployment, check both menu entries, cached/reload
 ## Responsive Defense follow-up
 
 Desktop 1440/1536 layouts show two 160×600 reserved ad placeholders, separated from gameplay by 150 px. Rails require a minimum 760 px game viewport and collapse on narrower layouts. The v4 safe overlay changes only HUD _layout against v3; music, models, main gameplay and 166 other packed resources remain identical. Native checks cover narrow result-card text and on-screen keyboard hit targets.
+
+## Crossword catalog follow-up
+
+Four theme decks now contain 256 puzzles each, 1,024 distinct answer sets in total. The existing host selects the active site theme (travel by default). Each deck is exhausted before repeating a puzzle; saved drafts, completion state and recent history survive reload and locale changes. The 439 used answers retain their existing meanings in all 33 languages. The current answer is blue, its input position is darker blue, and solved answers stay jade. Models, fonts and the accepted music are unchanged.

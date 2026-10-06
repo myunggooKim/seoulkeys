@@ -4,6 +4,8 @@ import "./game-visuals.css";
 import "./crossword-3d.css";
 import "./crossword-white.css";
 import { makeGardenBoard, gardenSeasons, readGardenProgress, type GardenProgress } from "./crossword-garden";
+import { CROSSWORD_CATALOG_VERSION, createGardenDeck, drawGardenBoard, gardenCatalogBoard, gardenThemeKey, type GardenDeck } from "./crossword-catalog";
+import { gardenCheckpointKey, readGardenCheckpoint, type GardenCheckpoint } from "./crossword-checkpoint";
 import { CrosswordDiorama } from "./CrosswordDiorama";
 import { crosswordChapter, crosswordStars, crosswordWordReward } from "./crossword-session";
 
@@ -66,7 +68,9 @@ export function CrosswordGame({ locale, clueLocale = locale, soundEnabled, onSuc
   const [assistedEntries, setAssistedEntries] = useState<Set<string>>(new Set());
   const [revealedEntries, setRevealedEntries] = useState<Set<string>>(new Set());
   const [collection, setCollection] = useState<Array<Pick<CrosswordEntry, "answer" | "clueEn" | "clueKo">>>([]);
-  const [progressLoaded, setProgressLoaded] = useState(false);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const [caret, setCaret] = useState<{entryId: string; index: number} | null>(null);
+  const deckRef = useRef<GardenDeck>(createGardenDeck());
   const [saveState, setSaveState] = useState<"ready" | "saved" | "unavailable">("ready");
   const [speechNote, setSpeechNote] = useState("");
   const [zoomed, setZoomed] = useState(false);
@@ -113,12 +117,17 @@ export function CrosswordGame({ locale, clueLocale = locale, soundEnabled, onSuc
   const journey = crosswordChapter(puzzleIndex);
   const season = gardenSeasons[(journey.chapter - 1) % gardenSeasons.length];
   const progressKey = `seoulkeys-atelier-v3-${themeId || "core"}`;
+  // The same Korean answers share progress across clue languages; themes have independent decks.
+  const checkpointKey = gardenCheckpointKey(themeId);
+  const progressLoaded = loadedKey === checkpointKey;
   const activeSolved = solvedEntries.has(activeEntry.id);
+  const focusedIndex = Math.min(activeCells.length - 1, caret?.entryId === activeEntry.id ? caret.index : Array.from(activeDraft).length);
+  const focusedCellKey = !activeSolved && activeCells[focusedIndex] ? cellKey(activeCells[focusedIndex].row, activeCells[focusedIndex].col) : null;
   const sceneCells = useMemo(() => [...board.cells].map(([key, cell]) => {
     const [row, col] = key.split("-").map(Number);
     return { key, row, col, value: displayedAnswers.get(key) ?? "", number: board.numberByStart.get(key),
-      active: activeCellKeys.has(key), solved: cell.entryIds.some(id => solvedEntries.has(id)), wrong: wrongCells.has(key) };
-  }), [board, displayedAnswers, activeCellKeys, solvedEntries, wrongCells]);
+      active: activeCellKeys.has(key), focused: key === focusedCellKey, solved: cell.entryIds.some(id => solvedEntries.has(id)), wrong: wrongCells.has(key) };
+  }), [board, displayedAnswers, activeCellKeys, focusedCellKey, solvedEntries, wrongCells]);
   const onDioramaFailure = useCallback(() => setRenderFailed(true), []);
 
   const focusAnswer = useCallback(() => {
@@ -167,26 +176,52 @@ export function CrosswordGame({ locale, clueLocale = locale, soundEnabled, onSuc
     focusAnswer();
   }, [focusAnswer, puzzleIndex]);
 
-  // Hydrate browser-only saved progress after mount, without changing SSR output.
-  // Store completed gardens only: a reload resumes at the next unopened board.
+  // Resume the actual round, including its drafts. A reload never starts the old
+  // compact loop again or consumes another card. Theme changes cannot save the
+  // previous theme's state into the next theme's storage key.
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-    let saved: GardenProgress | null = null;
-    try { saved = readGardenProgress(localStorage.getItem(progressKey)); setSaveState(saved ? "saved" : "ready"); }
-    catch { setSaveState("unavailable"); }
-    const index = saved?.index ?? 0;
-    const fresh = buildBoard(index);
-    if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
-    setPuzzle(fresh); setPuzzleIndex(index); setActiveEntryId(fresh.entries[0].id);
-    setEntryDrafts({}); setSolvedEntries(new Set()); setWrongCells(new Set());
-    setStatus("playing"); setSeconds(0); setHints(0); setMistakes(0);
-    setAssistedEntries(new Set()); setRevealedEntries(new Set());
-    setScore(saved?.score ?? 0); setTotalStars(saved?.stars ?? 0); setBestStreak(saved?.best ?? 0);
-    setCollection(saved?.words ?? []); setStreak(0); setSpeechNote(""); setProgressLoaded(true);
-    window.setTimeout(focusAnswer, 0);
+      let saved: GardenProgress | null = null, checkpoint: GardenCheckpoint | null = null;
+      try {
+        checkpoint = readGardenCheckpoint(localStorage.getItem(checkpointKey), themeId);
+        saved = readGardenProgress(localStorage.getItem(progressKey));
+        setSaveState(checkpoint || saved ? "saved" : "ready");
+      } catch { setSaveState("unavailable"); }
+      const index = checkpoint?.index ?? saved?.index ?? 0;
+      const seed = new Uint32Array(1);
+      try { window.crypto.getRandomValues(seed); } catch { seed[0] = Date.now() >>> 0; }
+      const initialDeck = createGardenDeck(seed[0]);
+      if (saved?.words.length) initialDeck.recent = [saved.words.slice(-7).map(word => word.answer)];
+      const draw = checkpoint ? {puzzle: gardenCatalogBoard(checkpoint.puzzleId)!, deck: checkpoint.deck} : drawGardenBoard(initialDeck, index, themeId);
+      deckRef.current = draw.deck;
+      const fresh = draw.puzzle;
+      if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
+      setPuzzle(fresh); setPuzzleIndex(index); setActiveEntryId(checkpoint?.activeEntryId ?? fresh.entries[0].id);
+      setEntryDrafts(checkpoint?.drafts ?? {}); setSolvedEntries(new Set(checkpoint?.solved ?? [])); setWrongCells(new Set());
+      setStatus(checkpoint?.solved.length === fresh.entries.length ? "solved" : "playing");
+      setSeconds(checkpoint?.seconds ?? 0); setHints(checkpoint?.hints ?? 0); setMistakes(checkpoint?.mistakes ?? 0);
+      setAssistedEntries(new Set(checkpoint?.assisted ?? [])); setRevealedEntries(new Set(checkpoint?.revealed ?? []));
+      setScore(checkpoint?.score ?? saved?.score ?? 0); setTotalStars(checkpoint?.stars ?? saved?.stars ?? 0); setBestStreak(checkpoint?.best ?? saved?.best ?? 0);
+      setCollection(checkpoint?.words ?? saved?.words ?? []); setStreak(checkpoint?.streak ?? 0); setSpeechNote(""); setCaret(null); setLoadedKey(checkpointKey);
+      window.setTimeout(focusAnswer, 0);
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [progressKey, buildBoard, focusAnswer]);
+  }, [progressKey, checkpointKey, themeId, focusAnswer]);
+
+  useEffect(() => {
+    if (!progressLoaded) return;
+    const checkpoint: GardenCheckpoint = {
+      version: 1, catalogVersion: CROSSWORD_CATALOG_VERSION, theme: gardenThemeKey(themeId), puzzleId: puzzle.id,
+      index: puzzleIndex, deck: deckRef.current, score, stars: totalStars, best: bestStreak, words: collection,
+      activeEntryId, drafts: entryDrafts, solved: [...solvedEntries], assisted: [...assistedEntries], revealed: [...revealedEntries],
+      seconds, hints, mistakes, streak,
+    };
+    let result: "saved" | "unavailable" = "saved";
+    try { localStorage.setItem(checkpointKey, JSON.stringify(checkpoint)); }
+    catch { result = "unavailable"; }
+    const savedNotice = window.setTimeout(() => setSaveState(result), 0);
+    return () => window.clearTimeout(savedNotice);
+  }, [progressLoaded, checkpointKey, themeId, puzzle, puzzleIndex, score, totalStars, bestStreak, collection, activeEntryId, entryDrafts, solvedEntries, assistedEntries, revealedEntries, seconds, hints, mistakes, streak]);
 
   useEffect(() => {
     if (suspended || status === "solved" || solvedEntries.has(activeEntryId)) return;
@@ -241,6 +276,7 @@ export function CrosswordGame({ locale, clueLocale = locale, soundEnabled, onSuc
     if (suspendedRef.current || !progressLoaded) return;
     if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
     setActiveEntryId(entry.id);
+    setCaret(null);
     setSpeechNote("");
     setWrongCells(new Set());
     setStatus(solvedEntries.size === puzzle.entries.length ? "solved" : solvedEntries.has(entry.id) ? "correct" : "playing");
@@ -262,6 +298,7 @@ export function CrosswordGame({ locale, clueLocale = locale, soundEnabled, onSuc
 
   function updateActiveDraft(value: string) {
     if (suspendedRef.current || !progressLoaded) return;
+    setCaret(null);
     const next = normalizeDraft(value);
     setEntryDrafts((current) => ({ ...current, [activeEntry.id]: next }));
     setWrongCells(new Set());
@@ -381,7 +418,10 @@ export function CrosswordGame({ locale, clueLocale = locale, soundEnabled, onSuc
     if (suspendedRef.current || !progressLoaded) return;
     const nextIndex = puzzleIndex + 1;
     if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
-    const next = buildBoard(nextIndex);
+    const drawn = drawGardenBoard(deckRef.current, nextIndex, themeId);
+    deckRef.current = drawn.deck;
+    const next = drawn.puzzle;
+    setCaret(null);
     // A long expedition retains learned words, not every old board/DOM model.
     setPuzzle(next);
     setPuzzleIndex(nextIndex);
@@ -431,7 +471,7 @@ export function CrosswordGame({ locale, clueLocale = locale, soundEnabled, onSuc
   return (
     <div
       className={`crossword-game-wrap crossword-expedition crossword-atelier ${status}`}
-      data-visual-revision="studio-candidate-10c-music"
+      data-visual-revision="studio-candidate-11-variety-active"
       data-progress-ready={progressLoaded}
       aria-busy={!progressLoaded}
       data-season={(journey.chapter - 1) % gardenSeasons.length}
@@ -479,7 +519,15 @@ export function CrosswordGame({ locale, clueLocale = locale, soundEnabled, onSuc
             const alternatives = cell.entryIds.filter(id => id !== activeEntry.id && !solvedEntries.has(id));
             const id = alternatives[0] ?? cell.entryIds.find(id => !solvedEntries.has(id)) ?? cell.entryIds[0];
             const entry = puzzle.entries.find(item => item.id === id);
-            if (entry) selectEntry(entry);
+            if (entry) {
+              selectEntry(entry);
+              const position = entryCells(entry).findIndex(cell => cellKey(cell.row, cell.col) === key);
+              if (position >= 0 && !suspendedRef.current && progressLoaded && !solvedEntries.has(entry.id)) {
+                const inputPosition = Math.min(position, (entryDrafts[entry.id] ?? "").length);
+                setCaret({entryId:entry.id,index:inputPosition});
+                window.requestAnimationFrame(() => answerInputRef.current?.setSelectionRange(inputPosition, inputPosition));
+              }
+            }
           }} />
         </div>
         <p className="crossword-garden-note">{tr(locale, season.noteEn, season.noteKo)}</p>
@@ -527,7 +575,10 @@ export function CrosswordGame({ locale, clueLocale = locale, soundEnabled, onSuc
               <HangulInput id="crossword-word-input" locale={locale} onScreenSubmit={checkActiveWord} ref={answerInputRef} lang="ko" value={activeDraft}
                 disabled={suspended || activeSolved || !progressLoaded} maxLength={Array.from(activeEntry.answer).length} onValueChange={updateActiveDraft}
                 onKeyDownCapture={(event) => { if (soundEnabled && shouldPlayTypingKeySound(event)) { if (!suspendedRef.current) onKeySound(event.code); } }}
-                onKeyDown={handleInputKeys} autoComplete="off" spellCheck={false}
+                onKeyDown={handleInputKeys}
+                onSelect={event => setCaret({entryId: activeEntry.id, index: event.currentTarget.selectionStart ?? activeDraft.length})}
+                onKeyUp={event => setCaret({entryId: activeEntry.id, index: event.currentTarget.selectionStart ?? activeDraft.length})}
+                autoComplete="off" spellCheck={false}
                 placeholder={tr(locale, "{n} Korean syllables", `${Array.from(activeEntry.answer).length}글자 단어`).replace("{n}", String(Array.from(activeEntry.answer).length))}
                 aria-describedby="crossword-entry-progress crossword-status" />
               <span id="crossword-entry-progress">{Array.from(activeDraft).length}/{Array.from(activeEntry.answer).length}</span>
@@ -560,7 +611,7 @@ export function CrosswordGame({ locale, clueLocale = locale, soundEnabled, onSuc
         </details>
         <div className="game-key-help crossword-key-help"><span><kbd>Enter</kbd>{tr(locale, "check word", "단어 확인")}</span><span><kbd>Alt+→</kbd>{tr(locale, "next clue", "다음 낱말")}</span><span><kbd>Alt+H</kbd>{tr(locale, "hint", "한 글자 힌트")}</span></div>
       </div>
-      <p className="crossword-save-note">{saveState === "unavailable" ? tr(locale, "Saving is unavailable. You can keep playing this session.", "저장을 사용할 수 없지만 계속 플레이할 수 있어요.") : tr(locale, "Completed boards stay on this browser · Familiar words return for practice", "완성한 퍼즐은 이 브라우저에 저장돼요 · 익숙한 낱말은 복습으로 다시 만나요")}</p>
+      <p className="crossword-save-note">{saveState === "unavailable" ? tr(locale, "Saving is unavailable. You can keep playing this session.", "저장을 사용할 수 없지만 계속 플레이할 수 있어요.") : tr(locale, "This round and your answers stay on this browser · Every puzzle appears once per deck", "현재 퍼즐과 입력은 이 브라우저에 저장돼요 · 모든 문제를 푼 뒤에 같은 문제가 다시 나와요")}</p>
       {collection.length > 0 && <details className="crossword-collection">
         <summary><span>{tr(locale, "Your word collection", "나의 낱말 컬렉션")} <b>{collection.length}</b></span><span>{tr(locale, "Open to revisit", "펼쳐서 복습하기")} ↗</span></summary>
         <div>{collection.map(entry => <article key={entry.answer}><strong lang="ko">{entry.answer}</strong><span lang={clueLocale} dir="auto">{clueMeaning(clueLocale, entry)}</span></article>)}</div>

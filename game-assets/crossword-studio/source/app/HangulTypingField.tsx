@@ -138,7 +138,7 @@ export function HangulInput({ locale, onValueChange, onScreenSubmit, keyHint, re
   return (
     <div className={`${styles.field} hangul-field`}>
       <input {...props} ref={fieldRef} dir="ltr" onChange={(event) => onValueChange(event.target.value)}
-        onKeyDown={onKeyDown} onSelect={readSelection}
+        onKeyDown={onKeyDown} onSelect={event => { readSelection(); props.onSelect?.(event); }}
         onCompositionStart={onCompositionStart} onCompositionEnd={onCompositionEnd} />
       <InputTools value={props.value} onValueChange={onValueChange} locale={locale} keyHint={keyHint} onScreenSubmit={onScreenSubmit} disabled={props.disabled || props.readOnly} controls={controls} />
     </div>
@@ -150,7 +150,7 @@ export function HangulTextarea({ locale, onValueChange, onScreenSubmit, keyHint,
   return (
     <div className={`${styles.field} hangul-field`}>
       <textarea {...props} ref={fieldRef} dir="ltr" onChange={(event) => onValueChange(event.target.value)}
-        onKeyDown={onKeyDown} onSelect={readSelection}
+        onKeyDown={onKeyDown} onSelect={event => { readSelection(); props.onSelect?.(event); }}
         onCompositionStart={onCompositionStart} onCompositionEnd={onCompositionEnd} />
       <InputTools value={props.value} onValueChange={onValueChange} locale={locale} keyHint={keyHint} onScreenSubmit={onScreenSubmit} disabled={props.disabled || props.readOnly} controls={controls} />
     </div>

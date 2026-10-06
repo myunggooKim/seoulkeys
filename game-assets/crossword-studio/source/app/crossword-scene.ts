@@ -148,20 +148,30 @@ export async function createCrosswordScene(host: HTMLElement, overlay: HTMLEleme
   const uniqueSignals=[...new Set(signalMaterials)];
   const chapterColors=['#93cfe2','#9bb8ec','#d7b77b','#a8d1bc'];
   function paint(cell:CrosswordDioramaCell,tile:Tile) {
-    const signature=`${cell.value}|${cell.number}|${cell.solved}|${cell.wrong}|${cell.active}`;
+    const focused=cell.active&&!!cell.focused;
+    const signature=`${cell.value}|${cell.number}|${cell.solved}|${cell.wrong}|${cell.active}|${focused}`;
     if(signature===tile.signature)return;tile.signature=signature;
     const ctx=tile.canvas.getContext('2d');if(!ctx)return;
     ctx.clearRect(0,0,256,256);
     ctx.fillStyle=cell.wrong?'#932f35':'#132c3a';ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.font='700 137px "Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif';ctx.fillText(cell.value,128,144);
-    if(cell.number){ctx.font='800 49px system-ui, sans-serif';ctx.textAlign='left';ctx.fillStyle='#142820';ctx.fillText(String(cell.number),7,34);}
+    if(cell.number){ctx.font='800 49px system-ui, sans-serif';ctx.textAlign='left';ctx.fillStyle='#142820';ctx.fillText(String(cell.number),17,34);}
     if(cell.solved){ctx.fillStyle='#258278';ctx.beginPath();ctx.arc(232,24,7,0,Math.PI*2);ctx.fill();}
-    tile.texture.needsUpdate=true;
-    const palette=crosswordCeramicPalette(cell.solved);
+    const palette=crosswordCeramicPalette(cell.solved,cell.active,focused);
     for(const skin of tile.skin){skin.color.set(palette.face);if(skin instanceof MeshPhysicalMaterial)skin.emissive.set(palette.sheen);}
-    // Solved cells remain jade ceramic; selected unsolved faces stay pearl white.
-    if(cell.active||cell.solved||cell.wrong){ctx.strokeStyle=cell.wrong?'#9b4943':cell.solved?'#4b8272':'#8d7655';ctx.lineWidth=cell.active?5:3;ctx.beginPath();ctx.moveTo(13,244);ctx.lineTo(243,244);ctx.stroke();}
-    for(const light of tile.light){light.color.set(cell.wrong?'#e08077':cell.solved?'#77d1c4':cell.active?'#ecc48a':'#7595a6');light.emissive.copy(light.color);light.emissiveIntensity=cell.active?.22:cell.solved?.16:.025;}
+    // The selection border survives a solved crossing or an incorrect answer.
+    // Paint it on the ceramic face so orbiting keeps the mark aligned in 3D.
+    if(cell.active){
+      ctx.strokeStyle=focused?'#114779':'#24629d';ctx.lineWidth=focused?9:5;
+      const inset=focused?6:4,edge=256-inset,radius=15;
+      ctx.beginPath();ctx.moveTo(inset+radius,inset);
+      ctx.arcTo(edge,inset,edge,edge,radius);ctx.arcTo(edge,edge,inset,edge,radius);
+      ctx.arcTo(inset,edge,inset,inset,radius);ctx.arcTo(inset,inset,edge,inset,radius);
+      ctx.closePath();ctx.stroke();
+    }
+    if(cell.solved||cell.wrong){ctx.strokeStyle=cell.wrong?'#9b4943':'#4b8272';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(18,239);ctx.lineTo(238,239);ctx.stroke();}
+    tile.texture.needsUpdate=true;
+    for(const light of tile.light){light.color.set(cell.active?'#69b9ff':cell.wrong?'#e08077':cell.solved?'#77d1c4':'#7595a6');light.emissive.copy(light.color);light.emissiveIntensity=focused?.3:cell.active?.22:cell.solved?.16:.025;}
   }
   function projectControls(){
     for(const cell of state.cells){const tile=tiles.get(cell.key),button=overlay.querySelector<HTMLElement>(`[data-cell="${cell.key}"]`);if(!tile||!button)continue;

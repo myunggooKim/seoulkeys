@@ -25,7 +25,7 @@ test('reviewed integration reverses to the exact recorded upstream commit and or
 });
 
 test('every before and after hunk matches exactly once at its recorded line and roundtrips without loss',()=>{
-  assert.equal(delta.hunks.length,8);
+  assert.equal(delta.hunks.length,9);
   for(const hunk of delta.hunks){
     for(const [source,fragment,line] of [[upstreamHome,hunk.before,hunk.upstreamStartLine],[home,hunk.after,hunk.integratedStartLine]]){
       const index=source.indexOf(fragment);

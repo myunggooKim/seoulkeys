@@ -1,1 +1,1 @@
-export const CROSSWORD_BUILD = {"revision":"studio-candidate-10c-music","tileHash":"adab0c5863c902a0388dfb074a97ec7d722e902d3c9bcbbcea09150eb22036d5","sourceHash":"7caede7ce26536db4c50f9205fa149067165668e0d0a7d300f4bdaa4ccfbb1b6"} as const;
+export const CROSSWORD_BUILD = {"revision":"studio-candidate-11-variety-active","tileHash":"adab0c5863c902a0388dfb074a97ec7d722e902d3c9bcbbcea09150eb22036d5","sourceHash":"a5bb495ce8426c7e6b2d35b8c4e7b807e491d81062442c0be4ccecf87bb7feb1","baseSourceHash":"7caede7ce26536db4c50f9205fa149067165668e0d0a7d300f4bdaa4ccfbb1b6"} as const;

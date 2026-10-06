@@ -258,6 +258,14 @@
 .crossword-game-wrap.crossword-expedition.crossword-atelier .is-flat .crossword-cell.correct { background: #83d9bc; border-color: #469d81; box-shadow: 0 2px 0 #468d75; }
 .crossword-game-wrap.crossword-expedition.crossword-atelier .is-flat .crossword-cell.correct strong { color: #174e3d; }
 .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-caption span:nth-child(2) i { background: #389779; }
+/* Match the blue selected-word glaze and keep jade at solved intersections. */
+.crossword-game-wrap.crossword-expedition.crossword-atelier .is-flat .crossword-cell.active-word { background: linear-gradient(145deg, #c5e5ff, #75b6f1); box-shadow: inset 0 0 0 2px #24629d, 0 2px 0 #5484b2; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .is-flat .crossword-cell.active-word.correct { background: #83d9bc; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .is-flat .crossword-cell.active-word.input-position { box-shadow: inset 0 0 0 3px #114779, 0 2px 0 #5484b2; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .is-flat .crossword-cell.active-word.input-position:not(.correct) { background: linear-gradient(145deg, #a4d5ff, #559bdb); }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .is-flat .crossword-cell.active-word strong { color: #132c3a; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .is-flat .crossword-cell.active-word.wrong strong { color: #932f35; }
+.crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-board-caption span:first-child i { background: #438fcf; }
 .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-orbit-help { color: #465e6b; font-size: 13px; font-weight: 600; line-height: 1.5; margin: 6px 0 0; }
 .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama:not(.is-flat) button { cursor: inherit; }
 .crossword-game-wrap.crossword-expedition.crossword-atelier .crossword-diorama:focus-visible { outline: 3px solid #3c728f; outline-offset: -3px; border-radius: 8px; }

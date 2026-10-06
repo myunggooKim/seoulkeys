@@ -1451,8 +1451,8 @@ const activities: Array<{
     korean: "가로세로 퀴즈",
     description: "Connect clues, sounds, and meanings.",
     descriptionKo: "힌트를 보고 낱말 전체를 입력해 가로세로판을 완성하세요.",
-    time: "6+ clues · 3 boards",
-    timeKo: "판마다 6개 이상 · 3개 문제판",
+    time: "6–7 clues · 1,024 puzzles",
+    timeKo: "6~7개 단서 · 1,024개 퍼즐",
     accent: "cyan",
   },
   {

@@ -1,4 +1,8 @@
-/** Persistent solved jade is independent of the transient selected-word state. */
-export function crosswordCeramicPalette(solved: boolean) {
-  return solved ? {face:'#54cbb0',sheen:'#a8f5d8'} : {face:'#ffffff',sheen:'#ffffff'};
+/** Keep earned jade while the current clue has a distinct blue ceramic glaze. */
+export function crosswordCeramicPalette(solved: boolean, active = false, focused = false) {
+  if (solved) return {face:'#54cbb0',sheen:'#a8f5d8'};
+  if (active) return focused
+    ? {face:'#3188da',sheen:'#a8d6ff'}
+    : {face:'#60a8ed',sheen:'#bddfff'};
+  return {face:'#ffffff',sheen:'#ffffff'};
 }

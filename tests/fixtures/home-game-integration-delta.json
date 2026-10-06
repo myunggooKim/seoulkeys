@@ -8,7 +8,7 @@
     "sha256": "1152a5b52b8c1eee543d78ccea06eb2149bf133abe76a61cd3036f68f96db874",
     "gitBlobSha1": "037963f9bf445998fa20e0c86a52bcb05598a01e"
   },
-  "integratedSha256": "afc59afba53305cccab021fb4503596e1bb9b5bcc1b06896ddb5b1cf8e550129",
+  "integratedSha256": "5e13e66fd2d93a55d93aea300e23cbd87d13377f228a12f6c4fbbda5ddc2730a",
   "communityBaselineFixture": "tests/fixtures/community-preservation.json",
   "lineEndings": "LF; CRLF is normalized exactly as in the original preservation check.",
   "hunks": [
@@ -75,6 +75,14 @@
       "integratedStartLine": 3743,
       "before": "              )}\n\n              {activeActivity === \"crossword\" && (\n                <CrosswordGame koreanUi={locale === \"ko\"} locale={locale} soundEnabled={returnSoundEnabled} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} themeId={themeId} />\n              )}\n            </Suspense>\n          </GameLoadBoundary>\n",
       "after": "              )}\n\n              {activeActivity === \"crossword\" && (\n                <CrosswordGame koreanUi={locale === \"ko\"} locale={locale} soundEnabled={returnSoundEnabled} onSoundEnabledChange={setReturnSoundEnabled} onRequestExit={() => setExitPromptOpen(true)} onSuccessSound={playSuccessChime} onKeySound={playTypingKeySound} suspended={exitPromptOpen} themeId={themeId} />\n              )}\n            </Suspense>\n          </GameLoadBoundary>\n"
+    },
+    {
+      "id": "expanded-crossword-catalog-label",
+      "description": "Reflect the explicitly requested 1,024-puzzle catalog expansion in the existing activity card.",
+      "upstreamStartLine": 1452,
+      "integratedStartLine": 1454,
+      "before": "    time: \"6+ clues · 3 boards\",\n    timeKo: \"판마다 6개 이상 · 3개 문제판\",",
+      "after": "    time: \"6–7 clues · 1,024 puzzles\",\n    timeKo: \"6~7개 단서 · 1,024개 퍼즐\","
     }
   ]
 }

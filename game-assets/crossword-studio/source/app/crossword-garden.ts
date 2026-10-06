@@ -1,4 +1,5 @@
-import { cellKey, entryCells, makeCrosswordBoard, makeThemedCrosswordBoard, type CrosswordEntry, type CrosswordPuzzle } from './ProgressivePuzzles';
+import { createGardenDeck, drawGardenBoard } from './crossword-catalog';
+import { cellKey, entryCells, type CrosswordEntry, type CrosswordPuzzle } from './ProgressivePuzzles';
 
 export const gardenSeasons = [
   { en: 'The shape of a word', ko: '낱말이 모이는 순간', noteEn: 'Connect a word. Open a new world.', noteKo: '낱말을 연결하고 새로운 세계를 열어요.', icon: '01' },
@@ -40,10 +41,13 @@ export function compactGardenBoard(puzzle: CrosswordPuzzle, count = 6): Crosswor
   return { ...puzzle, size: b.size, entries: best.map(e => ({ ...e, row: e.row - b.minRow, col: e.col - b.minCol })) };
 }
 
+/** Compatibility helper; live play carries its persisted deck rather than replaying it. */
 export function makeGardenBoard(index: number, themeId?: string): CrosswordPuzzle {
-  const original = themeId ? makeThemedCrosswordBoard(index, themeId) : makeCrosswordBoard(index);
-  // Six words are a short, achievable session; later gardens gently add one.
-  return compactGardenBoard(original, index < 3 ? 6 : 7);
+  let deck = createGardenDeck(), puzzle: CrosswordPuzzle | undefined;
+  for (let step = 0; step <= Math.max(0, index); step++) {
+    const next = drawGardenBoard(deck, step, themeId); deck = next.deck; puzzle = next.puzzle;
+  }
+  return puzzle!;
 }
 
 export type GardenProgress = {
