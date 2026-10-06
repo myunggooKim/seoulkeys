@@ -9,6 +9,7 @@
     "run_worker_first": ["/robots.txt", "/sitemap.xml"]
   },
   "workers_dev": true,
+  "ai": { "binding": "AI" },
   "routes": [
     { "pattern": "seoulkeys.com", "custom_domain": true },
     { "pattern": "www.seoulkeys.com", "custom_domain": true }

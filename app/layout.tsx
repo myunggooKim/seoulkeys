@@ -116,6 +116,19 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Connect AdSense for ownership verification only. Keep ad requests
+            paused until ad placement and consent controls are ready. */}
+        <script
+          id="adsense-request-pause"
+          dangerouslySetInnerHTML={{
+            __html: "(window.adsbygoogle = window.adsbygoogle || []).pauseAdRequests = 1;",
+          }}
+        />
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4355487582107293"
+          crossOrigin="anonymous"
+        />
         {/* App screens resolve locale, account state and progress before their
             first frame. Public guides are already complete server-rendered
             documents, so they must paint immediately instead of waiting for the

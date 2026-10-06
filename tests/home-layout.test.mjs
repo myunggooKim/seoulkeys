@@ -4,7 +4,7 @@ import test from "node:test";
 
 test("the single unchanged community board sits below the header categories, not above practice", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
-  const header = page.slice(page.indexOf('<header className="topbar"'), page.indexOf("</header>"));
+  const header = page.slice(page.indexOf('<header className={`topbar'), page.indexOf("</header>"));
   assert.equal((page.match(/<CommunityPulse locale=\{locale\}/g) ?? []).length, 1);
   assert.match(header, /className="header-navigation">[\s\S]*<nav className="nav-links"[\s\S]*<\/nav>\s*<CommunityPulse locale=\{locale\}/);
   assert.doesNotMatch(page, /className="notice-row"|className="desktop-notice-bar"|Desktop Environment Optimized/);
@@ -22,14 +22,11 @@ test("compact home spacing is desktop-only and cannot shrink expanded practice o
   assert.match(css, /\.header-navigation \.live-board \{[^}]*max-width: 100%;[^}]*flex-wrap: wrap;/s);
 });
 
-test("desktop board edges follow the menu without extending beyond its final auth button", async () => {
-  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
-  assert.match(css, /@media \(min-width: 901px\) \{\s*\.topbar > \.header-navigation \{ padding-block: 0; \}/);
-  assert.match(css, /\.header-navigation > \.live-board \{[^}]*position: absolute;[^}]*inset-inline-start: 0;[^}]*inset-block-start: calc\(50% \+ 18px\);[^}]*width: 100%;[^}]*max-width: 100%;[^}]*padding-block: 3px;/s);
+test("the refined board follows the full menu frame without an absolute offset or extra width", async () => {
+  const css = await readFile(new URL("../app/home-header.module.css", import.meta.url), "utf8");
+  assert.match(css, /:global\(\.header-navigation\) > :global\(\.live-board\) \{[^}]*position: static !important;[^}]*width: calc\(100% - 8px\) !important;[^}]*max-width: 100%;[^}]*box-sizing: border-box;[^}]*flex-wrap: wrap;/s);
+  assert.match(css, /:global\(\.nav-links\) > :global\(\.header-auth-button\) \{[^}]*margin-inline-start: auto;/s);
   assert.doesNotMatch(css, /width: max\(100%, 400px\)/);
-  assert.match(css, /\.header-navigation \.live-board-cell \{ flex: 0 0 auto;/);
-  assert.match(css, /\.header-navigation \.live-board-digits \{ flex: 0 0 auto;/);
-  assert.match(css, /\.header-navigation \.live-board \{[^}]*width: 400px;[^}]*max-width: 100%;/s);
 });
 
 test("sign-in and sign-out occupy the same slot and reuse the existing account actions", async () => {

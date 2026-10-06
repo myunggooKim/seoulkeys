@@ -18,6 +18,9 @@ const pages = [
   { loc: "https://seoulkeys.com/learn/korean-typing-mistakes", changefreq: "monthly", priority: "0.8" },
   { loc: "https://seoulkeys.com/learn/korean-typing-practice-plan", changefreq: "monthly", priority: "0.8" },
   { loc: "https://seoulkeys.com/about", changefreq: "monthly", priority: "0.5" },
+  { loc: "https://seoulkeys.com/community", changefreq: "daily", priority: "0.6" },
+  { loc: "https://seoulkeys.com/community/welcome", changefreq: "monthly", priority: "0.5" },
+  { loc: "https://seoulkeys.com/community/rules", changefreq: "monthly", priority: "0.3" },
   { loc: "https://seoulkeys.com/contact", changefreq: "monthly", priority: "0.5" },
   { loc: "https://seoulkeys.com/legal", changefreq: "monthly", priority: "0.3" },
 ];

@@ -1,0 +1,201 @@
+/* Only the home header opts in. Existing practice/admin/public styles stay put.
+   Scoped !important rules replace legacy global !important header overrides. */
+.header:global(.topbar)[aria-label] {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 12px 18px !important;
+  min-height: 88px !important;
+  height: auto !important;
+  padding-block: 10px !important;
+  border-bottom: 1px solid var(--line);
+  direction: ltr !important;
+}
+
+.header:global(.topbar) > :global(.brand) { align-self: center; white-space: nowrap; }
+.header:global(.topbar) > :global(.brand) > span:last-child { display: inline !important; }
+.header:global(.topbar) > :global(.header-navigation) {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 5px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+}
+.header:global(.topbar) :global(.nav-links) {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 3px;
+  min-width: 0;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface-2);
+  font-size: 13px;
+  line-height: 1.35;
+}
+.header:global(.topbar) :global(.nav-links) > :is(a, button) {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--ink);
+  font-size: inherit;
+  font-weight: 800;
+  line-height: inherit;
+  text-decoration: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.header:global(.topbar) :global(.nav-links) > a:hover { background: var(--paper); border-color: var(--line); }
+.header:global(.topbar) :global(.nav-links) > :global(.header-community-link) {
+  background: color-mix(in srgb, var(--pink) 14%, var(--paper));
+  border-color: color-mix(in srgb, var(--pink) 32%, var(--line));
+}
+.header:global(.topbar) :global(.nav-links) > :global(.header-community-link):hover { background: color-mix(in srgb, var(--pink) 24%, var(--paper)); }
+.header:global(.topbar) :global(.nav-links) > :global(.header-auth-button) {
+  display: grid !important;
+  margin-inline-start: auto;
+  background: var(--paper);
+  border-color: var(--line);
+  cursor: pointer;
+}
+.header:global(.topbar) :global(.header-auth-button):hover:not(:disabled) { border-color: var(--ink); }
+.header:global(.topbar) :global(.header-auth-button):disabled { opacity: .65; cursor: wait; }
+.header:global(.topbar) :global(.header-navigation) > :global(.live-board) {
+  position: static !important;
+  width: calc(100% - 8px) !important;
+  margin-inline: 4px;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 7px;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+  box-shadow: none;
+}
+
+.header:global(.topbar) > :global(.header-tools) {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  grid-template-areas: "theme keyboard" "sound language";
+  grid-template-rows: repeat(2, minmax(32px, 1fr));
+  align-items: stretch;
+  align-self: stretch;
+  justify-content: stretch !important;
+  justify-self: end;
+  width: 270px;
+  min-height: 69px;
+  gap: 5px !important;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.header:global(.topbar) :global(.theme-toggle-btn) { grid-area: theme; }
+.header:global(.topbar) :global(.keyboard-setup-btn) { grid-area: keyboard; }
+.header:global(.topbar) :global(.sound-menu) { grid-area: sound; flex: 0 1 auto !important; min-width: 0; }
+.header:global(.topbar) :global(.language-picker) { grid-area: language; }
+.header:global(.topbar) :global(.header-tools) > *,
+.header:global(.topbar) :global(.sound-menu-trigger) { width: 100%; max-width: 100% !important; }
+.header:global(.topbar) :is(:global(.sound-menu-trigger), :global(.language-picker), :global(.theme-toggle-btn), :global(.keyboard-setup-btn)) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px;
+  box-sizing: border-box;
+  height: 100% !important;
+  min-height: 32px !important;
+  min-width: 0;
+  padding: 0 10px !important;
+  border: 1px solid color-mix(in srgb, var(--purple) 18%, var(--line)) !important;
+  border-radius: 10px !important;
+  background: color-mix(in srgb, var(--purple) 4%, var(--paper)) !important;
+  color: var(--ink) !important;
+  box-shadow: 0 1px 2px rgb(0 0 0 / .04) !important;
+  font-size: 12px !important;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: normal;
+  transition: border-color 120ms ease, background-color 120ms ease;
+  cursor: pointer;
+}
+.header:global(.topbar) :is(:global(.sound-menu-trigger), :global(.theme-toggle-btn), :global(.keyboard-setup-btn)):hover,
+.header:global(.topbar) :global(.language-picker):focus-within { border-color: var(--muted) !important; transform: none; filter: none; }
+.header:global(.topbar) :global(.language-picker) {
+  flex: 0 1 auto !important;
+  justify-content: center !important;
+  padding-inline: 32px !important;
+}
+.header:global(.topbar) :global(.language-picker) > select {
+  /* The native control covers the icon, caret and padding, not just the text. */
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  box-sizing: border-box;
+  border-radius: 0 !important;
+  padding-inline: 32px !important;
+  min-width: 0;
+  text-align: center !important;
+  text-align-last: center !important;
+}
+.header:global(.topbar) :global(.language-picker) > select > optgroup > option { text-align: start; }
+.header:global(.topbar) :is(:global(.sound-menu-trigger), :global(.language-picker)) { background: var(--paper) !important; }
+.header:global(.topbar) :global(.language-picker)::before { content: none !important; }
+.header:global(.topbar) :global(.language-picker) > svg {
+  position: absolute;
+  inset-inline-start: 9px;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  pointer-events: none;
+}
+.header:global(.topbar) svg { flex: 0 0 auto; color: var(--muted); }
+.header:global(.topbar) :is(:global(.header-tool-label), :global(.sound-menu-label)) { min-width: 0; overflow-wrap: anywhere; }
+.header:global(.topbar) :global(.sound-menu-panel) {
+  width: max-content;
+  min-width: 280px;
+  max-width: min(350px, calc(100vw - 32px));
+  box-sizing: border-box;
+  border-color: var(--line);
+}
+.header:global(.topbar) :is(a, button, select):focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; }
+
+@media (max-width: 1280px) {
+  .header:global(.topbar)[aria-label] { grid-template-columns: auto minmax(0, 1fr) !important; gap: 7px 16px !important; }
+  .header:global(.topbar) > :global(.header-tools) { grid-column: 1 / -1; }
+}
+@media (min-width: 901px) and (max-width: 1280px) {
+  .header:global(.topbar)[aria-label] { grid-template-columns: auto minmax(0, 1fr) 250px !important; padding-block: 0 !important; }
+  .header:global(.topbar) > :global(.header-tools) { grid-column: auto; width: 250px; }
+}
+@media (max-width: 680px) {
+  .header:global(.topbar)[aria-label] { grid-template-columns: minmax(0, 1fr) !important; gap: 9px !important; padding-block: 12px !important; }
+  .header:global(.topbar) > :global(.header-navigation) { grid-column: 1; }
+  .header:global(.topbar) :global(.nav-links) { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; font-size: 12px; }
+  .header:global(.topbar) :global(.nav-links) > :is(a, button) { padding-inline: 7px; }
+  .header:global(.topbar) :global(.nav-links) > :global(.header-auth-button) { margin-inline-start: 0; }
+  .header:global(.topbar) > :global(.header-tools) { grid-template-rows: repeat(2, minmax(42px, 1fr)); width: 100%; justify-self: stretch; }
+  .header:global(.topbar) :is(:global(.sound-menu-trigger), :global(.language-picker), :global(.theme-toggle-btn), :global(.keyboard-setup-btn)) { min-height: 42px !important; padding-block: 5px !important; align-self: stretch; }
+  .header:global(.topbar) :global(.sound-menu-panel) { inset-inline-start: 0; inset-inline-end: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .header:global(.topbar) :is(a, button, label) { transition: none; }
+}

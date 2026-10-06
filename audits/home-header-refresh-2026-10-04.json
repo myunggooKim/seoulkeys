@@ -1,0 +1,74 @@
+{
+  "date": "2026-10-04",
+  "scope": "Home header navigation and settings-control presentation only",
+  "deployment": {
+    "worker": "hangeul-pop",
+    "version": "488beb02-e2ee-4a16-8796-6e0c8bcdc8a1",
+    "trafficPercent": 100,
+    "preview": "https://488beb02-hangeul-pop.travels444.workers.dev",
+    "production": "https://seoulkeys.com/",
+    "previousVersion": "12e22865-8ddf-4535-86a4-4fba5c74fa9d",
+    "environmentVariablesPreserved": true,
+    "databaseMigrations": false,
+    "adsenseApplicationSubmitted": false
+  },
+  "changes": [
+    "Sound, language, theme and keyboard controls share 38px height, 10px corners, borders and inline SVG icon style on desktop",
+    "Mobile controls share 42px minimum height and retain accessible names with compact icon-only settings buttons",
+    "Community appears in primary navigation; Korean Learn label becomes 학습 과정 and English label becomes Curriculum",
+    "Concise curriculum, community and guide navigation labels cover all 33 supported locales",
+    "Visitor board remains below navigation within the login/logout button edge",
+    "Styles are scoped to the home header; app/globals.css is unchanged"
+  ],
+  "preservation": {
+    "preExistingUncommittedChangesKept": true,
+    "typingGameSpeechProgressAndAccountHandlersUnchanged": true,
+    "nonHeaderHomeCodeMatchesPriorBaseline": true,
+    "backups": [
+      "scratchpad/header-baseline-2026-10-04/home.tsx",
+      "scratchpad/header-baseline-2026-10-04/globals.css"
+    ],
+    "gitCommitOrPushPerformed": false,
+    "newDependencies": false,
+    "newPaidTranslationRequests": false
+  },
+  "verification": {
+    "typecheck": "passed",
+    "build": "passed",
+    "fullRegressionSuite": {"passed": 181, "failed": 0},
+    "finalFocusedSuite": {"passed": 26, "failed": 0},
+    "localBrowserAll33Locales": {
+      "desktop1440x900": "No header controls outside bounds or horizontal page overflow",
+      "mobile390x844": "No header controls outside bounds or horizontal page overflow"
+    },
+    "localLaptop1024x768": "Four uniform 38px controls in compact two-column toolbar; Korean header 91px high",
+    "previewInteractions": [
+      "Sound settings opened and closed",
+      "Theme switched to dark and back to light",
+      "Keyboard installation dialog opened and closed",
+      "Basic practice expanded with fixed stage and hidden body scroll",
+      "Theatre mode selected and WebGL canvas appeared",
+      "Home control returned to basic mode"
+    ],
+    "productionDesktop1440x900": {
+      "allFourControlsHeight": 38,
+      "allFourControlsCornerRadius": 10,
+      "visitorBoardRightMatchesAuthButtonRight": true,
+      "noHorizontalOverflow": true,
+      "primaryCommunityLinkOpensFeed": true,
+      "operatorWelcomeLinkPresent": true
+    },
+    "productionMobile390x844": {
+      "allFourControlsHeight": 42,
+      "allFourControlsCornerRadius": 10,
+      "controlsOutsideHeader": [],
+      "noHorizontalOverflow": true,
+      "communityVisible": true
+    }
+  },
+  "limits": [
+    "Browser checks used Chrome desktop and mobile emulation; physical Safari/macOS and real mobile devices were not available",
+    "Existing narrow-laptop unexpanded practice-card height was not changed by this header-only request",
+    "Real account authentication and progress writes were not exercised; existing handlers were preserved and regression-tested"
+  ]
+}

@@ -8,8 +8,12 @@ import {
 } from "../app/learn/guides";
 import { isGuideTypingLiteral } from "../app/learn/guide-typing-literals";
 import { koreanGuideTranslations } from "../app/learn/guides-ko";
+import { loadReviewedLearningTranslations } from "./load-reviewed-learning-translations";
 
 const root = process.cwd();
+// Corrections reviewed against the educational source must survive regeneration.
+// Only matching source keys are exported; this file never invokes a translator.
+const reviewedLearningTranslations = loadReviewedLearningTranslations(root);
 const outputPath = path.join(root, "scratchpad", "learning-i18n-source.json");
 const locales = [
   "ko", "es", "pt-BR", "ja", "zh-Hans", "zh-Hant", "fr", "de", "it", "pl", "nl", "ru", "tr",
@@ -195,6 +199,12 @@ for (const guide of guides) {
 const serializedBundles = Object.fromEntries(
   [...bundles].map(([name, value]) => {
     const keys = [...value.keys].sort((a, b) => a.localeCompare(b, "en"));
+    for (const locale of locales) {
+      const reviewed = reviewedLearningTranslations[locale];
+      for (const key of keys) {
+        if (reviewed?.[key]) value.existing[locale][key] = reviewed[key];
+      }
+    }
     const existing = Object.fromEntries(locales.map((locale) => [
       locale,
       Object.fromEntries(

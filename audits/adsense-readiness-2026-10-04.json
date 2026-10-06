@@ -1,0 +1,107 @@
+{
+  "project": "Seoul Keys",
+  "date": "2026-10-04",
+  "status": "수정·검증·배포·운영 확인 완료. 사이트 측 준비 상태를 기준으로 애드센스 심사 진행 권고",
+  "authorization": {
+    "productionDeployment": "사용자가 ‘검증 후 배포까지 진행’으로 명시 승인",
+    "adsenseApplicationSubmitted": false,
+    "githubCommitOrPushPerformed": false
+  },
+  "preservation": {
+    "original28FileBackup": "scratchpad/translation-review-baseline-2026-10-02/",
+    "preReadinessBackup": "scratchpad/readiness-baseline-2026-10-04/",
+    "resetOrDiscardPerformed": false,
+    "originalMainKoreanPackUnchanged": true,
+    "mainKoreanPackSha256": "96e44f1c9bb2d414b313fecc6ece1653a43af20b65d5fc858a456ab36537153c",
+    "nonLearningAppFilesChanged": [],
+    "unchangedAreas": ["기존 타자·한글 조합·게임·음성·진도·인증 코드", "홈 및 극장 스타일", "Cloudflare 설정·DB 스키마·도메인"],
+    "learningRuntimeChange": "Vite public 자산 import 경고를 제거하기 위해 오프라인 한국어 공통 번역을 동기화된 소스 모듈로 이동. 번역 로딩 및 입력 로직 변경 없음"
+  },
+  "implemented": [
+    "일본어·스페인어의 학습 용어, 한글 원리와 안내문 제목·핵심 답변 보완",
+    "누락 11개 언어의 110개 학습 번역 파일 복구 및 핵심 안내·목차·연습 이동 버튼 보완",
+    "ㅇ의 초성 무음/종성 ŋ 구분, 획 추가와 소리의 관계, 근거 없는 학습 효과 및 문자 유일성 주장 수정",
+    "rmf → 글 예제는 유지하고 열린 음절이 아닌 닫힌 음절로 표기 수정",
+    "검토되지 않은 상세 자동 번역은 정확한 영어 원문으로 표시하고 선택 언어로 설명",
+    "복구 11개 언어의 미검토 자동 번역 메뉴 문구도 게시하지 않도록 검토 기준 적용",
+    "학습 페이지 모바일의 긴 버튼·다음 강의 목차·하단 링크 줄바꿈 보정",
+    "재현 가능한 공개 페이지 검사 및 운영 번역 파일 무결성 검사 스크립트 추가"
+  ],
+  "translationScope": {
+    "interfaceLanguages": 33,
+    "nonEnglishPackLanguages": 32,
+    "bundlesPerLanguage": 10,
+    "publishedPacks": 320,
+    "uniqueSourceStrings": 860,
+    "recoveredLanguages": ["th", "id", "ms", "vi", "my", "km", "lo", "bn", "ta", "ne", "si"],
+    "reviewedNonIdentityStrings": { "ko": 856, "ja": 240, "es": 244, "eachRecoveredLanguage": 106 },
+    "englishSourceFallbacks": { "ja": 616, "es": 612, "eachRecoveredLanguage": 750 },
+    "fullNativeTranslationComplete": false,
+    "fallbackIsPublishedOriginalContent": true,
+    "note": "번역 키 누락이 없는 것과 전체 번역 검수가 끝난 것은 다릅니다. 영어 상세 설명은 삭제나 빈칸이 아니라 완전한 원문입니다. 기존 다른 언어의 짧은 메뉴 번역은 유지했으며 전체 의미 검수를 완료했다고 간주하지 않습니다."
+  },
+  "automatedVerification": {
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "fullRegressionTests": { "passed": 159, "failed": 0, "skipped": 0 },
+    "postDeployAuditTestMaintenance": "학습 검증 테스트의 임시 파일 의존성을 제거한 후 해당 7개 테스트를 재실행해 모두 통과했습니다. 배포된 앱에는 추가 변경이 없습니다.",
+    "coverage": ["브라우저 내 한글 입력과 조합", "네이티브 IME 타자음 중복 방지", "진도 저장·계정 제어", "게임 지연 로딩", "기본·극장 전환", "손 그래픽과 스페이스 키", "단어 사전", "학습 번역 키·교육용 입력 예제·한국어 예제 보존", "8개 안내문의 물리 키 입력과 실제 한글 결과"]
+  },
+  "actualScreenVerification": {
+    "local": [
+      "일본어·스페인어의 8개 안내문 제목과 핵심 답변",
+      "일본어·스페인어 및 복구 11개 언어의 키보드 안내·7행의 표·390×844 화면",
+      "한글 원리 페이지 13개 언어의 제목과 번역 표시 정책",
+      "물리 키 gkak 입력으로 하마 출력, Enter 후 정확도 100%와 진도 1/102→2/102 이동",
+      "극장 canvas 표시 및 sk→나 입력, 기본 모드 전환 후에도 나 입력 유지"
+    ],
+    "production": [
+      "한국어 한글 원리 본문과 수정된 ㅇ 표기",
+      "일본어·스페인어 및 복구 11개 언어 모바일 표시: 모두 clientWidth=scrollWidth=375",
+      "한국어 4개 학습 탭: 선택에 따라 표시 패널 1개, 모두 가로 넘침 없음",
+      "홈 한국어 표시·입력창·기본 모드·canvas 존재, 페이지 전체 가로 넘침 없음",
+      "조회한 seoulkeys.com 브라우저 오류 로그 0건"
+    ],
+    "productionUserProgressMutated": false,
+    "proof": "scratchpad/learning-live-2026-10-04.jpg"
+  },
+  "deployment": {
+    "worker": "hangeul-pop",
+    "version": "a1b62603-d9de-4d5a-8526-23046b2e632f",
+    "trafficPercent": 100,
+    "previousVersionForRollback": "84ed4d49-b25d-46c3-8c9a-dc3c9835c0a4",
+    "keepExistingServerVariables": true,
+    "previewHttpChecks": "passed before activation",
+    "dbMigrations": false,
+    "domainOrSecurityChanges": false,
+    "paidAiCallsIntroducedOrUsed": false
+  },
+  "liveHttpVerification": {
+    "publicPages": 14,
+    "allPublicPageStatus": 200,
+    "titlesCanonicalAndNoindexChecks": "passed",
+    "robotsStatus": 200,
+    "sitemapStatus": 200,
+    "nonexistentPageStatus": 404,
+    "wwwRedirect": { "status": 308, "location": "https://seoulkeys.com/learn" },
+    "learningPacksChecked": 320,
+    "learningPacksMatchingVerifiedLocalSha256": 320,
+    "staticAudioSamplesAvailable": 4,
+    "issues": []
+  },
+  "adsenseAssessment": {
+    "siteSideBlockingIssuesObserved": [],
+    "recommendation": "현재 공개 버전으로 심사를 진행해도 된다는 판단입니다. 모든 언어의 상세 안내 번역 완료를 신청의 전제 조건으로 삼지 않습니다.",
+    "guaranteedApproval": false,
+    "adsenseAccountAndOwnershipConnection": "이번에 계정 조작·신청·확인 코드 설정은 하지 않았습니다. 신청 시 AdSense에서 요구하는 사이트 연결·소유권 확인을 완료해야 합니다.",
+    "currentAdsenseCodeAdded": false,
+    "reviewScope": "공개 콘텐츠·메뉴·기술적 접근성을 확인한 것이며 Google의 최종 심사를 대행한 것은 아닙니다.",
+    "officialPolicyReference": "https://support.google.com/adsense/answer/81904?hl=ko"
+  },
+  "remainingNotClaimedComplete": [
+    "추가 11개 언어를 포함한 상세 안내문의 전체 번역·원어민에 의한 전체 검수",
+    "모든 OS의 실제 IME·음성 출력을 직접 시도하는 기기별 전수 검증",
+    "운영 로그인 계정의 진도 쓰기·모든 게임의 수동 플레이. 이번에는 코드 미변경과 회귀 테스트, 로컬 게스트 동작으로 확인했습니다.",
+    "AdSense 계정의 사이트 연결·신청과 Google 승인"
+  ]
+}

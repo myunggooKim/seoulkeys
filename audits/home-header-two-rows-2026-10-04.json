@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-04",
+  "scope": "Home header settings layout and subtle visual role distinction only",
+  "version": "b0daea90-30a3-4d4f-a1cb-65443284af5e",
+  "previousVersion": "488beb02-e2ee-4a16-8796-6e0c8bcdc8a1",
+  "preview": "https://b0daea90-hangeul-pop.travels444.workers.dev",
+  "production": "https://seoulkeys.com/",
+  "arrangement": {
+    "topRow": ["theme", "keyboard setup"],
+    "bottomRow": ["sound dropdown", "language dropdown"],
+    "keyboardFocusOrderMatchesVisualOrder": true,
+    "settingsDistinction": "Subtle purple-tinted borders and action-button backgrounds; dropdowns retain paper background"
+  },
+  "verification": {
+    "typecheckAndProductionBuild": "passed",
+    "regressionTests": {"passed": 182, "failed": 0},
+    "desktop33Locales1440x900": "No control bounds, caption height, alignment or horizontal-overflow failures in browser-local style preview",
+    "mobile33Locales390x844": "No control bounds, caption height or horizontal-overflow failures on uploaded version preview",
+    "versionPreviewDesktop": "Left navigation and right settings both start at y=10 and have 69px total height; actions at y=10, dropdowns at y=47",
+    "versionPreviewLaptop1024x768": "Left and right groups both start at y=0 and have 87px total height; no horizontal overflow",
+    "soundPanel": "Opened below lower-row trigger and remained within viewport"
+  },
+  "preserved": [
+    "All existing settings handlers",
+    "Typing, theatre, games, audio and progress logic",
+    "Existing uncommitted work from other sessions",
+    "Global CSS, database, environment variables and custom domains"
+  ],
+  "limits": [
+    "Physical Safari and mobile hardware were not available; browser checks used Chrome and viewport emulation",
+    "No real sign-in, progress write, paid AI translation, Git commit or AdSense application performed"
+  ]
+}

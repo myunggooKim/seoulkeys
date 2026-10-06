@@ -1,4 +1,4 @@
-# Hangeul Pop
+# Seoul Keys
 
 Multilingual Korean typing and language-learning site built with Next.js/vinext and hosted independently on Cloudflare Workers.
 
@@ -15,10 +15,15 @@ Multilingual Korean typing and language-learning site built with Next.js/vinext 
 
 ### Continuing on another computer
 
-Clone the GitHub repository once a remote has been configured, then run `npm ci`
-with Node.js 22.13 or newer. Read `ONBOARDING-2026-09-20.md` before deploying:
-the transfer snapshot includes local changes that have not been deployed, two
-existing translation-test failures, and unresolved local browser-preview issues.
+Repository: https://github.com/myunggooKim/seoulkeys (branch `main`).
+With Node.js 22.13 or newer, clone it and run `npm ci`. On an existing checkout,
+check `git status` before pulling so changes from another device are preserved.
+
+The October 6, 2026 source snapshot includes the reviewed learning translations,
+community and post likes, header improvements, AdSense verification code, and
+the current game visuals. `ONBOARDING-2026-09-20.md` and older audit files are
+historical records, not the current deployment or test status. Read the latest
+update at the top of `HANDOFF.md` first.
 
 Create a local `.dev.vars` with the required settings described below; credentials
 are deliberately excluded from Git. Sign in to Cloudflare separately on the new
@@ -28,10 +33,15 @@ Checked-in audio and translation assets do not need paid regeneration.
 
 Committing or pushing this snapshot is not a production deployment.
 
+`npm test` regenerates its educational source catalog locally. The community
+preservation test uses a checked-in SHA-256 fixture; it does not require old
+files from the ignored `scratchpad` directory. No paid AI, remote DB migration,
+or audio regeneration is needed to build and test this snapshot.
+
 Requires Node.js 22.13 or newer.
 
 ```bash
-npm install
+npm ci
 npm run dev
 npm run lint
 npm run typecheck
@@ -77,9 +87,14 @@ idempotent per account and UTC date.
 ## Database and verification
 
 - Schema: `db/schema.ts`
-- Migrations: `drizzle/*.sql`
+- Core migrations: `drizzle/*.sql`; community additions: `migrations/*.sql`
 - Generate future migrations: `npm run db:generate`
 - Apply locally: `npx wrangler d1 migrations apply DB --local`
 - Apply remotely: `npx wrangler d1 migrations apply DB --remote`
 - Production build: `npm run build`
 - Full verification: `npm test`
+
+For this existing service, do not blindly apply all migrations to production.
+Inspect its current schema first; the community and likes tables have already
+been added. Preserve the Worker name `hangeul-pop`, the existing `DB` binding,
+and existing production secrets. Git does not contain member or progress data.

@@ -1,0 +1,6 @@
+{
+  "baselineDate": "2026-10-04",
+  "description": "SHA-256 of the original community-launch home snapshot, with the separately authorized header and community footer link excluded. The digest was compared with the original local snapshot before publication.",
+  "algorithm": "sha256",
+  "homeWithoutHeaderSha256": "9c0305bb216a5cd635515cd7911580db07597a3f265d82fff6cc6730bf433f82"
+}

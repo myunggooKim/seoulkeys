@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-04",
+  "scope": "CSS-only centering of the selected language in the home header",
+  "version": "114460c7-c326-4440-83de-608e26e507b4",
+  "previousVersion": "b0daea90-30a3-4d4f-a1cb-65443284af5e",
+  "preview": "https://114460c7-hangeul-pop.travels444.workers.dev",
+  "changes": [
+    "Equal 32px inline padding on both sides of the language button",
+    "Centered select text and text-align-last independent of selected language",
+    "Native dropdown options retain start-aligned text"
+  ],
+  "verification": {
+    "build": "passed",
+    "focusedRegressionTests": {"passed": 28, "failed": 0},
+    "previewDesktop1440x900": {
+      "selectedNativeOptionsChecked": 33,
+      "computedAlignmentAndCenterOffsetFailures": [],
+      "leftAndRightHeaderGroupHeights": [69, 69],
+      "twoRowArrangementPreserved": true,
+      "noPageHorizontalOverflow": true
+    },
+    "previewMobile320x740": {
+      "textAlign": "center",
+      "textAlignLast": "center",
+      "selectCenterOffsetFromButtonCenterPx": 0,
+      "controlHeightPx": 42,
+      "noPageHorizontalOverflow": true
+    }
+  },
+  "preserved": [
+    "Home JSX and all event handlers unchanged in this correction",
+    "Other three settings buttons, icon and caret positions, and two-row layout",
+    "Existing uncommitted work, global CSS, database, domain and environment settings"
+  ],
+  "limits": [
+    "Browser-native selection alignment checked with Chrome; physical Safari and other devices were not available",
+    "No Git commit, paid AI request or AdSense application performed"
+  ]
+}

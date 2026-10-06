@@ -1,5 +1,7 @@
 "use client";
 
+import "./game-visuals.css";
+
 import { HangulInput } from "./HangulTypingField";
 import { isImeKey } from "./browser-hangul-input";
 import { shouldPlayTypingKeySound } from "./typing-key-audio";
@@ -621,6 +623,7 @@ export function FallingWordsGame({ locale, soundEnabled, onSuccessSound, onKeySo
         </div>
       </div>
       <div className="word-rain-board" aria-label={tr(locale, "Falling word defense game for Neon Hangul City", "네온 한글시티를 방어하는 낙하 단어 게임")}>
+        <div className="defense-atmosphere" aria-hidden="true"><i className="orbital-halo" /><i className="city-beacon" /><i className="city-reflection" /></div>
         <div className="retro-scanlines" aria-hidden="true" />
         <div className="pixel-stars" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /><i /></div>
         <div className="aurora aurora-one" /><div className="aurora aurora-two" />

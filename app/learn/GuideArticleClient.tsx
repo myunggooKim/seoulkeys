@@ -10,6 +10,7 @@ import type {
 } from "./guides";
 import { isGuideTypingLiteral } from "./guide-typing-literals";
 import { LearningFooter, LearningHeader } from "./LearningChrome";
+import LearningTranslationNote from "./LearningTranslationNote";
 import { learningTr, useLearningTranslations } from "./learning-i18n";
 import styles from "./learn.module.css";
 
@@ -130,6 +131,7 @@ export default function GuideArticleClient({
           </div>
         </header>
 
+        <LearningTranslationNote locale={locale} />
         <div className={styles.articleLayout}>
           <aside className={styles.toc}>
             <p>{learningTr(locale, "On this page", "이 페이지의 내용")}</p>

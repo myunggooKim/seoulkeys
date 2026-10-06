@@ -5,6 +5,7 @@ import type { Locale } from "../locale-detection";
 import { getRuntimeTranslation } from "../runtime-i18n";
 import { useActiveLocale } from "../use-active-locale";
 import { useLocaleTranslations } from "../use-locale-translations";
+import { adsenseNoticeKo } from "./adsense-notice";
 
 const translatableAttributes = ["aria-label", "title"] as const;
 const foreignLegalKeyAliases: Record<string, string> = {
@@ -59,7 +60,7 @@ export function LegalTranslationBridge() {
         : foreignLegalKeyAliases[normalizedOriginal] ?? normalizedOriginal;
       const translated = locale === "en" || preserveKoreanLabel
         ? undefined
-        : getRuntimeTranslation(locale, key);
+        : (locale === "ko" ? adsenseNoticeKo[key] : undefined) ?? getRuntimeTranslation(locale, key);
       node.nodeValue = translated && key ? translated : original;
       current = walker.nextNode();
     }

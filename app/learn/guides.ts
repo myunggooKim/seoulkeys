@@ -106,7 +106,7 @@ export const guides: LearningGuide[] = [
     eyebrow: "Keyboard map · Beginner",
     readMinutes: 9,
     published: "2026-09-03",
-    updated: "2026-09-03",
+    updated: "2026-10-04",
     accent: "lime",
     keywords: [
       "Korean keyboard layout",
@@ -170,7 +170,7 @@ export const guides: LearningGuide[] = [
         ],
         examples: [
           { label: "One closed block", keys: "gks", result: "한", note: "ㅎ + ㅏ + ㄴ" },
-          { label: "One open block", keys: "rmf", result: "글", note: "ㄱ + ㅡ + ㄹ" },
+          { label: "One closed block", keys: "rmf", result: "글", note: "ㄱ + ㅡ + ㄹ" },
           { label: "Two blocks", keys: "tjdnf", result: "서울", note: "서 + 울" },
           { label: "Greeting", keys: "dkssud", result: "안녕", note: "안 + 녕" },
           { label: "Useful phrase", keys: "rkatkgkqslek", result: "감사합니다", note: "감 + 사 + 합 + 니 + 다" },

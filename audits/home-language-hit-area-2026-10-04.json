@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-04",
+  "scope": "CSS-only native language selector hit-area expansion",
+  "version": "733f5b59-4d47-47fa-ad7d-d5d3529269df",
+  "previousProductionVersion": "114460c7-c326-4440-83de-608e26e507b4",
+  "preview": "https://733f5b59-hangeul-pop.travels444.workers.dev",
+  "trafficPercent": 100,
+  "cause": "Select previously occupied only the central text area; hit testing on caret and globe returned the surrounding label",
+  "fix": "Native select covers the label interior with absolute inset zero and full dimensions; symmetric padding retains centered text; decorative icons pass clicks through; transparent select has no independent capsule-shaped hit clipping",
+  "verification": {
+    "build": "passed",
+    "focusedTests": {"passed": 29, "failed": 0},
+    "browserLocalInteriorHitGrid": {"points": 15, "failed": 0},
+    "uploadedPreviewDesktop": "Caret, globe, text and side-padding hit native select; actual trusted click opened native dropdown, confirmed with :open",
+    "uploadedPreviewMobile320x740": "Caret and globe hit select; center offset zero and no horizontal overflow"
+  },
+  "preserved": ["Centered selected language", "Header geometry and visual design", "Home JSX and all existing event handlers", "Unrelated uncommitted files", "Domain, environment variables and database"],
+  "limits": ["Browser verification used Chrome; physical Safari and mobile devices unavailable", "No Git commit, paid AI request or AdSense application performed"]
+}

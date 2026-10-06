@@ -1,0 +1,43 @@
+{
+  "retired": [
+    "The round cross-section of an open throat — the sound made furthest back.",
+    "Hangul was not inherited — it was designed. In 1443 the consonants were drawn from the shape the mouth makes, and the vowels from three strokes: sky, earth and human. Every letter has a reason, and knowing the reason halves what you have to memorise.",
+    "Add a stroke, strengthen the sound",
+    "The remaining consonants are not new letters. They are the basic five with strokes added, and each added stroke pushes more breath through. A change in shape is a change in sound.",
+    "Hangul is recognized as the only script whose creator, time of creation, purpose and design principles are all clearly preserved in a contemporary document. Its opening purpose is not conquest or prestige, but helping people express what they mean.",
+    "One open block"
+  ],
+  "locales": {
+    "ja": {
+      "human": "人",
+      "Korean grammar": "韓国語の文法",
+      "On the keyboard": "キーボードでの入力",
+      "The original letter depicts the open throat. In modern Korean, ㅇ is silent at the start of a syllable and represents /ŋ/ at the end, as in 강.": "元の字形は開いた喉を表しています。現代韓国語では、ㅇは音節の初めでは発音せず、강のように終声に置かれると/ŋ/の音を表します。",
+      "Hangul was designed in the fifteenth century. The five basic consonants reflect speech organs, and the original vowel signs represent sky, earth and human. Understanding these patterns helps you learn the letters and practise typing.": "ハングルは15世紀に設計された文字です。基本子音5字は発音器官をかたどり、最初の母音記号は天・地・人を表します。この仕組みを理解すると、文字の学習やタイピング練習に役立ちます。",
+      "Related shapes, different sounds": "関連する字形、異なる音",
+      "Many consonants build on the five basic shapes. For example, ㄱ and ㅋ are related, and ㅋ is aspirated. Added strokes do not always mean more breath: ㅁ and ㅂ differ in how the sound is produced, while doubled letters such as ㄲ mark tense consonants.": "多くの子音字は基本の5字形をもとに作られています。たとえばㄱとㅋは関連し、ㅋは息を強く出す激音です。ただし、画を加えると必ず息が強くなるわけではありません。ㅁとㅂは発音の仕方が異なり、ㄲのように重ねた字は濃音を表します。",
+      "The Hunminjeongeum Haerye preserves the creator, purpose and design principles of Hangul in a contemporary document. Its preface explains the aim of helping ordinary people express themselves in writing.": "『訓民正音解例』には、ハングルの創作者、目的、設計原理が当時の記録として残されています。序文には、一般の人々が自分の思いを文字で表せるようにする目的が記されています。"
+    },
+    "es": {
+      "How Hangul Works": "Cómo funciona Hangul",
+      "On the keyboard": "En el teclado",
+      "Now try typing it": "Ahora prueba a escribirlo",
+      "The original letter depicts the open throat. In modern Korean, ㅇ is silent at the start of a syllable and represents /ŋ/ at the end, as in 강.": "La forma original representa la garganta abierta. En el coreano moderno, ㅇ no se pronuncia al inicio de una sílaba; al final representa /ŋ/, como en 강.",
+      "Hangul was designed in the fifteenth century. The five basic consonants reflect speech organs, and the original vowel signs represent sky, earth and human. Understanding these patterns helps you learn the letters and practise typing.": "Hangul se diseñó en el siglo XV. Las cinco consonantes básicas representan órganos del habla, y los signos vocálicos originales representan el cielo, la tierra y el ser humano. Comprender estos patrones ayuda a aprender las letras y practicar la escritura con el teclado.",
+      "Related shapes, different sounds": "Formas relacionadas, sonidos distintos",
+      "Many consonants build on the five basic shapes. For example, ㄱ and ㅋ are related, and ㅋ is aspirated. Added strokes do not always mean more breath: ㅁ and ㅂ differ in how the sound is produced, while doubled letters such as ㄲ mark tense consonants.": "Muchas consonantes se basan en las cinco formas básicas. Por ejemplo, ㄱ y ㅋ están relacionadas, y ㅋ es aspirada. Añadir trazos no siempre implica más aire: ㅁ y ㅂ se producen de forma distinta, mientras que letras duplicadas como ㄲ representan consonantes tensas.",
+      "The Hunminjeongeum Haerye preserves the creator, purpose and design principles of Hangul in a contemporary document. Its preface explains the aim of helping ordinary people express themselves in writing.": "El Hunminjeongeum Haerye conserva el creador, el propósito y los principios de diseño de Hangul en un documento de la época. Su prefacio explica el objetivo de ayudar a la gente común a expresar sus ideas por escrito."
+    },
+    "th": { "On the keyboard": "บนแป้นพิมพ์", "Now try typing it": "ลองพิมพ์ด้วยตัวเอง" },
+    "id": { "On the keyboard": "Pada papan ketik", "Now try typing it": "Sekarang coba mengetiknya" },
+    "ms": { "On the keyboard": "Pada papan kekunci", "Now try typing it": "Sekarang cuba menaipnya" },
+    "vi": { "On the keyboard": "Trên bàn phím", "Now try typing it": "Bây giờ hãy thử gõ" },
+    "my": { "On the keyboard": "ကီးဘုတ်ပေါ်တွင်", "Now try typing it": "ယခု ကိုယ်တိုင်ရိုက်ကြည့်ပါ" },
+    "km": { "On the keyboard": "នៅលើក្ដារចុច", "Now try typing it": "ឥឡូវសាកល្បងវាយដោយខ្លួនឯង" },
+    "lo": { "On the keyboard": "ເທິງແປ້ນພິມ", "Now try typing it": "ຕອນນີ້ລອງພິມເບິ່ງ" },
+    "bn": { "On the keyboard": "কিবোর্ডে", "Now try typing it": "এবার নিজে টাইপ করে দেখুন" },
+    "ta": { "On the keyboard": "விசைப்பலகையில்", "Now try typing it": "இப்போது நீங்களே தட்டச்சு செய்து பாருங்கள்" },
+    "ne": { "On the keyboard": "किबोर्डमा", "Now try typing it": "अब आफैँ टाइप गरेर हेर्नुहोस्" },
+    "si": { "On the keyboard": "යතුරු පුවරුවේ", "Now try typing it": "දැන් ඔබම ටයිප් කර බලන්න" }
+  }
+}

@@ -1,11 +1,14 @@
 # Seoul Keys — 작업 인계 문서
 
-> **2026-09-20 인계 업데이트:** 현재 작업 트리에는 미배포 온보딩·교사 화면 변경이 있습니다.
-> 아래 2026-08-08의 배포 완료 표시는 당시 기록이며 현재 상태가 아닙니다.
-> 최신 검증 결과와 배포 차단 항목은 `ONBOARDING-2026-09-20.md`를 먼저 확인하세요.
-> 이번 인계 커밋은 코드 보관용이며 운영 배포 승인을 뜻하지 않습니다.
-> GitHub 연결은 커밋 준비 시점에 없었습니다. 실제 연결 여부는 `git remote -v`로 확인하세요.
-> `.dev.vars`와 Cloudflare/GitHub 인증 정보는 커밋하지 않습니다. 새 기기에서 별도 설정해야 합니다.
+> **2026-10-06 GitHub 인계 업데이트:** 저장소는 `https://github.com/myunggooKim/seoulkeys`, 기본 브랜치는 `main`입니다.
+> 최신 학습 안내 번역·커뮤니티·좋아요·헤더·애드센스 확인 코드·게임 화면 변경을 함께 보관합니다.
+> 아래 8월·9월 기록과 과거 감사 파일의 미배포·테스트 실패·GitHub 없음 표시는 당시 기록입니다.
+> 워커 이름은 **`hangeul-pop`**, 운영 주소는 `https://seoulkeys.com`, D1은 기존 `hangeul-pop-db`입니다.
+> 마지막으로 직접 확인한 좋아요 운영 배포는 10월 5일 버전 `f7b781dc-4679-46ec-9081-9664f46b749d`입니다. 이후 다른 작업의 배포 여부는 별도로 확인해야 합니다.
+> 이번 작업은 커밋·푸시이며 운영 재배포·애드센스 신청·AI 호출·원격 DB 초기화를 하지 않습니다.
+> 새 기기: Node.js 22.13 이상 → `npm ci` → `npm run typecheck` → `npm test`. 기존 작업이 있으면 `git status`를 확인한 뒤 pull하세요.
+> 보존 회귀 테스트의 임시 폴더 의존은 `tests/fixtures/community-preservation.json`으로 대체했습니다. 원래 스냅샷과 SHA-256 일치를 확인했으며 비교 범위를 줄이지 않았습니다.
+> `.dev.vars`와 Cloudflare/GitHub 인증 정보는 제외됩니다. 새 기기에서 따로 로그인·설정하고 기존 운영 시크릿과 DB 연결을 유지하세요.
 
 > 새 세션에서는 이 파일을 먼저 읽으세요.
 > 마지막 갱신: 2026-08-08 (3차) / 배포 버전 `bf8cb41d` — **작업 트리 = 라이브. 미배포 변경 없음.**
@@ -29,8 +32,8 @@
 | 소스 | `F:\재즈\video-streaming-server\hangul-spark` |
 | 운영 주소 | https://seoulkeys.com (+ www) |
 | 배포 | `npm run deploy` (빌드 → `prepare-deploy-config` → `wrangler deploy`) |
-| 워커 이름 | `seoulkeys` |
-| GitHub | **없음.** 원격 저장소도 CI도 없습니다 — 배포는 로컬 → Cloudflare 직행 |
+| 워커 이름 | `hangeul-pop` |
+| GitHub | https://github.com/myunggooKim/seoulkeys — `main` |
 | DB | Cloudflare D1 `hangeul-pop-db` |
 | 지원 언어 | 33개 (`app/locale-detection.ts`의 `Locale` 타입) |
 

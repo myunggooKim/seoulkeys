@@ -1,5 +1,7 @@
 "use client";
 
+import "./game-visuals.css";
+
 import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   buildCrossword,

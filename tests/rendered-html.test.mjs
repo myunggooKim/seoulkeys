@@ -420,6 +420,8 @@ test("keeps header controls out of the progress navigation at laptop widths", as
   // The 1360px caption-hiding hack is gone: the captions moved into the panel,
   // where there is room for the longest of the 33 languages.
   assert.match(css, /\.sound-menu-panel[\s\S]*?min-width: 280px/);
-  assert.match(css, /@media \(max-width: 1120px\)[\s\S]*?\.nav-links a:not\(\[href="\/my"\]\)[\s\S]*?display: none/);
-  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.nav-links[\s\S]*?display: none/);
+  const headerCss = await readFile(new URL("../app/home-header.module.css", import.meta.url), "utf8");
+  // Scoped header rules override the historical hide-on-laptop rules above.
+  assert.match(headerCss, /:global\(\.nav-links\) \{[^}]*display: flex !important;/s);
+  assert.match(headerCss, /@media \(max-width: 1280px\)[\s\S]*?grid-column: 1 \/ -1/);
 });

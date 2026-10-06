@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://seoulkeys.com/legal" },
 };
 
-const effectiveDate = "September 3, 2026";
+const effectiveDate = "October 4, 2026";
 const contactEmail = "travels444@gmail.com";
 
 export default function LegalCenter() {
@@ -29,7 +29,7 @@ export default function LegalCenter() {
         <p>개인정보처리방침 · 이용약관 · 쿠키/광고 · 저작권 · 아동 안전 · 접근성</p>
         <div className="legal-status-row">
           <span>Effective {effectiveDate}</span>
-          <span>Policy version 1.1</span>
+          <span>Policy version 1.3</span>
           <span className="preview-status">Public learning service · no ads</span>
         </div>
       </section>
@@ -54,7 +54,9 @@ export default function LegalCenter() {
             <p>
               Seoul Keys is a public educational service for learning Hangul and practising Korean typing. Signed-in
               learners receive a personal progress page and visit rewards. The service does not currently offer
-              payments, uploads, public profiles, or advertising.
+              payments, uploads, public profile pages, or advertising. The optional learner community publishes
+              posts, replies and chosen nicknames; community rules and translation disclosures are available at{" "}
+              <Link href="/community/rules">Community rules &amp; privacy</Link>.
               It does use product analytics (Cloudflare Web Analytics and Microsoft Clarity) to understand how the
               lessons are used and where learners get stuck. Typing entries stay in the active browser session;
               summarized progress is saved to the learner’s account.
@@ -68,6 +70,16 @@ export default function LegalCenter() {
               <div><span>Korean speech</span><b>Pre-generated female/male audio</b></div>
               <div><span>Third-party entertainment media</span><b>Not part of the current service</b></div>
             </div>
+            <h3>Learner community</h3>
+            <p>
+              Community messages, nicknames, language and timestamps are public. Account email is kept private
+              for ownership and abuse prevention; personal typing answers and learning progress are not imported
+              into the community. Public message text may be processed by Cloudflare Workers AI for translation.
+              No account email, private progress or session credentials are included in translation requests.
+              Cached translations and moderation records are retained with the community messages. Removal from
+              public view is a soft delete; contact us to request complete erasure of messages and their translations.
+              Please read the <Link href="/community/rules">community rules and privacy details</Link> before posting.
+            </p>
           </section>
 
           <section id="privacy" className="legal-section">
@@ -131,10 +143,22 @@ export default function LegalCenter() {
 
           <section id="cookies" className="legal-section">
             <p className="legal-kicker">쿠키·광고 정책 · COOKIES & ADS</p>
-            <h2>No advertising cookies — product analytics only</h2>
+            <h2>Cookies, analytics &amp; AdSense connection</h2>
             <p>
-              The service uses browser local storage for essential preferences and daily lesson continuity. It does
-              not load Google AdSense, behavioral advertising, or social pixels.
+              The service uses browser local storage for essential preferences and daily lesson continuity.
+              Google AdSense code is installed for site connection and review. Ad requests remain paused;
+              advertising is not active.
+            </p>
+            <p>
+              Loading the Google script sends technical request information to Google and can read existing
+              Google cookies. Pausing ad requests is not a consent management platform. Required consent controls
+              must be configured before advertising is activated.
+            </p>
+            <p>
+              Learn more about how Google uses data on partner sites in the{" "}
+              <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener noreferrer">
+                Google partner-site privacy notice
+              </a>.
             </p>
             <p>
               It does use two product-analytics tools so we can improve the lessons:
@@ -197,7 +221,10 @@ export default function LegalCenter() {
             <p className="legal-kicker">아동·가족 안전 · CHILD SAFETY</p>
             <h2>A low-data learning environment</h2>
             <p>
-              The service has no public chat, direct messaging, public profile, upload, or location-sharing feature.
+              The service has no real-time public chat, direct messaging, public profile page, upload, or location-sharing feature.
+              The optional community has public text posts and replies under chosen nicknames. Never publish a
+              child’s name, contact details, school or other identifying information. Younger learners should not
+              post personal information and should use the community only with a parent, guardian or teacher.
               Signed-in progress uses an email address and display name. It is intended for general language learning
               and is not designed to collect children’s information without appropriate safeguards. Younger learners
               should use the service with a parent, guardian, or teacher. Age-appropriate design, parental consent,

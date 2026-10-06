@@ -1,0 +1,10 @@
+// This provider notice is scoped to /legal; existing global lesson packs and
+// their identical key sets are intentionally unchanged.
+export const adsenseNoticeKo: Record<string, string> = {
+  "Policy version 1.3": "정책 버전 1.3",
+  "Cookies, analytics & AdSense connection": "쿠키, 분석 도구 및 애드센스 연결",
+  "The service uses browser local storage for essential preferences and daily lesson continuity. Google AdSense code is installed for site connection and review. Ad requests remain paused; advertising is not active.": "필수 설정과 매일의 학습을 이어가기 위해 브라우저의 로컬 저장소를 사용합니다. 사이트 연결과 심사를 위해 Google 애드센스 코드를 설치했습니다. 광고 요청은 보류 중이며, 광고는 노출하지 않습니다.",
+  "Loading the Google script sends technical request information to Google and can read existing Google cookies. Pausing ad requests is not a consent management platform. Required consent controls must be configured before advertising is activated.": "Google 스크립트를 불러오면 기술적인 요청 정보가 Google에 전달되며 기존 Google 쿠키가 읽힐 수 있습니다. 광고 요청 보류는 동의 관리 시스템을 대신하지 않습니다. 광고를 활성화하기 전에 필요한 동의 관리 기능을 마련해야 합니다.",
+  "Learn more about how Google uses data on partner sites in the": "제휴 사이트에서 Google이 데이터를 사용하는 방식은 다음 안내에서 확인할 수 있습니다:",
+  "Google partner-site privacy notice": "Google 제휴 사이트 개인정보 안내",
+};

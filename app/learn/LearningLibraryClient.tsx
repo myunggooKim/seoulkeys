@@ -5,6 +5,7 @@ import type { Locale } from "../locale-detection";
 import { useActiveLocale } from "../use-active-locale";
 import type { GuideAccent } from "./guides";
 import { LearningFooter, LearningHeader } from "./LearningChrome";
+import LearningTranslationNote from "./LearningTranslationNote";
 import { learningTr, useLearningTranslations } from "./learning-i18n";
 import styles from "./learn.module.css";
 
@@ -94,6 +95,7 @@ export default function LearningLibraryClient({ cards }: { cards: LearningGuideC
           </div>
         </section>
 
+        <div className={styles.contentWidth}><LearningTranslationNote locale={locale} /></div>
         <section className={styles.librarySection} id="guides">
           <div className={styles.contentWidth}>
             <div className={styles.sectionHeading}>

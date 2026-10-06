@@ -109,7 +109,7 @@ test("exports route-scoped learning bundles without adding guide prose to the ho
   assert.doesNotMatch(generator, /cache_root=LEARNING_CACHE_ROOT \/ name/);
   assert.match(generator, /LEARNING_OUTPUT_ROOT \/ name/);
   assert.match(generator, /unique_values = sorted\(dict\.fromkeys\(values\), key=len, reverse=True\)/);
-  assert.match(generator, /required_protected_values\(key, learning_content\)/);
+  assert.match(generator, /required_protected_values\(source, learning_content\)/);
   assert.match(generator, /"Hangul is the script; Korean has the grammar": \(/);
 });
 

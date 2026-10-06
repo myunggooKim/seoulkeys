@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useActiveLocale } from "../../use-active-locale";
 import { LearningLocaleSelect } from "../LearningChrome";
+import LearningTranslationNote from "../LearningTranslationNote";
+import styles from "../learn.module.css";
 import { learningTr as tr, useLearningTranslations } from "../learning-i18n";
 
 /* Four lessons on why the letters look the way they do and how Korean works.
@@ -135,11 +137,11 @@ const organs: Organ[] = [
     jamo: "ㅇ",
     nameEn: "Throat sound",
     nameKo: "목구멍소리",
-    ipa: "glottal · /ŋ/",
+    ipa: "initial ∅ · final /ŋ/",
     labelEn: "throat",
     labelKo: "목구멍",
-    bodyEn: "The round cross-section of an open throat — the sound made furthest back.",
-    bodyKo: "열린 목구멍의 둥근 단면. ㅇ은 가장 깊은 곳에서 나는 소리입니다.",
+    bodyEn: "The original letter depicts the open throat. In modern Korean, ㅇ is silent at the start of a syllable and represents /ŋ/ at the end, as in 강.",
+    bodyKo: "원래 글자 모양은 열린 목구멍을 나타냅니다. 현대 한국어에서 ㅇ은 음절 첫머리에서는 소리가 없고, 강처럼 받침으로 쓰이면 /ŋ/ 소리를 냅니다.",
     art: (
       <>
         <path d="M18 112 Q18 30 96 22 Q168 16 182 60" fill="none" stroke={strokeLine} strokeWidth="2" />
@@ -155,7 +157,7 @@ const ladder: Array<{ base: string; b1: string; one: string; i1: string; two?: s
   { base: "ㄴ", b1: "n", one: "ㄷ", i1: "t", two: "ㅌ", i2: "tʰ", en: "A touching tongue becomes a blocking one, then a bursting one", ko: "혀끝이 닿기만 하던 것이 막고, 터짐" },
   { base: "ㅁ", b1: "m", one: "ㅂ", i1: "p", two: "ㅍ", i2: "pʰ", en: "The lips part and the breath bursts through", ko: "입술이 붙었다 떨어지며 숨이 터짐" },
   { base: "ㅅ", b1: "s", one: "ㅈ", i1: "tɕ", two: "ㅊ", i2: "tɕʰ", en: "A hissing sound becomes one that sticks, then releases", ko: "새는 소리가 붙었다 터지는 소리로" },
-  { base: "ㅇ", b1: "ŋ", one: "ㅎ", i1: "h", en: "Breath rubs its way out through the open throat", ko: "열린 목구멍에서 숨이 마찰하며 나감" },
+  { base: "ㅇ", b1: "∅ / ŋ", one: "ㅎ", i1: "h", en: "Breath rubs its way out through the open throat", ko: "열린 목구멍에서 숨이 마찰하며 나감" },
 ];
 
 const historyMilestones = [
@@ -282,7 +284,7 @@ export default function HangulGuidePage() {
   }, []);
 
   return (
-    <main className="hangul-guide">
+    <main className={`hangul-guide ${styles.hangulPage}`}>
       <div className="hg-wrap">
 
         <nav className="hg-nav">
@@ -303,8 +305,8 @@ export default function HangulGuidePage() {
             <p className="hg-standfirst">
               {tr(
                 locale,
-                "Hangul was not inherited — it was designed. In 1443 the consonants were drawn from the shape the mouth makes, and the vowels from three strokes: sky, earth and human. Every letter has a reason, and knowing the reason halves what you have to memorise.",
-                "한글은 자라난 글자가 아니라 설계된 글자입니다. 1443년, 자음은 소리를 내는 입 안의 모양에서, 모음은 하늘·땅·사람 세 획에서 나왔습니다. 스물넉 자의 생김새에는 전부 이유가 있고, 그 이유를 알면 외울 것이 절반으로 줄어듭니다.",
+                "Hangul was designed in the fifteenth century. The five basic consonants reflect speech organs, and the original vowel signs represent sky, earth and human. Understanding these patterns helps you learn the letters and practise typing.",
+                "한글은 15세기에 설계된 문자입니다. 다섯 기본 자음은 발음 기관을 본뜨고, 처음의 모음 기호는 하늘·땅·사람을 나타냅니다. 이 원리를 이해하면 글자를 익히고 타자를 연습하는 데 도움이 됩니다.",
               )}
             </p>
           </div>
@@ -316,6 +318,7 @@ export default function HangulGuidePage() {
           </div>
         </header>
 
+        <LearningTranslationNote locale={locale} />
         <nav
           className="hg-section-tabs"
           id="hangul-lessons"
@@ -393,12 +396,12 @@ export default function HangulGuidePage() {
             ))}
           </div>
 
-          <h3>{tr(locale, "Add a stroke, strengthen the sound", "획을 더하면 소리가 세진다")}</h3>
+          <h3>{tr(locale, "Related shapes, different sounds", "닮은 모양, 서로 다른 소리")}</h3>
           <p>
             {tr(
               locale,
-              "The remaining consonants are not new letters. They are the basic five with strokes added, and each added stroke pushes more breath through. A change in shape is a change in sound.",
-              "나머지 자음은 새로 만든 글자가 아닙니다. 기본 다섯 자에 획을 하나씩 더한 것이고, 획이 늘수록 숨이 세게 나갑니다. 모양의 변화가 곧 소리의 변화입니다.",
+              "Many consonants build on the five basic shapes. For example, ㄱ and ㅋ are related, and ㅋ is aspirated. Added strokes do not always mean more breath: ㅁ and ㅂ differ in how the sound is produced, while doubled letters such as ㄲ mark tense consonants.",
+              "여러 자음은 다섯 기본 글자의 모양을 바탕으로 만들어졌습니다. 예를 들어 ㄱ과 ㅋ은 모양이 이어지며, ㅋ은 거센소리입니다. 획을 더했다고 항상 숨이 세지는 것은 아닙니다. ㅁ과 ㅂ은 소리를 내는 방식이 다르고, ㄲ처럼 겹쳐 쓴 글자는 된소리를 나타냅니다.",
             )}
           </p>
 
@@ -597,8 +600,8 @@ export default function HangulGuidePage() {
               <p>
                 {tr(
                   locale,
-                  "Hangul is recognized as the only script whose creator, time of creation, purpose and design principles are all clearly preserved in a contemporary document. Its opening purpose is not conquest or prestige, but helping people express what they mean.",
-                  "한글은 만든 사람과 시기, 목적, 제자 원리가 당대 문헌에 모두 명확히 남아 있는 세계 유일의 문자로 평가됩니다. 첫머리에 기록된 창제 목적도 정복이나 권위가 아니라, 백성이 뜻을 쉽게 펴게 하는 데 있습니다.",
+                  "The Hunminjeongeum Haerye preserves the creator, purpose and design principles of Hangul in a contemporary document. Its preface explains the aim of helping ordinary people express themselves in writing.",
+                  "『훈민정음 해례본』에는 만든 사람과 창제 목적, 제자 원리가 당대의 기록으로 남아 있습니다. 서문은 평범한 백성이 자기 뜻을 글로 쉽게 표현하게 하려는 목적을 밝힙니다.",
                 )}
               </p>
             </article>

@@ -1,0 +1,105 @@
+{
+  "date": "2026-10-02",
+  "project": "Seoul Keys",
+  "phase": "local translation correction and verification only",
+  "completion": "partial: missing-file coverage repaired; full semantic translation review remains open",
+  "externalActions": {
+    "deployed": false,
+    "adsenseSubmitted": false,
+    "committedOrPushed": false,
+    "cloudAiCalled": false,
+    "productionDataWritten": false
+  },
+  "preservation": {
+    "initialUncommittedFiles": 28,
+    "backupDirectory": "scratchpad/translation-review-baseline-2026-10-02",
+    "allInitialFilesBackedUp": true,
+    "resetOrCheckoutUsed": false,
+    "initialLearningRuntimeAndKoreanMainPackUnchanged": true,
+    "existingTranslationEntriesUnchanged": 17684,
+    "existingTranslationEntriesChanged": 994,
+    "unexpectedValidTranslationChanges": 0,
+    "comparisonRule": "Initial 28 files compared with their pre-task backup; other existing packs compared with HEAD. Explicit editorial corrections, source-reviewed Korean wording, mechanically broken output, and missing Hangul/key literals are separately allowed. This rule does not prove all preserved machine translations are semantically correct.",
+    "changedFunctionalAppFiles": [],
+    "newAppChanges": [
+      "app/learn/learn.module.css: learning-only mobile navigation/action-button wrapping",
+      "app/learn/guides-ko.ts: one paragraph retains the source term 두벌식 alongside 2벌식"
+    ]
+  },
+  "translationWork": {
+    "missingLocalesRestored": ["th", "id", "ms", "vi", "my", "km", "lo", "bn", "ta", "ne", "si"],
+    "missingLocaleFilesAdded": 110,
+    "totalNonEnglishLocalePacks": 320,
+    "routeBundlesPerLocale": 10,
+    "uniqueSourceStringsPerLocale": 861,
+    "editorialScope": [
+      "Japanese and Spanish Hangul history, consonant/vowel strokes, grammar roles, direction labels, and keyboard versus input-method distinction",
+      "Learning navigation, guide-card names and Hangul tabs in the eleven added locales",
+      "Eight guide titles and actionable quick answers in Japanese, Spanish and the eleven added locales",
+      "Keyboard table directions and consonant/vowel terminology in those thirteen locales"
+    ],
+    "typingExamples": "Physical key sequences, Hangul results, Shift shortcuts and existing practice/game data retained.",
+    "generation": "Existing local caches and an already installed local M2M100 model; no paid translation or cloud AI call. Explicit editorial corrections survive source export and regeneration.",
+    "safety": "Unusable or incomplete generated output falls back to its English source and is recorded as unfinished, not counted as a successful reviewed translation.",
+    "detailedFallbackSources": "scratchpad/learning-translation-quality-report.json",
+    "addedLocaleEnglishFallbacksTotal": 701,
+    "englishFallbackCountsByLocale": {
+      "ko": 0, "es": 8, "pt-BR": 25, "ja": 2,
+      "zh-Hans": 4, "zh-Hant": 4, "fr": 14, "de": 8,
+      "it": 2, "pl": 24, "nl": 32, "ru": 13, "tr": 31,
+      "ar": 18, "fa": 22, "ur": 23, "fil": 27,
+      "th": 3, "id": 7, "ms": 4, "vi": 5,
+      "my": 269, "km": 187, "lo": 5, "hi": 2,
+      "bn": 43, "ta": 36, "ne": 101, "si": 41,
+      "kk": 231, "uz": 301, "mn": 68
+    },
+    "countDefinition": "Unique English source strings per locale across the ten bundles, excluding deliberately unchanged brand names and typing literals. Existing locales' pre-existing broken drafts are also included. These counts are not native-language review scores.",
+    "factCheckReferences": [
+      "https://www.korean.go.kr/hangeul/origin/001.html",
+      "https://www.unesco.org/en/memory-world/hunminjeongum-manuscript?hub=1081"
+    ]
+  },
+  "actualBrowserVerification": {
+    "environment": "Local development server, Chrome; no production deployment",
+    "learningLanding": "Japanese and Spanish native headings, descriptions and navigation observed",
+    "hangulGuide": "Japanese lesson and grammar panel checked; the eleven added locales' native headings and four lesson tabs observed through the real language selector",
+    "keyboardLayoutArticle": {
+      "locales": ["ja", "es", "th", "id", "ms", "vi", "my", "km", "lo", "bn", "ta", "ne", "si"],
+      "desktopViewportWidth": 1920,
+      "mobileViewport": {"width": 390, "height": 844},
+      "nativeTitleAndQuickAnswerObserved": true,
+      "tenKeySequencesAndHangulResultsUnchanged": true,
+      "mobileHorizontalOverflowAfterFix": false,
+      "mobileDocumentWidthAfterFix": 375,
+      "mobileViewportOverrideReset": true
+    },
+    "discoveredUiProblem": "Long Spanish/Tamil/Khmer learning-page CTA labels overflowed narrow screens. Learning-only mobile links now wrap; table content keeps its existing internal scroll behavior.",
+    "screenshot": "scratchpad/learning-mobile-es-2026-10-02.jpg",
+    "limits": [
+      "Not every paragraph in every language was read or independently checked by a native speaker.",
+      "All eight detailed guide overviews were tested automatically; actual browser verification concentrated on the learning landing, Hangul guide and keyboard-layout article.",
+      "No authenticated production progress sync, actual operating-system IME setup, or cross-device audio playback was exercised."
+    ]
+  },
+  "regressions": {
+    "baseline": {"tests": 147, "passed": 145, "failed": 2},
+    "baselineFailures": [
+      "A stale test assertion expected the generator's old variable name.",
+      "The complete-learning-pack assertion failed because locale packs were missing; after recovery it also exposed pre-existing broken outputs."
+    ],
+    "final": {"tests": 152, "passed": 152, "failed": 0},
+    "typecheck": "passed after correcting new helper module imports",
+    "localProductionBuild": "passed",
+    "gitDiffCheck": "passed",
+    "coverage": "Existing typing composition, keyboard guidance, games, sound-related behavior, progress-related logic, theatre geometry and translation tests. Automated success is not a guarantee of zero runtime side effects."
+  },
+  "remaining": [
+    "Replace or review 701 English fallbacks in the eleven added locales, prioritizing Burmese, Khmer and Nepali.",
+    "Review long machine-translated lesson bodies for meaning; passing the mechanical quality gate does not validate educational terminology.",
+    "Existing Kazakh, Uzbek and Mongolian packs also contain many fallbacks and unreviewed prose.",
+    "Review pre-existing source claims about memorization being halved, all added consonant strokes increasing breath, initial ㅇ versus final /ŋ/, and exclusive claims about Hangul's documented invention.",
+    "The source keyboard guide labels the closed syllable 글 as 'One open block'; key sequence rmf is correct, but the pedagogical caption needs a separate source-and-all-locales correction.",
+    "Native-speaker review, additional-device testing, deployment, live operational checks and any AdSense request have not been completed or authorized in this phase.",
+    "The other session's learning-i18n.ts directly imports public/i18n/learn/common/ko.json. Local dev logs emitted a Vite public-asset-import warning; typecheck and production build pass, but this development-loading behavior remains to be separately checked. That existing runtime change was not silently replaced."
+  ]
+}

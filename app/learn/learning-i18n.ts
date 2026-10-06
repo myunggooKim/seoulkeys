@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import type { Locale } from "../locale-detection";
 import { translationQualityIssue } from "../translation-quality";
 import { tr } from "../ui-i18n";
+import { koreanGuideTranslations } from "./guides-ko";
+import koreanLearningCommon from "./common-ko.json";
 
 type LocalePack = Record<string, string>;
 
@@ -68,7 +70,13 @@ export function loadLearningTranslations(locale: Locale, guideSlug?: string): Pr
 }
 
 export function learningTr(locale: Locale, english: string, korean?: string): string {
-  if (locale === "ko" && korean) return tr(locale, english, korean);
+  // Reviewed Korean guide and library copy remains available even when the
+  // route pack request times out or fails. Inline reviewed copy takes priority.
+  if (locale === "ko") {
+    const reviewed = korean ?? koreanGuideTranslations[english]
+      ?? (koreanLearningCommon as LocalePack)[english];
+    if (reviewed) return reviewed;
+  }
   return mergedPacks[locale]?.[english] ?? tr(locale, english, korean);
 }
 

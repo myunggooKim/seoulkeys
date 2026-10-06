@@ -1,0 +1,48 @@
+import type {Locale} from './locale-detection';
+
+export const homeGuideLabel: Record<Locale, string> = {
+  en:'Guides',ko:'학습 가이드',es:'Guías','pt-BR':'Guias',ja:'学習ガイド',
+  'zh-Hans':'学习指南','zh-Hant':'學習指南',fr:'Guides',de:'Anleitungen',it:'Guide',
+  pl:'Poradniki',nl:'Gidsen',ru:'Руководства',tr:'Rehberler',ar:'أدلة التعلم',
+  fa:'راهنماها',ur:'رہنما',fil:'Mga gabay',th:'คู่มือ',id:'Panduan',ms:'Panduan',
+  vi:'Hướng dẫn',my:'လမ်းညွှန်များ',km:'ការណែនាំ',lo:'ຄູ່ມື',hi:'मार्गदर्शिका',
+  bn:'নির্দেশিকা',ta:'வழிகாட்டிகள்',ne:'मार्गदर्शन',si:'මාර්ගෝපදේශ',
+  kk:'Нұсқаулықтар',uz:'Qo‘llanmalar',mn:'Заавар',
+};
+
+// Route labels only: never load community content or alter a learning pack.
+export const homeNavigation: Record<Locale, {curriculum: string; community: string}> = {
+  en: {curriculum:'Curriculum',community:'Community'},
+  ko: {curriculum:'학습 과정',community:'커뮤니티'},
+  es: {curriculum:'Plan de estudio',community:'Comunidad'},
+  'pt-BR': {curriculum:'Plano de estudo',community:'Comunidade'},
+  ja: {curriculum:'学習コース',community:'コミュニティ'},
+  'zh-Hans': {curriculum:'学习课程',community:'社区'},
+  'zh-Hant': {curriculum:'學習課程',community:'社群'},
+  fr: {curriculum:'Parcours',community:'Communauté'},
+  de: {curriculum:'Lernplan',community:'Community'},
+  it: {curriculum:'Percorso',community:'Comunità'},
+  pl: {curriculum:'Plan nauki',community:'Społeczność'},
+  nl: {curriculum:'Leerplan',community:'Community'},
+  ru: {curriculum:'Учебный план',community:'Сообщество'},
+  tr: {curriculum:'Öğrenme planı',community:'Topluluk'},
+  ar: {curriculum:'خطة التعلم',community:'المجتمع'},
+  fa: {curriculum:'برنامه یادگیری',community:'انجمن'},
+  ur: {curriculum:'تعلیمی منصوبہ',community:'کمیونٹی'},
+  fil: {curriculum:'Plano ng pag-aaral',community:'Komunidad'},
+  th: {curriculum:'หลักสูตร',community:'ชุมชน'},
+  id: {curriculum:'Rencana belajar',community:'Komunitas'},
+  ms: {curriculum:'Pelan pembelajaran',community:'Komuniti'},
+  vi: {curriculum:'Lộ trình học',community:'Cộng đồng'},
+  my: {curriculum:'သင်ယူမှုအစီအစဉ်',community:'အသိုင်းအဝိုင်း'},
+  km: {curriculum:'ផែនការសិក្សា',community:'សហគមន៍'},
+  lo: {curriculum:'ແຜນການຮຽນ',community:'ຊຸມຊົນ'},
+  hi: {curriculum:'सीखने की योजना',community:'समुदाय'},
+  bn: {curriculum:'শেখার পরিকল্পনা',community:'কমিউনিটি'},
+  ta: {curriculum:'கற்றல் திட்டம்',community:'சமூகம்'},
+  ne: {curriculum:'सिकाइ योजना',community:'समुदाय'},
+  si: {curriculum:'ඉගෙනුම් සැලැස්ම',community:'ප්‍රජාව'},
+  kk: {curriculum:'Оқу жоспары',community:'Қауымдастық'},
+  uz: {curriculum:'O‘quv rejasi',community:'Hamjamiyat'},
+  mn: {curriculum:'Сургалтын хөтөлбөр',community:'Хамт олон'},
+};

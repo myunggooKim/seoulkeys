@@ -15,6 +15,18 @@
   text-wrap: pretty;
 }
 
+.translationNote {
+  margin: 16px 0 24px;
+  padding: 12px 16px;
+  border-inline-start: 3px solid var(--purple);
+  border-radius: 6px;
+  color: var(--muted);
+  background: var(--surface-2);
+  font-size: 0.93rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
 :global(html[lang="ko"]) .page {
   word-break: keep-all;
 }
@@ -1211,6 +1223,22 @@
 }
 
 @media (max-width: 700px) {
+  .hangulPage :global(.hg-practice) {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .hangulPage :global(.hg-footer) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hangulPage :global(.hg-lesson-pager) span {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-wrap: anywhere;
+  }
+
   .headerInner,
   .footerInner,
   .contentWidth {
@@ -1229,15 +1257,36 @@
   .headerNav .navCta {
     padding: 8px 10px;
     font-size: 0.76rem;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+    line-height: 1.35;
+  }
+
+  .headerNav {
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-end;
   }
 
   .languagePicker {
     margin-inline: 0;
+    flex-shrink: 0;
   }
 
   .languagePicker select {
     width: 92px;
     padding-inline: 22px 7px;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
   }
 
   .hubHero {

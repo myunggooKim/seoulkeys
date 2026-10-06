@@ -1,0 +1,204 @@
+{
+  "ja": {
+    "korean-keyboard-layout": {
+      "title": "韓国語キーボード配列：2ボル式の全キーを解説",
+      "quickAnswer": "QWERTY配列では、多くの子音をQ–T、A–G、Z–Vで、母音をY–P、H–L、B–Mで入力します。初声の子音、母音、必要なら終声の子音の順に打ちます。音節ブロックの組み立ては韓国語入力方式が行います。"
+    },
+    "add-korean-keyboard": {
+      "title": "Windows・Mac・iPhone・Androidに韓国語キーボードを追加する方法",
+      "quickAnswer": "機器の「言語」「キーボード」「入力ソース」の設定で韓国語を追加し、選べる場合は2ボル式を選びます。切り替えにはWindows+Space、MacではControl+Spaceまたは地球儀/Fnキー、モバイルでは地球儀キーやスペースバーの言語切り替えを使います。"
+    },
+    "hangul-syllable-blocks": {
+      "title": "入力中にハングルの音節ブロックができる仕組み",
+      "quickAnswer": "各音節は「初声の子音＋母音＋必要なら終声の子音」の順に入力します。ㅏのような縦向きの母音は初声の右、ㅗのような横向きの母音は下に置かれます。この配置は入力方式が自動的に処理します。"
+    },
+    "type-batchim": {
+      "title": "パッチムと韓国語の終声を入力する方法",
+      "quickAnswer": "音節の初声と母音の後に、つづり上の終声を入力します。밥はQ–K–Qです。二重パッチムは二つの子音をつづりの順に打ちます。값はㄱ–ㅏ–ㅂ–ㅅ、QWERTY配列ではR–K–Q–Tです。"
+    },
+    "type-double-consonants-and-vowels": {
+      "title": "韓国語の濃音と複合母音を入力する方法",
+      "quickAnswer": "ShiftとQ、W、E、R、Tで、それぞれㅃ、ㅉ、ㄸ、ㄲ、ㅆを入力します。Shift+Oはㅒ、Shift+Pはㅖです。ㅘやㅝにはShiftを使わず、ㅗの後にㅏ（H–K）、ㅜの後にㅓ（N–J）を打ちます。"
+    },
+    "korean-touch-typing": {
+      "title": "韓国語タッチタイピング：指の位置と練習",
+      "quickAnswer": "通常のQWERTYタイピングと同じく、指をA–S–D–FとJ–K–L–;に置きます。各指は担当する縦の範囲を受け持ち、人差し指は内側の追加の列も担当します。ハングルの入力結果を見ながら、子音と母音の組み合わせをゆっくり練習しましょう。"
+    },
+    "korean-typing-mistakes": {
+      "title": "韓国語入力の間違い：順を追った原因確認ガイド",
+      "quickAnswer": "メモでG–K–Sを試します。gksなら入力言語を切り替え、違う字母なら配列や物理キーを確認します。ㅎㅏㄴと分かれるなら別のアプリで文字合成を試します。한ならシステムのキーボードは正常で、元の単語・入力欄・アプリを調べる必要があります。"
+    },
+    "korean-typing-practice-plan": {
+      "title": "4週間の韓国語タイピング練習計画",
+      "quickAnswer": "10分を、知っているキーでの準備2分、新しい動き1つに3分、意味のある単語に3分、短い文かゲームに2分と分けます。一度の速い記録ではなく、複数の練習で正確さが安定したら次へ進みましょう。"
+    }
+  },
+  "es": {
+    "korean-keyboard-layout": {
+      "title": "Teclado coreano: todas las teclas de la distribución de dos conjuntos",
+      "quickAnswer": "En un teclado QWERTY, usa Q–T, A–G y Z–V para la mayoría de las consonantes; Y–P, H–L y B–M para las vocales. Escribe la consonante inicial, la vocal y, si la hay, la consonante final. El método de entrada coreano forma el bloque automáticamente."
+    },
+    "add-korean-keyboard": {
+      "title": "Cómo añadir un teclado coreano en Windows, Mac, iPhone y Android",
+      "quickAnswer": "Abre los ajustes de idioma, teclado o fuente de entrada, añade coreano y elige la distribución de dos conjuntos si está disponible. Cambia con Windows+Space; en Mac, con Control+Space o la tecla del globo/Fn; en móviles, con el globo o el control de idioma de la barra espaciadora."
+    },
+    "hangul-syllable-blocks": {
+      "title": "Cómo se forman los bloques silábicos de Hangul al escribir",
+      "quickAnswer": "Escribe cada sílaba como consonante inicial + vocal + consonante final opcional. Una vocal vertical como ㅏ va a la derecha de la inicial; una horizontal como ㅗ va debajo. El método de entrada coloca las letras automáticamente."
+    },
+    "type-batchim": {
+      "title": "Cómo escribir batchim y consonantes finales coreanas",
+      "quickAnswer": "Escribe la inicial y la vocal, y después la consonante final según la ortografía. Para 밥, pulsa Q–K–Q. Si hay dos consonantes finales, escríbelas en su orden: 값 es ㄱ–ㅏ–ㅂ–ㅅ, es decir, R–K–Q–T en QWERTY."
+    },
+    "type-double-consonants-and-vowels": {
+      "title": "Cómo escribir consonantes dobles y vocales compuestas en coreano",
+      "quickAnswer": "Mantén Shift con Q, W, E, R o T para ㅃ, ㅉ, ㄸ, ㄲ o ㅆ, respectivamente. Shift+O da ㅒ y Shift+P da ㅖ. Para ㅘ o ㅝ no mantengas Shift: escribe ㅗ y luego ㅏ (H–K), o ㅜ y luego ㅓ (N–J)."
+    },
+    "korean-touch-typing": {
+      "title": "Mecanografía coreana: posición de los dedos y práctica",
+      "quickAnswer": "Coloca los dedos en A–S–D–F y J–K–L–;, como en la mecanografía QWERTY habitual. Cada dedo cubre su zona vertical y los índices también las columnas interiores adicionales. Practica despacio los patrones consonante–vocal mientras miras el resultado en Hangul."
+    },
+    "korean-typing-mistakes": {
+      "title": "Errores al escribir coreano: diagnóstico paso a paso",
+      "quickAnswer": "Prueba G–K–S en una nota sencilla. Si aparece gks, cambia el idioma de entrada; si salen letras incorrectas, revisa la distribución y las teclas físicas. Si aparece ㅎㅏㄴ separado, prueba la composición en otra aplicación. Si aparece 한, el teclado del sistema funciona: revisa la palabra, el campo o la aplicación original."
+    },
+    "korean-typing-practice-plan": {
+      "title": "Plan de cuatro semanas para practicar mecanografía coreana",
+      "quickAnswer": "Practica diez minutos: dos de calentamiento con teclas conocidas, tres para un movimiento nuevo, tres con palabras que tengan sentido y dos con una frase corta o un juego. Avanza cuando mantengas la precisión durante varias sesiones, no por una sola puntuación rápida."
+    }
+  },
+  "th": {
+    "korean-keyboard-layout": {
+      "title": "ผังแป้นพิมพ์ภาษาเกาหลี: อธิบายทุกปุ่มของระบบสองชุด",
+      "quickAnswer": "บนแป้นพิมพ์ QWERTY ใช้ Q–T, A–G และ Z–V สำหรับพยัญชนะส่วนใหญ่ และ Y–P, H–L และ B–M สำหรับสระ พิมพ์พยัญชนะต้น ตามด้วยสระ และพยัญชนะท้ายถ้ามี ระบบป้อนภาษาเกาหลีจะประกอบพยางค์ให้อัตโนมัติ"
+    },
+    "add-korean-keyboard": {
+      "title": "วิธีเพิ่มแป้นพิมพ์ภาษาเกาหลีบน Windows, Mac, iPhone และ Android",
+      "quickAnswer": "เปิดการตั้งค่าภาษา แป้นพิมพ์ หรือแหล่งป้อน เพิ่มภาษาเกาหลี และเลือกแป้นพิมพ์สองชุดถ้ามี สลับด้วย Windows+Space บน Mac ใช้ Control+Space หรือปุ่มลูกโลก/Fn บนมือถือใช้ปุ่มลูกโลกหรือปุ่มเปลี่ยนภาษาบนสเปซบาร์"
+    },
+    "hangul-syllable-blocks": {
+      "title": "ฮันกึลประกอบเป็นพยางค์ขณะพิมพ์ได้อย่างไร",
+      "quickAnswer": "พิมพ์แต่ละพยางค์ตามลำดับ พยัญชนะต้น + สระ + พยัญชนะท้ายถ้ามี สระแนวตั้ง เช่น ㅏ อยู่ด้านขวาของพยัญชนะต้น ส่วนสระแนวนอน เช่น ㅗ อยู่ด้านล่าง ระบบป้อนจะจัดตำแหน่งให้อัตโนมัติ"
+    },
+    "type-batchim": {
+      "title": "วิธีพิมพ์พยัญชนะท้ายพยางค์ภาษาเกาหลี",
+      "quickAnswer": "พิมพ์พยัญชนะต้นและสระก่อน แล้วพิมพ์พยัญชนะท้ายตามตัวสะกด 밥 ใช้ Q–K–Q ถ้ามีพยัญชนะท้ายสองตัว ให้พิมพ์ตามลำดับตัวสะกด 값 คือ ㄱ–ㅏ–ㅂ–ㅅ หรือ R–K–Q–T บน QWERTY"
+    },
+    "type-double-consonants-and-vowels": {
+      "title": "วิธีพิมพ์พยัญชนะซ้ำและสระประสมภาษาเกาหลี",
+      "quickAnswer": "กด Shift พร้อม Q, W, E, R หรือ T เพื่อพิมพ์ ㅃ, ㅉ, ㄸ, ㄲ หรือ ㅆ ตามลำดับ Shift+O ให้ ㅒ และ Shift+P ให้ ㅖ สำหรับ ㅘ หรือ ㅝ ไม่ต้องกด Shift ให้พิมพ์ ㅗ แล้ว ㅏ (H–K) หรือ ㅜ แล้ว ㅓ (N–J)"
+    },
+    "korean-touch-typing": {
+      "title": "การพิมพ์สัมผัสภาษาเกาหลี: ตำแหน่งนิ้วและการฝึก",
+      "quickAnswer": "วางนิ้วบน A–S–D–F และ J–K–L–; เช่นเดียวกับการพิมพ์สัมผัส QWERTY แต่ละนิ้วรับผิดชอบแนวปุ่มของตน นิ้วชี้รับผิดชอบคอลัมน์ด้านในเพิ่มเติม ฝึกพยัญชนะสลับสระช้า ๆ โดยดูผลลัพธ์ที่เป็นฮันกึล"
+    },
+    "korean-typing-mistakes": {
+      "title": "ข้อผิดพลาดในการพิมพ์ภาษาเกาหลี: ตรวจแก้ทีละขั้น",
+      "quickAnswer": "ลอง G–K–S ในแอปจดบันทึก ถ้าได้ gks ให้เปลี่ยนภาษาป้อน ถ้าได้ตัวอักษรผิด ให้ตรวจผังและตำแหน่งปุ่ม ถ้าได้ ㅎㅏㄴ แยกกัน ให้ลองประกอบในแอปอื่น ถ้าได้ 한 แสดงว่าแป้นพิมพ์ของระบบทำงาน ให้ตรวจคำ ช่องป้อน หรือแอปเดิม"
+    },
+    "korean-typing-practice-plan": {
+      "title": "แผนฝึกพิมพ์ภาษาเกาหลีสี่สัปดาห์",
+      "quickAnswer": "ฝึกสิบนาที: อุ่นเครื่องด้วยปุ่มที่รู้แล้วสองนาที ฝึกการเคลื่อนไหวใหม่หนึ่งอย่างสามนาที ฝึกคำที่มีความหมายสามนาที และฝึกประโยคสั้นหรือเกมสองนาที ไปขั้นต่อไปเมื่อความแม่นยำคงที่หลายครั้ง ไม่ใช่จากคะแนนเร็วเพียงครั้งเดียว"
+    }
+  },
+  "id": {
+    "korean-keyboard-layout": {"title":"Papan ketik Korea: penjelasan setiap tombol tata letak dua set","quickAnswer":"Pada QWERTY, gunakan Q–T, A–G, dan Z–V untuk kebanyakan konsonan; Y–P, H–L, dan B–M untuk vokal. Ketik konsonan awal, vokal, lalu konsonan akhir jika ada. Metode input Korea menyusun blok suku kata secara otomatis."},
+    "add-korean-keyboard": {"title":"Cara menambahkan papan ketik Korea di Windows, Mac, iPhone, dan Android","quickAnswer":"Buka pengaturan bahasa, papan ketik, atau sumber input; tambahkan bahasa Korea dan pilih tata letak dua set jika tersedia. Beralih dengan Windows+Space; di Mac gunakan Control+Space atau tombol globe/Fn; di ponsel gunakan globe atau pengalih bahasa pada spasi."},
+    "hangul-syllable-blocks": {"title":"Cara blok suku kata Hangul terbentuk saat mengetik","quickAnswer":"Ketik setiap suku kata sebagai konsonan awal + vokal + konsonan akhir opsional. Vokal vertikal seperti ㅏ berada di kanan konsonan awal; vokal horizontal seperti ㅗ berada di bawahnya. Metode input mengatur posisi itu secara otomatis."},
+    "type-batchim": {"title":"Cara mengetik batchim dan konsonan akhir Korea","quickAnswer":"Ketik konsonan awal dan vokal, lalu konsonan akhir sesuai ejaan. 밥 diketik Q–K–Q. Untuk dua konsonan akhir, ikuti urutan ejaannya: 값 adalah ㄱ–ㅏ–ㅂ–ㅅ, yaitu R–K–Q–T pada QWERTY."},
+    "type-double-consonants-and-vowels": {"title":"Cara mengetik konsonan ganda dan vokal gabungan Korea","quickAnswer":"Tahan Shift bersama Q, W, E, R, atau T untuk ㅃ, ㅉ, ㄸ, ㄲ, atau ㅆ. Shift+O menghasilkan ㅒ dan Shift+P menghasilkan ㅖ. Untuk ㅘ atau ㅝ, jangan tahan Shift: ketik ㅗ lalu ㅏ (H–K), atau ㅜ lalu ㅓ (N–J)."},
+    "korean-touch-typing": {"title":"Mengetik Korea tanpa melihat tombol: posisi jari dan latihan","quickAnswer":"Letakkan jari pada A–S–D–F dan J–K–L–;, seperti pengetikan QWERTY biasa. Setiap jari menangani zona vertikalnya; telunjuk juga menangani kolom tambahan di bagian dalam. Latih pola konsonan–vokal perlahan sambil melihat hasil Hangul."},
+    "korean-typing-mistakes": {"title":"Kesalahan mengetik Korea: panduan diagnosis bertahap","quickAnswer":"Coba G–K–S dalam catatan sederhana. Jika muncul gks, ganti bahasa input; jika hurufnya salah, periksa tata letak dan posisi tombol. Jika muncul ㅎㅏㄴ terpisah, coba komposisi di aplikasi lain. Jika muncul 한, papan ketik sistem bekerja: periksa kata, kolom, atau aplikasi asal."},
+    "korean-typing-practice-plan": {"title":"Rencana latihan mengetik Korea selama empat minggu","quickAnswer":"Berlatih sepuluh menit: dua menit pemanasan dengan tombol yang dikenal, tiga menit untuk satu gerakan baru, tiga menit untuk kata bermakna, dan dua menit untuk kalimat pendek atau permainan. Lanjutkan setelah akurasi stabil dalam beberapa sesi, bukan setelah satu skor cepat."}
+  },
+  "ms": {
+    "korean-keyboard-layout": {"title":"Papan kekunci Korea: penerangan setiap kekunci susun atur dua set","quickAnswer":"Pada QWERTY, gunakan Q–T, A–G dan Z–V untuk kebanyakan konsonan; Y–P, H–L dan B–M untuk vokal. Taip konsonan awal, vokal, kemudian konsonan akhir jika ada. Kaedah input Korea membentuk blok suku kata secara automatik."},
+    "add-korean-keyboard": {"title":"Cara menambah papan kekunci Korea pada Windows, Mac, iPhone dan Android","quickAnswer":"Buka tetapan bahasa, papan kekunci atau sumber input; tambah bahasa Korea dan pilih susun atur dua set jika tersedia. Tukar dengan Windows+Space; pada Mac gunakan Control+Space atau kekunci glob/Fn; pada telefon gunakan glob atau kawalan bahasa pada bar ruang."},
+    "hangul-syllable-blocks": {"title":"Cara blok suku kata Hangul terbentuk semasa anda menaip","quickAnswer":"Taip setiap suku kata mengikut urutan konsonan awal + vokal + konsonan akhir jika ada. Vokal menegak seperti ㅏ berada di kanan konsonan awal; vokal mendatar seperti ㅗ berada di bawahnya. Kaedah input mengurus kedudukan itu secara automatik."},
+    "type-batchim": {"title":"Cara menaip batchim dan konsonan akhir Korea","quickAnswer":"Taip konsonan awal dan vokal, kemudian konsonan akhir mengikut ejaan. 밥 ialah Q–K–Q. Untuk dua konsonan akhir, ikut urutan ejaan: 값 ialah ㄱ–ㅏ–ㅂ–ㅅ, iaitu R–K–Q–T pada QWERTY."},
+    "type-double-consonants-and-vowels": {"title":"Cara menaip konsonan berganda dan vokal gabungan Korea","quickAnswer":"Tekan Shift bersama Q, W, E, R atau T untuk ㅃ, ㅉ, ㄸ, ㄲ atau ㅆ. Shift+O menghasilkan ㅒ dan Shift+P menghasilkan ㅖ. Untuk ㅘ atau ㅝ, jangan tekan Shift: taip ㅗ kemudian ㅏ (H–K), atau ㅜ kemudian ㅓ (N–J)."},
+    "korean-touch-typing": {"title":"Menaip Korea tanpa melihat kekunci: kedudukan jari dan latihan","quickAnswer":"Letakkan jari pada A–S–D–F dan J–K–L–;, seperti menaip QWERTY biasa. Setiap jari menjaga zon menegaknya; jari telunjuk turut menjaga lajur tambahan di bahagian dalam. Latih pola konsonan–vokal perlahan-lahan sambil melihat hasil Hangul."},
+    "korean-typing-mistakes": {"title":"Kesilapan menaip Korea: panduan menyelesaikan masalah langkah demi langkah","quickAnswer":"Cuba G–K–S dalam nota ringkas. Jika muncul gks, tukar bahasa input; jika hurufnya salah, semak susun atur dan kedudukan kekunci. Jika muncul ㅎㅏㄴ berasingan, uji penggabungan dalam aplikasi lain. Jika muncul 한, papan kekunci sistem berfungsi: semak perkataan, medan atau aplikasi asal."},
+    "korean-typing-practice-plan": {"title":"Pelan latihan menaip Korea selama empat minggu","quickAnswer":"Berlatih sepuluh minit: dua minit pemanasan dengan kekunci yang dikenali, tiga minit bagi satu gerakan baharu, tiga minit untuk perkataan bermakna, dan dua minit untuk ayat pendek atau permainan. Maju apabila ketepatan stabil dalam beberapa sesi, bukan selepas satu skor pantas."}
+  },
+  "vi": {
+    "korean-keyboard-layout": {"title":"Bàn phím tiếng Hàn: giải thích từng phím trong bố cục hai bộ","quickAnswer":"Trên QWERTY, dùng Q–T, A–G và Z–V cho phần lớn phụ âm; Y–P, H–L và B–M cho nguyên âm. Gõ phụ âm đầu, nguyên âm rồi phụ âm cuối nếu có. Bộ gõ tiếng Hàn tự ghép thành khối âm tiết."},
+    "add-korean-keyboard": {"title":"Cách thêm bàn phím tiếng Hàn trên Windows, Mac, iPhone và Android","quickAnswer":"Mở cài đặt ngôn ngữ, bàn phím hoặc nguồn nhập; thêm tiếng Hàn và chọn bố cục hai bộ nếu có. Chuyển bằng Windows+Space; trên Mac dùng Control+Space hoặc phím quả địa cầu/Fn; trên điện thoại dùng phím quả địa cầu hoặc nút đổi ngôn ngữ trên phím cách."},
+    "hangul-syllable-blocks": {"title":"Khối âm tiết Hangul được hình thành khi gõ như thế nào","quickAnswer":"Gõ mỗi âm tiết theo thứ tự phụ âm đầu + nguyên âm + phụ âm cuối nếu có. Nguyên âm dọc như ㅏ nằm bên phải phụ âm đầu; nguyên âm ngang như ㅗ nằm phía dưới. Bộ gõ tự xử lý cách sắp xếp này."},
+    "type-batchim": {"title":"Cách gõ batchim và phụ âm cuối tiếng Hàn","quickAnswer":"Gõ phụ âm đầu và nguyên âm, rồi phụ âm cuối theo chính tả. 밥 dùng Q–K–Q. Với phụ âm cuối kép, gõ hai phụ âm theo thứ tự: 값 là ㄱ–ㅏ–ㅂ–ㅅ, tức R–K–Q–T trên QWERTY."},
+    "type-double-consonants-and-vowels": {"title":"Cách gõ phụ âm đôi và nguyên âm ghép tiếng Hàn","quickAnswer":"Giữ Shift với Q, W, E, R hoặc T để gõ lần lượt ㅃ, ㅉ, ㄸ, ㄲ hoặc ㅆ. Shift+O cho ㅒ và Shift+P cho ㅖ. Với ㅘ hoặc ㅝ, không giữ Shift: gõ ㅗ rồi ㅏ (H–K), hoặc ㅜ rồi ㅓ (N–J)."},
+    "korean-touch-typing": {"title":"Gõ tiếng Hàn không nhìn bàn phím: vị trí ngón tay và luyện tập","quickAnswer":"Đặt các ngón tay trên A–S–D–F và J–K–L–;, như khi gõ QWERTY thông thường. Mỗi ngón phụ trách vùng phím theo chiều dọc; ngón trỏ phụ trách thêm các cột phía trong. Luyện chậm các mẫu phụ âm–nguyên âm và nhìn kết quả Hangul."},
+    "korean-typing-mistakes": {"title":"Lỗi gõ tiếng Hàn: hướng dẫn chẩn đoán từng bước","quickAnswer":"Thử G–K–S trong một ghi chú đơn giản. Nếu thấy gks, đổi ngôn ngữ nhập; nếu chữ sai, kiểm tra bố cục và vị trí phím. Nếu thấy ㅎㅏㄴ tách rời, thử ghép chữ trong ứng dụng khác. Nếu thấy 한, bàn phím hệ thống hoạt động: cần kiểm tra từ, ô nhập hoặc ứng dụng ban đầu."},
+    "korean-typing-practice-plan": {"title":"Kế hoạch luyện gõ tiếng Hàn trong bốn tuần","quickAnswer":"Luyện mười phút: hai phút khởi động bằng phím đã biết, ba phút cho một động tác mới, ba phút với từ có nghĩa và hai phút với câu ngắn hoặc trò chơi. Chuyển bước khi độ chính xác ổn định qua nhiều buổi, không phải sau một lần đạt tốc độ cao."}
+  },
+  "my": {
+    "korean-keyboard-layout": {"title":"ကိုရီးယား နှစ်စုံကီးဘုတ် ခလုတ်များအကြောင်း","quickAnswer":"QWERTY တွင် ဗျည်းအများစုအတွက် Q–T၊ A–G၊ Z–V ကို၊ သရများအတွက် Y–P၊ H–L၊ B–M ကို သုံးပါ။ အစဗျည်း၊ သရ၊ လိုအပ်လျှင် နောက်ဆုံးဗျည်းကို အစဉ်လိုက် ရိုက်ပါ။ ကိုရီးယားစာရိုက်စနစ်က အက္ခရာများကို အလိုအလျောက် ပေါင်းစပ်ပေးသည်။"},
+    "add-korean-keyboard": {"title":"Windows၊ Mac၊ iPhone နှင့် Android တွင် ကိုရီးယား ကီးဘုတ် ထည့်နည်း","quickAnswer":"ဘာသာစကား၊ ကီးဘုတ် သို့မဟုတ် ထည့်သွင်းစနစ် ဆက်တင်တွင် ကိုရီးယားကို ထည့်ပြီး ရွေးနိုင်လျှင် နှစ်စုံကီးဘုတ်ကို ရွေးပါ။ Windows+Space ဖြင့် ပြောင်းပါ။ Mac တွင် Control+Space သို့မဟုတ် ကမ္ဘာလုံး/Fn ခလုတ်၊ ဖုန်းတွင် ကမ္ဘာလုံး သို့မဟုတ် space ခလုတ်၏ ဘာသာစကားပြောင်းစနစ်ကို သုံးပါ။"},
+    "hangul-syllable-blocks": {"title":"စာရိုက်စဉ် ဟန်ဂုလ် အက္ခရာများ ပေါင်းစပ်ပုံ","quickAnswer":"အသံတစ်သံစာအတွက် အစဗျည်း + သရ + လိုအပ်လျှင် နောက်ဆုံးဗျည်းကို ရိုက်ပါ။ ㅏ ကဲ့သို့ ဒေါင်လိုက်သရသည် အစဗျည်း၏ ညာဘက်တွင်၊ ㅗ ကဲ့သို့ အလျားလိုက်သရသည် အောက်တွင် ရှိသည်။ စာရိုက်စနစ်က နေရာချထားမှုကို အလိုအလျောက် လုပ်ပေးသည်။"},
+    "type-batchim": {"title":"ကိုရီးယား နောက်ဆုံးဗျည်းနှင့် batchim ရိုက်နည်း","quickAnswer":"အစဗျည်းနှင့် သရကို ရိုက်ပြီး စာလုံးပေါင်းအတိုင်း နောက်ဆုံးဗျည်းကို ရိုက်ပါ။ 밥 အတွက် Q–K–Q ကို သုံးပါ။ နောက်ဆုံးဗျည်းနှစ်လုံးရှိလျှင် အစဉ်အတိုင်း ရိုက်ပါ။ 값 သည် ㄱ–ㅏ–ㅂ–ㅅ ဖြစ်ပြီး QWERTY တွင် R–K–Q–T ဖြစ်သည်။"},
+    "type-double-consonants-and-vowels": {"title":"ကိုရီးယား ဗျည်းနှစ်ထပ်နှင့် ပေါင်းစပ်သရ ရိုက်နည်း","quickAnswer":"Shift နှင့် Q၊ W၊ E၊ R၊ T ကို တွဲနှိပ်လျှင် အစဉ်အတိုင်း ㅃ၊ ㅉ၊ ㄸ၊ ㄲ၊ ㅆ ရသည်။ Shift+O က ㅒ၊ Shift+P က ㅖ ကို ပေးသည်။ ㅘ၊ ㅝ အတွက် Shift မနှိပ်ပါနှင့်။ ㅗ ပြီး ㅏ (H–K) သို့မဟုတ် ㅜ ပြီး ㅓ (N–J) ကို ရိုက်ပါ။"},
+    "korean-touch-typing": {"title":"ကီးဘုတ်မကြည့်ဘဲ ကိုရီးယားစာ ရိုက်ခြင်း: လက်ချောင်းနေရာနှင့် လေ့ကျင့်မှု","quickAnswer":"ပုံမှန် QWERTY ကဲ့သို့ လက်ချောင်းများကို A–S–D–F နှင့် J–K–L–; ပေါ်တွင် ထားပါ။ လက်ချောင်းတစ်ချောင်းစီက သက်ဆိုင်ရာ ဒေါင်လိုက်ခလုတ်နေရာများကို ရိုက်ပြီး လက်ညှိုးက အတွင်းဘက်ရှိ ထပ်ဆောင်းခလုတ်တန်းကိုပါ ရိုက်သည်။ ဟန်ဂုလ်ရလဒ်ကို ကြည့်ပြီး ဗျည်း–သရ တွဲများကို ဖြည်းဖြည်း လေ့ကျင့်ပါ။"},
+    "korean-typing-mistakes": {"title":"ကိုရီးယားစာရိုက် အမှားများကို အဆင့်ဆင့် စစ်ဆေးနည်း","quickAnswer":"မှတ်စုတွင် G–K–S ကို စမ်းပါ။ gks ထွက်လျှင် ထည့်သွင်းဘာသာစကား ပြောင်းပါ။ အက္ခရာမှားလျှင် ကီးဘုတ်ပုံစံနှင့် ခလုတ်နေရာကို စစ်ပါ။ ㅎㅏㄴ သီးခြားထွက်လျှင် အခြားအက်ပ်တွင် ပေါင်းစပ်မှုကို စမ်းပါ။ 한 ထွက်လျှင် စနစ်ကီးဘုတ် အလုပ်လုပ်သည်။ မူလစကားလုံး၊ အကွက် သို့မဟုတ် အက်ပ်ကို စစ်ပါ။"},
+    "korean-typing-practice-plan": {"title":"လေးပတ် ကိုရီးယားစာရိုက် လေ့ကျင့်ရေးအစီအစဉ်","quickAnswer":"ဆယ်မိနစ် လေ့ကျင့်ပါ။ သိပြီးသောခလုတ်ဖြင့် နှစ်မိနစ်၊ လှုပ်ရှားမှုအသစ်တစ်ခုကို သုံးမိနစ်၊ အဓိပ္ပာယ်ရှိစကားလုံးကို သုံးမိနစ်၊ စာကြောင်းတို သို့မဟုတ် ဂိမ်းကို နှစ်မိနစ် လေ့ကျင့်ပါ။ တစ်ကြိမ်မြန်သည့်ရမှတ်ထက် အကြိမ်များစွာ တိကျမှုတည်ငြိမ်မှ နောက်အဆင့်သို့ သွားပါ။"}
+  },
+  "km": {
+    "korean-keyboard-layout": {"title":"ប្លង់ក្ដារចុចកូរ៉េ៖ ការពន្យល់គ្រប់គ្រាប់ចុចនៃប្រព័ន្ធពីរសំណុំ","quickAnswer":"លើ QWERTY ប្រើ Q–T, A–G និង Z–V សម្រាប់ព្យញ្ជនៈភាគច្រើន និង Y–P, H–L និង B–M សម្រាប់ស្រៈ។ វាយព្យញ្ជនៈដើម ស្រៈ រួចព្យញ្ជនៈចុងប្រសិនបើមាន។ ប្រព័ន្ធបញ្ចូលភាសាកូរ៉េផ្សំជាប្លុកព្យាង្គដោយស្វ័យប្រវត្តិ។"},
+    "add-korean-keyboard": {"title":"របៀបបន្ថែមក្ដារចុចកូរ៉េលើ Windows, Mac, iPhone និង Android","quickAnswer":"បើកការកំណត់ភាសា ក្ដារចុច ឬប្រភពបញ្ចូល បន្ថែមភាសាកូរ៉េ និងជ្រើសប្លង់ពីរសំណុំប្រសិនបើមាន។ ប្ដូរដោយ Windows+Space; លើ Mac ប្រើ Control+Space ឬគ្រាប់ចុចរូបផែនដី/Fn; លើទូរសព្ទប្រើរូបផែនដី ឬប៊ូតុងប្ដូរភាសានៅគ្រាប់ចុចដកឃ្លា។"},
+    "hangul-syllable-blocks": {"title":"របៀបផ្សំប្លុកព្យាង្គហាន់គឹលពេលវាយអក្សរ","quickAnswer":"វាយព្យាង្គតាមលំដាប់ ព្យញ្ជនៈដើម + ស្រៈ + ព្យញ្ជនៈចុងប្រសិនបើមាន។ ស្រៈបញ្ឈរដូចជា ㅏ ស្ថិតនៅខាងស្ដាំព្យញ្ជនៈដើម; ស្រៈផ្ដេកដូចជា ㅗ ស្ថិតនៅខាងក្រោម។ ប្រព័ន្ធបញ្ចូលរៀបចំទីតាំងដោយស្វ័យប្រវត្តិ។"},
+    "type-batchim": {"title":"របៀបវាយ batchim និងព្យញ្ជនៈចុងភាសាកូរ៉េ","quickAnswer":"វាយព្យញ្ជនៈដើម និងស្រៈ រួចព្យញ្ជនៈចុងតាមអក្ខរាវិរុទ្ធ។ 밥 ប្រើ Q–K–Q។ បើមានព្យញ្ជនៈចុងពីរ វាយតាមលំដាប់៖ 값 គឺ ㄱ–ㅏ–ㅂ–ㅅ ឬ R–K–Q–T លើ QWERTY។"},
+    "type-double-consonants-and-vowels": {"title":"របៀបវាយព្យញ្ជនៈទ្វេ និងស្រៈផ្សំភាសាកូរ៉េ","quickAnswer":"ចុច Shift ជាមួយ Q, W, E, R ឬ T ដើម្បីបាន ㅃ, ㅉ, ㄸ, ㄲ ឬ ㅆ តាមលំដាប់។ Shift+O ផ្ដល់ ㅒ និង Shift+P ផ្ដល់ ㅖ។ សម្រាប់ ㅘ ឬ ㅝ កុំចុច Shift៖ វាយ ㅗ រួច ㅏ (H–K) ឬ ㅜ រួច ㅓ (N–J)។"},
+    "korean-touch-typing": {"title":"ការវាយកូរ៉េដោយមិនមើលក្ដារចុច៖ ទីតាំងម្រាមដៃ និងការហាត់","quickAnswer":"ដាក់ម្រាមដៃលើ A–S–D–F និង J–K–L–; ដូចការវាយ QWERTY ធម្មតា។ ម្រាមនីមួយៗទទួលបន្ទុកតំបន់បញ្ឈររបស់វា ហើយម្រាមចង្អុលទទួលបន្ទុកជួរខាងក្នុងបន្ថែម។ ហាត់ព្យញ្ជនៈ–ស្រៈយឺតៗដោយមើលលទ្ធផលហាន់គឹល។"},
+    "korean-typing-mistakes": {"title":"កំហុសវាយកូរ៉េ៖ មគ្គុទ្ទេសក៍ពិនិត្យតាមដំណាក់កាល","quickAnswer":"សាក G–K–S ក្នុងកម្មវិធីកត់ត្រាធម្មតា។ បើចេញ gks ប្ដូរភាសាបញ្ចូល; បើអក្សរខុស ពិនិត្យប្លង់ និងទីតាំងគ្រាប់ចុច។ បើចេញ ㅎㅏㄴ ដាច់ពីគ្នា សាកការផ្សំក្នុងកម្មវិធីផ្សេង។ បើចេញ 한 ក្ដារចុចប្រព័ន្ធដំណើរការ ហើយត្រូវពិនិត្យពាក្យ ប្រអប់បញ្ចូល ឬកម្មវិធីដើម។"},
+    "korean-typing-practice-plan": {"title":"ផែនការហាត់វាយភាសាកូរ៉េរយៈពេលបួនសប្ដាហ៍","quickAnswer":"ហាត់ដប់នាទី៖ ពីរនាទីជាមួយគ្រាប់ចុចដែលស្គាល់ បីនាទីសម្រាប់ចលនាថ្មីមួយ បីនាទីជាមួយពាក្យមានន័យ និងពីរនាទីជាមួយប្រយោគខ្លី ឬហ្គេម។ បន្តទៅមុខពេលភាពត្រឹមត្រូវមានស្ថិរភាពច្រើនលើក មិនមែនដោយពិន្ទុលឿនតែមួយលើកទេ។"}
+  },
+  "lo": {
+    "korean-keyboard-layout": {"title":"ຜັງແປ້ນພິມເກົາຫຼີ: ອະທິບາຍທຸກປຸ່ມຂອງລະບົບສອງຊຸດ","quickAnswer":"ໃນ QWERTY ໃຊ້ Q–T, A–G ແລະ Z–V ສຳລັບພະຍັນຊະນະສ່ວນໃຫຍ່; ໃຊ້ Y–P, H–L ແລະ B–M ສຳລັບສະຫຼະ. ພິມພະຍັນຊະນະຕົ້ນ ສະຫຼະ ແລ້ວພະຍັນຊະນະທ້າຍຖ້າມີ. ລະບົບປ້ອນເກົາຫຼີຈະປະສົມພະຍາງໃຫ້ອັດຕະໂນມັດ."},
+    "add-korean-keyboard": {"title":"ວິທີເພີ່ມແປ້ນພິມເກົາຫຼີໃນ Windows, Mac, iPhone ແລະ Android","quickAnswer":"ເປີດການຕັ້ງຄ່າພາສາ ແປ້ນພິມ ຫຼືແຫຼ່ງປ້ອນ; ເພີ່ມພາສາເກົາຫຼີ ແລະເລືອກສອງຊຸດຖ້າມີ. ປ່ຽນດ້ວຍ Windows+Space; ໃນ Mac ໃຊ້ Control+Space ຫຼືປຸ່ມລູກໂລກ/Fn; ໃນມືຖືໃຊ້ລູກໂລກ ຫຼືປຸ່ມປ່ຽນພາສາໃນແຖບວັກ."},
+    "hangul-syllable-blocks": {"title":"ກຸ່ມພະຍາງຮັນກຶລປະກອບຂຶ້ນແນວໃດໃນເວລາພິມ","quickAnswer":"ພິມຕາມລຳດັບ ພະຍັນຊະນະຕົ້ນ + ສະຫຼະ + ພະຍັນຊະນະທ້າຍຖ້າມີ. ສະຫຼະແນວຕັ້ງເຊັ່ນ ㅏ ຢູ່ຂວາຂອງພະຍັນຊະນະຕົ້ນ; ສະຫຼະແນວນອນເຊັ່ນ ㅗ ຢູ່ລຸ່ມ. ລະບົບປ້ອນຈັດຕຳແໜ່ງໃຫ້ອັດຕະໂນມັດ."},
+    "type-batchim": {"title":"ວິທີພິມ batchim ແລະພະຍັນຊະນະທ້າຍໃນພາສາເກົາຫຼີ","quickAnswer":"ພິມພະຍັນຊະນະຕົ້ນ ແລະສະຫຼະ ແລ້ວຕົວສະກົດຕາມຄຳຂຽນ. 밥 ໃຊ້ Q–K–Q. ຖ້າມີຕົວສະກົດສອງຕົວ ໃຫ້ພິມຕາມລຳດັບ: 값 ແມ່ນ ㄱ–ㅏ–ㅂ–ㅅ ຫຼື R–K–Q–T ໃນ QWERTY."},
+    "type-double-consonants-and-vowels": {"title":"ວິທີພິມພະຍັນຊະນະຊ້ອນ ແລະສະຫຼະປະສົມເກົາຫຼີ","quickAnswer":"ກົດ Shift ພ້ອມ Q, W, E, R ຫຼື T ເພື່ອໄດ້ ㅃ, ㅉ, ㄸ, ㄲ ຫຼື ㅆ ຕາມລຳດັບ. Shift+O ໄດ້ ㅒ ແລະ Shift+P ໄດ້ ㅖ. ສຳລັບ ㅘ ຫຼື ㅝ ບໍ່ກົດ Shift: ພິມ ㅗ ແລ້ວ ㅏ (H–K) ຫຼື ㅜ ແລ້ວ ㅓ (N–J)."},
+    "korean-touch-typing": {"title":"ການພິມເກົາຫຼີໂດຍບໍ່ເບິ່ງແປ້ນ: ຕຳແໜ່ງນິ້ວ ແລະການຝຶກ","quickAnswer":"ວາງນິ້ວໃນ A–S–D–F ແລະ J–K–L–; ເໝືອນ QWERTY ທົ່ວໄປ. ແຕ່ລະນິ້ວຮັບຜິດຊອບເຂດແນວຕັ້ງຂອງຕົນ; ນິ້ວຊີ້ຮັບຜິດຊອບຖັນພາຍໃນທີ່ເພີ່ມມາ. ຝຶກພະຍັນຊະນະ–ສະຫຼະຊ້າໆ ແລະເບິ່ງຜົນຮັນກຶລ."},
+    "korean-typing-mistakes": {"title":"ຂໍ້ຜິດພາດໃນການພິມເກົາຫຼີ: ວິທີກວດເປັນຂັ້ນຕອນ","quickAnswer":"ລອງ G–K–S ໃນບັນທຶກທົ່ວໄປ. ຖ້າໄດ້ gks ໃຫ້ປ່ຽນພາສາປ້ອນ; ຖ້າອັກສອນຜິດ ກວດຜັງ ແລະປຸ່ມຈິງ. ຖ້າໄດ້ ㅎㅏㄴ ແຍກກັນ ລອງປະສົມໃນແອັບອື່ນ. ຖ້າໄດ້ 한 ແປ້ນພິມລະບົບເຮັດວຽກ; ກວດຄຳ ຊ່ອງປ້ອນ ຫຼືແອັບເດີມ."},
+    "korean-typing-practice-plan": {"title":"ແຜນຝຶກພິມເກົາຫຼີສີ່ອາທິດ","quickAnswer":"ຝຶກສິບນາທີ: ອຸ່ນເຄື່ອງດ້ວຍປຸ່ມທີ່ຮູ້ສອງນາທີ, ຝຶກການເຄື່ອນໄຫວໃໝ່ໜຶ່ງຢ່າງສາມນາທີ, ຄຳທີ່ມີຄວາມໝາຍສາມນາທີ ແລະປະໂຫຍກສັ້ນຫຼືເກມສອງນາທີ. ໄປຂັ້ນຕໍ່ໄປເມື່ອຄວາມແມ່ນຍຳຄົງທີ່ຫຼາຍຄັ້ງ ບໍ່ແມ່ນຈາກຄະແນນໄວຄັ້ງດຽວ."}
+  },
+  "bn": {
+    "korean-keyboard-layout": {"title":"কোরীয় কিবোর্ড: দুই-সেট বিন্যাসের প্রতিটি কী","quickAnswer":"QWERTY-তে অধিকাংশ ব্যঞ্জনবর্ণের জন্য Q–T, A–G ও Z–V এবং স্বরবর্ণের জন্য Y–P, H–L ও B–M ব্যবহার করুন। প্রথম ব্যঞ্জনবর্ণ, স্বরবর্ণ, তারপর প্রয়োজন হলে শেষ ব্যঞ্জনবর্ণ টাইপ করুন। কোরীয় ইনপুট পদ্ধতি নিজেই ব্লক গঠন করে।"},
+    "add-korean-keyboard": {"title":"Windows, Mac, iPhone ও Android-এ কোরীয় কিবোর্ড যোগ করার উপায়","quickAnswer":"ভাষা, কিবোর্ড বা ইনপুট সোর্সের সেটিং খুলে কোরীয় যোগ করুন; থাকলে দুই-সেট বিন্যাস বেছে নিন। Windows+Space দিয়ে বদলান; Mac-এ Control+Space বা গ্লোব/Fn কী ব্যবহার করুন; মোবাইলে গ্লোব বা স্পেসবারের ভাষা বদলানোর নিয়ন্ত্রণ ব্যবহার করুন।"},
+    "hangul-syllable-blocks": {"title":"টাইপ করার সময় হানগুলের ধ্বনিদল-ব্লক কীভাবে তৈরি হয়","quickAnswer":"প্রতিটি ধ্বনিদল প্রথম ব্যঞ্জনবর্ণ + স্বরবর্ণ + ঐচ্ছিক শেষ ব্যঞ্জনবর্ণের ক্রমে টাইপ করুন। ㅏ-এর মতো খাড়া স্বরবর্ণ প্রথম ব্যঞ্জনবর্ণের ডান দিকে এবং ㅗ-এর মতো অনুভূমিক স্বরবর্ণ নিচে থাকে। ইনপুট পদ্ধতি নিজেই এই বিন্যাস সাজায়।"},
+    "type-batchim": {"title":"batchim ও কোরীয় শেষ ব্যঞ্জনবর্ণ টাইপ করার উপায়","quickAnswer":"প্রথম ব্যঞ্জনবর্ণ ও স্বরবর্ণের পরে বানান অনুযায়ী শেষ ব্যঞ্জনবর্ণ টাইপ করুন। 밥-এর জন্য Q–K–Q চাপুন। শেষে দুই ব্যঞ্জনবর্ণ থাকলে বানানের ক্রম মানুন: 값 হলো ㄱ–ㅏ–ㅂ–ㅅ, অর্থাৎ QWERTY-তে R–K–Q–T।"},
+    "type-double-consonants-and-vowels": {"title":"কোরীয় দ্বিত্ব ব্যঞ্জনবর্ণ ও যৌগিক স্বরবর্ণ টাইপ করার উপায়","quickAnswer":"Shift-এর সঙ্গে Q, W, E, R বা T ধরে যথাক্রমে ㅃ, ㅉ, ㄸ, ㄲ বা ㅆ লিখুন। Shift+O দেয় ㅒ এবং Shift+P দেয় ㅖ। ㅘ বা ㅝ-এর জন্য Shift ধরবেন না: ㅗ তারপর ㅏ (H–K), অথবা ㅜ তারপর ㅓ (N–J) লিখুন।"},
+    "korean-touch-typing": {"title":"না দেখে কোরীয় টাইপিং: আঙুলের অবস্থান ও অনুশীলন","quickAnswer":"সাধারণ QWERTY টাইপিংয়ের মতো A–S–D–F ও J–K–L–;-এ আঙুল রাখুন। প্রতিটি আঙুল নিজের খাড়া অঞ্চলের কী সামলাবে; তর্জনী ভেতরের অতিরিক্ত কলামও সামলাবে। হানগুলের ফল দেখতে দেখতে ব্যঞ্জন–স্বরের ধারা ধীরে অনুশীলন করুন।"},
+    "korean-typing-mistakes": {"title":"কোরীয় টাইপিংয়ের ভুল: ধাপে ধাপে সমস্যা খোঁজার নির্দেশিকা","quickAnswer":"সাধারণ নোটে G–K–S পরীক্ষা করুন। gks এলে ইনপুট ভাষা বদলান; ভুল অক্ষর এলে বিন্যাস ও কীর অবস্থান দেখুন। ㅎㅏㄴ আলাদা এলে অন্য অ্যাপে গঠন পরীক্ষা করুন। 한 এলে সিস্টেম কিবোর্ড কাজ করছে: মূল শব্দ, ইনপুট ঘর বা অ্যাপ পরীক্ষা করুন।"},
+    "korean-typing-practice-plan": {"title":"চার সপ্তাহের কোরীয় টাইপিং অনুশীলন পরিকল্পনা","quickAnswer":"দশ মিনিট অনুশীলন করুন: পরিচিত কী দিয়ে দুই মিনিট, একটি নতুন নড়াচড়া তিন মিনিট, অর্থপূর্ণ শব্দ তিন মিনিট এবং ছোট বাক্য বা খেলা দুই মিনিট। একবারের দ্রুত স্কোর নয়, কয়েকটি অনুশীলনে নির্ভুলতা স্থির হলে এগিয়ে যান।"}
+  },
+  "ta": {
+    "korean-keyboard-layout": {"title":"கொரிய விசைப்பலகை: இரு-தொகுதி அமைப்பின் ஒவ்வொரு விசையும்","quickAnswer":"QWERTY-இல் பெரும்பாலான மெய்யெழுத்துக்களுக்கு Q–T, A–G, Z–V; உயிரெழுத்துக்களுக்கு Y–P, H–L, B–M பயன்படுத்துங்கள். முதல் மெய், உயிர், தேவைப்பட்டால் இறுதி மெய் என்ற வரிசையில் தட்டச்சு செய்யுங்கள். கொரிய உள்ளீட்டு முறை அசைத் தொகுதியைத் தானாக உருவாக்கும்."},
+    "add-korean-keyboard": {"title":"Windows, Mac, iPhone, Android-இல் கொரிய விசைப்பலகையைச் சேர்ப்பது எப்படி","quickAnswer":"மொழி, விசைப்பலகை அல்லது உள்ளீட்டு மூல அமைப்புகளைத் திறந்து கொரியத்தைச் சேருங்கள்; கிடைத்தால் இரு-தொகுதி அமைப்பைத் தேர்ந்தெடுங்கள். Windows+Space மூலம் மாற்றுங்கள்; Mac-இல் Control+Space அல்லது பூகோள/Fn விசை; கைப்பேசியில் பூகோள விசை அல்லது இடைவெளி விசையின் மொழி மாற்றியைப் பயன்படுத்துங்கள்."},
+    "hangul-syllable-blocks": {"title":"தட்டச்சின்போது ஹங்குல் அசைத் தொகுதிகள் உருவாகும் விதம்","quickAnswer":"ஒவ்வொரு அசைக்கும் முதல் மெய் + உயிர் + தேவையான இறுதி மெய் என்ற வரிசையைப் பயன்படுத்துங்கள். ㅏ போன்ற செங்குத்து உயிர் முதல் மெய்யின் வலப்புறத்திலும், ㅗ போன்ற கிடைமட்ட உயிர் கீழேயும் அமையும். உள்ளீட்டு முறை இந்த அமைப்பைத் தானாகச் செய்கிறது."},
+    "type-batchim": {"title":"batchim மற்றும் கொரிய இறுதி மெய்யெழுத்துக்களைத் தட்டச்சு செய்வது எப்படி","quickAnswer":"முதல் மெய்யையும் உயிரையும் தட்டச்சு செய்து, எழுத்துக்கூட்டலுக்கேற்ப இறுதி மெய்யைத் தட்டச்சு செய்யுங்கள். 밥-க்கு Q–K–Q அழுத்துங்கள். இரண்டு இறுதி மெய்கள் இருந்தால் வரிசைப்படி எழுதுங்கள்: 값 என்பது ㄱ–ㅏ–ㅂ–ㅅ, QWERTY-இல் R–K–Q–T."},
+    "type-double-consonants-and-vowels": {"title":"கொரிய இரட்டை மெய்கள் மற்றும் கூட்டுயிர்களைத் தட்டச்சு செய்வது எப்படி","quickAnswer":"Shift உடன் Q, W, E, R அல்லது T அழுத்தினால் முறையே ㅃ, ㅉ, ㄸ, ㄲ அல்லது ㅆ கிடைக்கும். Shift+O என்பது ㅒ, Shift+P என்பது ㅖ. ㅘ அல்லது ㅝ-க்கு Shift வேண்டாம்: ㅗ பின்னர் ㅏ (H–K), அல்லது ㅜ பின்னர் ㅓ (N–J) எழுதுங்கள்."},
+    "korean-touch-typing": {"title":"பார்க்காமல் கொரியத் தட்டச்சு: விரல்களின் இடமும் பயிற்சியும்","quickAnswer":"வழக்கமான QWERTY தட்டச்சைப் போல A–S–D–F மற்றும் J–K–L–; மீது விரல்களை வையுங்கள். ஒவ்வொரு விரலும் அதன் செங்குத்துப் பகுதியைக் கவனிக்கும்; சுட்டுவிரல்கள் கூடுதல் உள் வரிசைகளையும் கவனிக்கும். ஹங்குல் முடிவைப் பார்த்தபடி மெய்–உயிர் முறைகளை மெதுவாகப் பயிற்சி செய்யுங்கள்."},
+    "korean-typing-mistakes": {"title":"கொரியத் தட்டச்சுத் தவறுகள்: படிப்படியான சிக்கல் தீர்வு","quickAnswer":"எளிய குறிப்பில் G–K–S சோதியுங்கள். gks வந்தால் உள்ளீட்டு மொழியை மாற்றுங்கள்; தவறான எழுத்து வந்தால் அமைப்பையும் விசை இடத்தையும் சரிபாருங்கள். ㅎㅏㄴ தனித்தனியாக வந்தால் வேறு செயலியில் சேர்க்கையைச் சோதியுங்கள். 한 வந்தால் கணினியின் விசைப்பலகை வேலை செய்கிறது: பழைய சொல், உள்ளீட்டுப் பெட்டி அல்லது செயலியைச் சரிபாருங்கள்."},
+    "korean-typing-practice-plan": {"title":"நான்கு வாரக் கொரியத் தட்டச்சுப் பயிற்சித் திட்டம்","quickAnswer":"பத்து நிமிடங்கள் பயிற்சி செய்யுங்கள்: தெரிந்த விசைகளுடன் இரண்டு நிமிடங்கள், ஒரு புதிய இயக்கத்திற்கு மூன்று, பொருளுள்ள சொற்களுக்கு மூன்று, சிறிய வாக்கியம் அல்லது விளையாட்டிற்கு இரண்டு. பல பயிற்சிகளில் துல்லியம் நிலையானதும் முன்னேறுங்கள்; ஒரே வேகமான மதிப்பெண்ணை வைத்து அல்ல."}
+  },
+  "ne": {
+    "korean-keyboard-layout": {"title":"कोरियाली किबोर्ड: दुई-सेट विन्यासका सबै कुञ्जी","quickAnswer":"QWERTY मा धेरैजसो व्यञ्जनका लागि Q–T, A–G र Z–V; स्वरका लागि Y–P, H–L र B–M प्रयोग गर्नुहोस्। सुरुको व्यञ्जन, स्वर र आवश्यक भए अन्तिम व्यञ्जन टाइप गर्नुहोस्। कोरियाली इनपुट पद्धतिले अक्षरखण्ड आफैँ बनाउँछ।"},
+    "add-korean-keyboard": {"title":"Windows, Mac, iPhone र Android मा कोरियाली किबोर्ड थप्ने तरिका","quickAnswer":"भाषा, किबोर्ड वा इनपुट स्रोतका सेटिङ खोल्नुहोस्; कोरियाली थपेर उपलब्ध भए दुई-सेट विन्यास रोज्नुहोस्। Windows+Space ले बदल्नुहोस्; Mac मा Control+Space वा ग्लोब/Fn कुञ्जी; मोबाइलमा ग्लोब वा स्पेसबारको भाषा बदल्ने नियन्त्रण प्रयोग गर्नुहोस्।"},
+    "hangul-syllable-blocks": {"title":"टाइप गर्दा हाङ्गुलका अक्षरखण्ड कसरी बन्छन्","quickAnswer":"हरेक अक्षरखण्ड सुरुको व्यञ्जन + स्वर + आवश्यक भए अन्तिम व्यञ्जनको क्रममा टाइप गर्नुहोस्। ㅏ जस्तो ठाडो स्वर सुरुको व्यञ्जनको दायाँ र ㅗ जस्तो तेर्सो स्वर तल बस्छ। इनपुट पद्धतिले यो मिलान आफैँ गर्छ।"},
+    "type-batchim": {"title":"batchim र कोरियाली अन्तिम व्यञ्जन टाइप गर्ने तरिका","quickAnswer":"सुरुको व्यञ्जन र स्वरपछि हिज्जेअनुसार अन्तिम व्यञ्जन टाइप गर्नुहोस्। 밥 का लागि Q–K–Q थिच्नुहोस्। दुई अन्तिम व्यञ्जन भए हिज्जेको क्रम पालना गर्नुहोस्: 값 भनेको ㄱ–ㅏ–ㅂ–ㅅ हो, QWERTY मा R–K–Q–T।"},
+    "type-double-consonants-and-vowels": {"title":"कोरियाली दोहोरो व्यञ्जन र संयुक्त स्वर टाइप गर्ने तरिका","quickAnswer":"Shift सँग Q, W, E, R वा T थिच्दा क्रमशः ㅃ, ㅉ, ㄸ, ㄲ वा ㅆ आउँछ। Shift+O ले ㅒ र Shift+P ले ㅖ दिन्छ। ㅘ वा ㅝ का लागि Shift नथिच्नुहोस्: ㅗ पछि ㅏ (H–K), वा ㅜ पछि ㅓ (N–J) टाइप गर्नुहोस्।"},
+    "korean-touch-typing": {"title":"नहेरी कोरियाली टाइपिङ: औँलाको स्थान र अभ्यास","quickAnswer":"साधारण QWERTY जस्तै औँला A–S–D–F र J–K–L–; मा राख्नुहोस्। प्रत्येक औँलाले आफ्नो ठाडो क्षेत्र सम्हाल्छ; चोरऔँलाले भित्री थप स्तम्भ पनि सम्हाल्छ। हाङ्गुलको नतिजा हेर्दै व्यञ्जन–स्वरको ढाँचा बिस्तारै अभ्यास गर्नुहोस्।"},
+    "korean-typing-mistakes": {"title":"कोरियाली टाइपिङका गल्ती: चरणबद्ध समस्या जाँच","quickAnswer":"साधारण नोटमा G–K–S जाँच्नुहोस्। gks आए इनपुट भाषा बदल्नुहोस्; गलत अक्षर आए विन्यास र कुञ्जीको स्थान जाँच्नुहोस्। ㅎㅏㄴ छुट्टाछुट्टै आए अर्को एपमा जोडिने प्रक्रिया जाँच्नुहोस्। 한 आए प्रणालीको किबोर्ड चल्छ: मूल शब्द, इनपुट बाकस वा एप जाँच्नुपर्छ।"},
+    "korean-typing-practice-plan": {"title":"चार हप्ताको कोरियाली टाइपिङ अभ्यास योजना","quickAnswer":"दस मिनेट अभ्यास गर्नुहोस्: चिनेका कुञ्जीमा दुई मिनेट, एउटा नयाँ चालमा तीन, अर्थपूर्ण शब्दमा तीन र छोटो वाक्य वा खेलमा दुई। एउटै छिटो स्कोरपछि होइन, धेरै अभ्यासमा शुद्धता स्थिर भएपछि अघि बढ्नुहोस्।"}
+  },
+  "si": {
+    "korean-keyboard-layout": {"title":"කොරියානු යතුරුපුවරුව: දෙකට්ටල සැලැස්මේ සෑම යතුරක්ම","quickAnswer":"QWERTY මත බොහෝ ව්‍යංජන සඳහා Q–T, A–G, Z–V සහ ස්වර සඳහා Y–P, H–L, B–M භාවිත කරන්න. මුල් ව්‍යංජනය, ස්වරය සහ තිබේ නම් අවසාන ව්‍යංජනය ලියන්න. කොරියානු ආදාන ක්‍රමය අක්ෂර ඛණ්ඩය ස්වයංක්‍රීයව සාදයි."},
+    "add-korean-keyboard": {"title":"Windows, Mac, iPhone සහ Android වෙත කොරියානු යතුරුපුවරුව එක් කරන ආකාරය","quickAnswer":"භාෂා, යතුරුපුවරු හෝ ආදාන මූලාශ්‍ර සැකසුම් විවෘත කර කොරියානු එක් කරන්න; තිබේ නම් දෙකට්ටල සැලැස්ම තෝරන්න. Windows+Space භාවිතයෙන් මාරු කරන්න; Mac මත Control+Space හෝ ලෝකගෝල/Fn යතුර; ජංගම දුරකථනයේ ලෝකගෝලය හෝ space යතුරේ භාෂා පාලනය භාවිත කරන්න."},
+    "hangul-syllable-blocks": {"title":"යතුරු ලියන විට හන්ගුල් අක්ෂර ඛණ්ඩ සෑදෙන ආකාරය","quickAnswer":"එක් ඛණ්ඩයක් මුල් ව්‍යංජනය + ස්වරය + තිබේ නම් අවසාන ව්‍යංජනය ලෙස ලියන්න. ㅏ වැනි සිරස් ස්වරයක් මුල් ව්‍යංජනයට දකුණින්; ㅗ වැනි තිරස් ස්වරයක් පහළින් පිහිටයි. ආදාන ක්‍රමය මෙම පිහිටීම ස්වයංක්‍රීයව සකසයි."},
+    "type-batchim": {"title":"batchim සහ කොරියානු අවසාන ව්‍යංජන යතුරු ලියන ආකාරය","quickAnswer":"මුල් ව්‍යංජනය සහ ස්වරයෙන් පසු අක්ෂර වින්‍යාසයට අනුව අවසාන ව්‍යංජනය ලියන්න. 밥 සඳහා Q–K–Q ඔබන්න. අවසානයේ ව්‍යංජන දෙකක් නම් අනුපිළිවෙළ රකින්න: 값 යනු ㄱ–ㅏ–ㅂ–ㅅ, QWERTY මත R–K–Q–T වේ."},
+    "type-double-consonants-and-vowels": {"title":"කොරියානු ද්විත්ව ව්‍යංජන සහ සංයුක්ත ස්වර යතුරු ලියන ආකාරය","quickAnswer":"Shift සමඟ Q, W, E, R හෝ T ඔබා පිළිවෙළින් ㅃ, ㅉ, ㄸ, ㄲ හෝ ㅆ ලබාගන්න. Shift+O යනු ㅒ සහ Shift+P යනු ㅖ වේ. ㅘ හෝ ㅝ සඳහා Shift නොඔබන්න: ㅗ පසුව ㅏ (H–K), හෝ ㅜ පසුව ㅓ (N–J) ලියන්න."},
+    "korean-touch-typing": {"title":"නොබලා කොරියානු යතුරු ලිවීම: ඇඟිලි පිහිටීම සහ පුහුණුව","quickAnswer":"සාමාන්‍ය QWERTY ලෙස ඇඟිලි A–S–D–F සහ J–K–L–; මත තබන්න. සෑම ඇඟිල්ලක්ම තම සිරස් කලාපය භාරගනී; දබරැඟිලි අමතර ඇතුළත තීරුත් භාරගනී. හන්ගුල් ප්‍රතිඵලය බලමින් ව්‍යංජන–ස්වර රටා සෙමින් පුහුණු වන්න."},
+    "korean-typing-mistakes": {"title":"කොරියානු යතුරු ලිවීමේ වැරදි: පියවරෙන් පියවර පරීක්ෂාව","quickAnswer":"සරල සටහනක G–K–S පරීක්ෂා කරන්න. gks නම් ආදාන භාෂාව මාරු කරන්න; වැරදි අකුරු නම් සැලැස්ම සහ යතුරු පිහිටීම බලන්න. ㅎㅏㄴ වෙන්ව පෙනේ නම් වෙනත් යෙදුමක සංයෝජනය පරීක්ෂා කරන්න. 한 නම් පද්ධති යතුරුපුවරුව ක්‍රියා කරයි: මුල් වචනය, ආදාන කොටුව හෝ යෙදුම පරීක්ෂා කරන්න."},
+    "korean-typing-practice-plan": {"title":"සති හතරක කොරියානු යතුරු ලිවීමේ පුහුණු සැලැස්ම","quickAnswer":"මිනිත්තු දහයක් පුහුණු වන්න: හුරු යතුරු සමඟ දෙකක්, එක් නව චලනයකට තුනක්, අර්ථවත් වචනවලට තුනක් සහ කෙටි වාක්‍යයක් හෝ ක්‍රීඩාවකට දෙකක්. එක් වේගවත් ලකුණකින් නොව සැසි කිහිපයක නිරවද්‍යතාව ස්ථාවර වූ පසු ඉදිරියට යන්න."}
+  }
+}

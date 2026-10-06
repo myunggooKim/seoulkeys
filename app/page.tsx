@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import headerStyles from "./home-header.module.css";
+import { HomeHeaderIcon } from "./HomeHeaderIcon";
+import { homeGuideLabel, homeNavigation } from "./home-navigation";
 import { type KeyboardEvent as ReactKeyboardEvent, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityPreview } from "./ActivityPreview";
 import { CommunityPulse } from "./CommunityPulse";
@@ -2994,7 +2997,7 @@ export default function Home() {
       {practiceFocusMode && <div className="practice-isolation-backdrop" aria-hidden="true" />}
       <a className="skip-link" href="#practice">{tr(locale, "Skip to practice", "연습으로 바로 가기")}</a>
 
-      <header className="topbar" aria-label={tr(locale, "Primary navigation", "주요 메뉴")}>
+      <header className={`topbar ${headerStyles.header}`} aria-label={tr(locale, "Primary navigation", "주요 메뉴")}>
         <a
           className="brand"
           href="#top"
@@ -3010,13 +3013,14 @@ export default function Home() {
         </a>
         <div className="header-navigation">
         <nav className="nav-links" aria-label={tr(locale, "Main menu", "메인 메뉴")}>
-          <a href="#learn">{t.navLearn}</a>
+          <a href="#learn">{homeNavigation[locale].curriculum}</a>
           <a href="#games">{t.navGames}</a>
           {/* The written guide. Linked from the nav because it is the only page a
               visitor can read rather than practise, and the one a search result
               or an assistant is most likely to land them on. */}
-          <Link href="/learn">{tr(locale, "Learning guides", "학습 가이드")}</Link>
-          <a href="/my">{t.navProgress}</a>
+          <Link href="/learn">{homeGuideLabel[locale]}</Link>
+          <Link href="/community" className="header-community-link">{homeNavigation[locale].community}</Link>
+          <a href="/my">{locale === "en" ? "Progress" : t.navProgress}</a>
           {/* Reserve both translated labels in one slot so authentication never
               moves the menu or the board. Reuse the existing sign-in dialog. */}
           <button
@@ -3035,6 +3039,23 @@ export default function Home() {
         <CommunityPulse locale={locale} />
         </div>
         <div className="header-tools">
+          <button
+            type="button"
+            className="theme-toggle-btn"
+            onClick={toggleThemeMode}
+            title={tr(locale, "Toggle Dark / Light Mode", "다크 / 라이트 모드 전환")}
+          >
+            <HomeHeaderIcon kind={themeMode === "dark" ? "sun" : "moon"} />
+            <span className="header-tool-label">{themeMode === "dark" ? tr(locale, "Light", "라이트") : tr(locale, "Dark", "다크")}</span>
+          </button>
+          <button
+            type="button"
+            className="button button-secondary keyboard-setup-btn"
+            onClick={() => setKeyboardModalOpen(true)}
+            title={tr(locale, "Add Korean keyboard to your device", "내 기기에 한글 키보드 추가하기")}
+          >
+            <HomeHeaderIcon kind="keyboard" /><span className="header-tool-label">{tr(locale, "Add Keyboard", "키보드 추가")}</span>
+          </button>
           <div className="sound-menu" ref={soundMenuRef}>
             <button
               type="button"
@@ -3044,7 +3065,7 @@ export default function Home() {
               aria-haspopup="true"
               title={tr(locale, "Sound settings", "소리 설정")}
             >
-              <span aria-hidden="true">{soundVolume === 0 ? "🔇" : "🔊"}</span>
+              <HomeHeaderIcon kind={soundVolume === 0 ? "muted" : "sound"} />
               <span className="sound-menu-label">{tr(locale, "Sound", "사운드")}</span>
               <span className="sound-menu-caret" aria-hidden="true">▾</span>
             </button>
@@ -3094,6 +3115,7 @@ export default function Home() {
             )}
           </div>
           <label className={`language-picker${localeLoading ? " is-loading" : ""}`}>
+            <HomeHeaderIcon kind="globe" />
             <span className="sr-only">{tr(locale, "Interface language", "화면 언어")}</span>
             <select
               aria-label={tr(locale, "Interface language", "화면 언어 선택")}
@@ -3110,23 +3132,6 @@ export default function Home() {
               ))}
             </select>
           </label>
-          <button
-            type="button"
-            className="theme-toggle-btn"
-            onClick={toggleThemeMode}
-            title={tr(locale, "Toggle Dark / Light Mode", "다크 / 라이트 모드 전환")}
-          >
-            {themeMode === "dark" ? `☀️ ${tr(locale, "Light", "라이트")}` : `🌙 ${tr(locale, "Dark", "다크")}`}
-          </button>
-          <button
-            type="button"
-            className="button button-secondary keyboard-setup-btn"
-            onClick={() => setKeyboardModalOpen(true)}
-            style={{ padding: "6px 12px", fontSize: "12px", borderRadius: "8px" }}
-            title={tr(locale, "Add Korean keyboard to your device", "내 기기에 한글 키보드 추가하기")}
-          >
-            🌐 {tr(locale, "Add Keyboard", "키보드 추가")}
-          </button>
         </div>
       </header>
 
@@ -4060,6 +4065,7 @@ export default function Home() {
           <a href="#learn">{tr(locale, "Curriculum", "학습 과정")}</a>
           <a href="#games">{tr(locale, "Games", "게임")}</a>
           <Link href="/learn">{tr(locale, "Guides", "학습 가이드")}</Link>
+          <Link href="/community">{tr(locale, "Community", "커뮤니티")}</Link>
           <Link href="/my">{tr(locale, "My page", "내 페이지")}</Link>
           <Link href="/about">{tr(locale, "About", "소개")}</Link>
           <Link href="/contact">{tr(locale, "Contact", "문의")}</Link>
