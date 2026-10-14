@@ -151,43 +151,42 @@
 
 
 
-/* CHEONGUNG-COMPACT-FRAME-V10 */
-/* 1) 도시 방어전 바깥쪽 흰색+검은테두리 외관 틀 자체를 상·하단 카드 섹션과 동일한 폭(1200px)으로 축소 */
-:not(html):not(body):not(main):not(:has(.godot-defense-game.is-fullscreen)):has(> .godot-defense-game),
-:not(html):not(body):not(main):not(:has(.godot-defense-game.is-fullscreen)):has(> * > .godot-defense-game),
-:not(html):not(body):not(main):not(:has(.godot-defense-game.is-fullscreen)):has(> * > * > .godot-defense-game) {
-  max-width: 1200px !important;
-  width: 100% !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
-  box-sizing: border-box !important;
-}
 
-/* 2) 가로세로 퀴즈(.studio-crossword-frame, .crossword-game-wrap) 외관 컨테이너에 상·하단과 동일한 1200px 둥근 검은색 테두리 네모 틀 적용 */
-:not(html):not(body):not(main):has(> .studio-crossword-frame),
-:not(html):not(body):not(main):has(> .crossword-game-wrap),
-.studio-crossword-frame,
-.stage-crossword {
+/* CHEONGUNG-COMPACT-FRAME-V11 */
+/* 1) '← 나가기 Esc'와 '컨셉' 버튼(.game-stage-bar)을 감싸는 최외곽 스테이지 박스를 상·하단 섹션과 동일한 1200px 둥근 네모 틀로 묶어,
+      나가기 버튼과 컨셉 버튼이 외곽 네모 박스 안쪽 상단에 들어가도록 처리 */
+.practice-screen-stage:not(:has(.godot-defense-game.is-fullscreen)),
+:not(html):not(body):not(main):not(:has(.godot-defense-game.is-fullscreen)):has(> .game-stage-bar) {
   max-width: 1200px !important;
   width: 100% !important;
   margin-left: auto !important;
   margin-right: auto !important;
   border: 2px solid #0f172a !important;
-  border-radius: 24px !important;
+  border-radius: 28px !important;
   background-color: #ffffff !important;
-  padding: 20px 24px 28px !important;
+  padding: 18px 22px 24px !important;
   box-sizing: border-box !important;
 }
 
-.crossword-game-wrap {
+/* 나가기 버튼과 컨셉 버튼 바(.game-stage-bar)가 1200px 네모 박스 안쪽 상단에 깔끔하게 정렬되도록 설정 */
+.game-stage-bar {
   max-width: 100% !important;
   width: 100% !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  margin-bottom: 14px !important;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
   box-sizing: border-box !important;
 }
 
-/* 3) 안쪽 남색 게임창(.godot-defense-game)은 바깥 1200px 틀 안에 빈틈 없이 100% 꽉 차도록 설정 */
+/* 가로세로 퀴즈 자체(.crossword-game-wrap, .studio-crossword-frame)는 내부 2단 레이아웃(좌상단 보드 + 우측 기능버튼·입력창)이 절대 깨지거나 줄어들지 않도록 순정 100% 폭 유지 및 중복 외곽선만 제거 */
+.practice-screen-stage > .crossword-game-wrap {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* 2) 안쪽 남색 게임창(.godot-defense-game)은 바깥 1200px 틀 안에 빈틈 없이 100% 꽉 차도록 설정 */
 .godot-defense-game {
   max-width: 100% !important;
   width: 100% !important;
@@ -218,11 +217,11 @@
 .godot-defense-game .gd-side-ad {
   display: none !important;
 }
-/* 4) 미리보기 그림 프레임 바깥 바로 아래에 선명한 HTML/CSS 버전 배지 표시 */
+/* 3) 미리보기 그림 프레임 바깥 바로 아래에 선명한 HTML/CSS 버전 배지 표시 */
 .godot-defense-game :has(> img[src*="preview"])::after,
 .godot-defense-game .gd-preview-card::after,
 .godot-defense-game figure::after {
-  content: "● VER v10.0 · 천궁-II KM-SAM 3D (남산·광화문 무겹침 · 초고속 셰이더)" !important;
+  content: "● VER v11.0 · 천궁-II KM-SAM 3D (MFR·발사대·ECS 무겹침 0.74x)" !important;
   display: inline-block !important;
   margin-top: 10px !important;
   padding: 6px 14px !important;
