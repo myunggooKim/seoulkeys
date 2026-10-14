@@ -147,8 +147,7 @@ export default function LegalCenter() {
             <h2>Cookies, analytics &amp; AdSense connection</h2>
             <p>
               The service uses browser local storage for essential preferences and daily lesson continuity.
-              Google AdSense code is installed for site connection and review. Ad requests remain paused;
-              advertising is not active.
+              Google AdSense (Publisher ID: pub-4355487582107293) is used to keep core Korean typing lessons and games free. Third-party vendors, including Google, use cookies to serve ads based on prior visits to this or other websites.
             </p>
             <p>
               Loading the Google script sends technical request information to Google and can read existing
@@ -182,18 +181,17 @@ export default function LegalCenter() {
               You can block these at any time with your browser’s tracking protection or an ad/tracker blocker; the
               lessons and games continue to work normally.
             </p>
-            <h3>If advertising is introduced</h3>
-            <p>
-              Advertising is not active today. Before any advertising provider is enabled, Seoul Keys will update
-              this notice to identify the provider, purposes, and available privacy choices.
-            </p>
-            <ul>
-              <li>This policy and the on-site privacy control must be updated with the actual providers and purposes.</li>
-              <li>Where required, ads and non-essential storage must remain blocked until a valid choice is made.</li>
-              <li>EEA, UK, and Swiss traffic must use a Google-certified consent management platform compatible with Google’s applicable publisher requirements.</li>
-              <li>Users must be able to revisit and change privacy choices.</li>
-              <li>Child-directed audiences must not receive behavioral advertising.</li>
-            </ul>
+            <h3>Advertising choices &amp; regional consent</h3>
+        <p>
+          Users may opt out of personalized advertising at any time by visiting{" "}
+          <a href="https://adssettings.google.com/" target="_blank" rel="noopener noreferrer">
+            Google Ads Settings
+          </a>{" "}
+          or{" "}
+          <a href="https://www.aboutads.info" target="_blank" rel="noopener noreferrer">
+            www.aboutads.info
+          </a>. For visitors from the EEA, the UK, and Switzerland, consent choices are managed through a Google-certified Consent Management Platform (CMP). Behavioral advertising is never directed at children.
+        </p>
           </section>
 
           <section id="copyright" className="legal-section">

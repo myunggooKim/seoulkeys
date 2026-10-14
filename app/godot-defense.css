@@ -142,3 +142,7 @@
   /* Reserve the whole box even on 768/864 px-tall laptops; this page scrolls normally. */
   .game-demo > .godot-defense-game:not(:fullscreen) .gd-layout.has-side-rails { min-height: 780px; }
 }
+
+/* CHEONGUNG-NO-SIDE-ADS */
+.godot-defense-game .gd-side-ad { display: none !important; }
+.godot-defense-game .gd-layout.has-side-rails { grid-template-columns: minmax(0, 1040px) !important; grid-template-areas: "game" !important; column-gap: 0 !important; justify-content: center !important; }

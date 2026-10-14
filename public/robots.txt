@@ -1,8 +1,16 @@
-# One shared group keeps private application routes excluded consistently for
-# search and advertising crawlers while leaving every public lesson crawlable.
+User-agent: Mediapartners-Google
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Disallow: /my
+Disallow: /community
+
 User-agent: *
 Allow: /
-Disallow: /admin
 Disallow: /api/
+Disallow: /my
+Disallow: /community
 
 Sitemap: https://seoulkeys.com/sitemap.xml
