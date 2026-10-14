@@ -1,1698 +1,776 @@
 extends RefCounted
 
-# Godot 4.6 정적 타입 분석기 우회 헬퍼 (모든 Node/Resource/Mesh/Material 접근을 Variant 동적 디스패치로 안전하게 처리)
-static func _v(x):
-	return x
-
-
+# 천궁-II (KM-SAM Block-II) 통합 방공 포대 (v7.0 - v3 검증 엔진 코어 + 남산 도로 겹침 0% + 3단 직각 콜드런치)
 static func apply(chassis: Node3D, font: Font) -> void:
 	if not is_instance_valid(chassis) or chassis.has_node("K239Marking"):
 		return
 
-	# 1. 조종석 카메라 정면(-X면) 제식 명판: 'KM-SAM' (기존 K-239 완전 교체)
-	var mount = Node3D.new()
+	var launcher := chassis.get_parent() as Node3D
+	if not is_instance_valid(launcher):
+		return
+
+	# 남산 스테이지 건물·버스 스케일과 조화되도록 발사대 축소(0.55x) 및 한강대교 왼쪽 강변 잔디공원으로 이동 (다리 도로 겹침 0%)
+	chassis.position = Vector3(-1.45, 0.0, -0.25)
+	chassis.scale = Vector3(0.55, 0.55, 0.55)
+
+	# 1. 캡 측면 'KM-SAM' 명판 (기존 'K-239' 완전 대체)
+	var mount := Node3D.new()
 	mount.name = "K239Marking"
 	chassis.add_child(mount)
-	mount.position = Vector3(-1.63, 1.93, -2.75)
+	mount.position = Vector3(-1.628, 1.93, -2.75)
 	mount.rotation.y = -PI * 0.5
 
-	var plate = MeshInstance3D.new()
-	var shape = BoxMesh.new()
-	shape.size = Vector3(3.18, 0.66, 0.024)
+	var plate := MeshInstance3D.new()
+	var shape := BoxMesh.new()
+	shape.size = Vector3(3.16, 0.64, 0.022)
 	plate.mesh = shape
-	var backing = StandardMaterial3D.new()
-	backing.albedo_color = Color("2b3424")
-	backing.roughness = 0.52
-	backing.metallic = 0.35
+	var backing := StandardMaterial3D.new()
+	backing.albedo_color = Color("2b3527")
+	backing.roughness = 0.62
+	backing.metallic = 0.25
 	plate.material_override = backing
 	mount.add_child(plate)
 
-	var text = MeshInstance3D.new()
+	var border := MeshInstance3D.new()
+	var border_box := BoxMesh.new()
+	border_box.size = Vector3(3.24, 0.72, 0.012)
+	border.mesh = border_box
+	border.position.z = -0.004
+	var border_mat := StandardMaterial3D.new()
+	border_mat.albedo_color = Color("c8b88a")
+	border_mat.roughness = 0.45
+	border_mat.metallic = 0.55
+	border.material_override = border_mat
+	mount.add_child(border)
+
+	var text := MeshInstance3D.new()
 	text.name = "Designation_KM-SAM"
-	var letters = TextMesh.new()
+	var letters := TextMesh.new()
 	letters.text = "KM-SAM"
-	if font:
-		letters.font = font
+	letters.font = font
 	letters.font_size = 86
 	letters.pixel_size = 0.0085
-	letters.depth = 0.002
+	letters.depth = 0.004
 	letters.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	letters.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	text.mesh = letters
-	text.position.z = 0.016
-	var paint = StandardMaterial3D.new()
-	paint.albedo_color = Color("f4eed2")
-	paint.roughness = 0.42
+	text.position.z = 0.015
+	var paint := StandardMaterial3D.new()
+	paint.albedo_color = Color("f6f1d5")
+	paint.roughness = 0.45
 	paint.emission_enabled = true
-	paint.emission = Color("f4eed2")
+	paint.emission = Color("f6f1d5")
 	paint.emission_energy_multiplier = 0.35
 	text.material_override = paint
 	text.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mount.add_child(text)
 
-	if chassis.is_inside_tree():
-		_on_chassis_entered_tree.call_deferred(chassis, font, paint)
-	else:
-		chassis.tree_entered.connect(_on_chassis_entered_tree.bind(chassis, font, paint), CONNECT_ONE_SHOT)
+	# 2. 발사대 차량 지붕 적색 방공 경광등 & 하부 네온 패드 및 아웃리거
+	_build_tel_details(chassis)
 
-
-static func _on_chassis_entered_tree(chassis: Node3D, font: Font, paint: StandardMaterial3D) -> void:
-	if not is_instance_valid(chassis):
-		return
-	var tree = chassis.get_tree()
-	if tree:
-		tree.create_timer(0.04).timeout.connect(_build_full_cheongung_battery.bind(chassis, font, paint))
-	else:
-		_build_full_cheongung_battery(chassis, font, paint)
-
-
-static func _build_full_cheongung_battery(chassis: Node3D, font: Font, paint: StandardMaterial3D) -> void:
-	if not is_instance_valid(chassis) or chassis.has_node("CheongungVerticalErector"):
-		return
-	var launcher = chassis.get_parent()
-	if not is_instance_valid(launcher):
-		return
-	var tree = chassis.get_tree()
-	var main_scene = tree.current_scene if tree else launcher.get_parent()
-
-	# 기존 천무(Chunmoo) 대각선 사각 포드(PodRack)의 모든 메시를 완전히 제거(mesh = null)
-	var pod_rack = _v(launcher.find_child("PodRack", true, false))
+	# 3. 천무 사각형 포드(PodRack) 숨김 후 천궁-II 8연장 90도 수직 원통형 콜드런치 발사관 장착
+	var pod_rack := launcher.find_child("PodRack", true, false) as Node3D
 	if is_instance_valid(pod_rack):
-		if pod_rack is MeshInstance3D:
-			pod_rack.mesh = null
-		if pod_rack is VisualInstance3D or pod_rack is Node3D:
-			pod_rack.visible = false
-		for raw_ch in pod_rack.get_children():
-			var ch = _v(raw_ch)
-			if ch is MeshInstance3D:
-				ch.mesh = null
-			if ch is VisualInstance3D or ch is Node3D:
-				ch.visible = false
-			for raw_sub in ch.find_children("*", "VisualInstance3D", true, false):
-				var sub = _v(raw_sub)
-				if sub is MeshInstance3D:
-					sub.mesh = null
-				if sub is VisualInstance3D or sub is Node3D:
-					sub.visible = false
+		_apply_cheongung_canisters(pod_rack, font)
 
-	# 공용 PBR 고품질 재질 (Clearcoat & Specular Rim 적용)
-	var mat_olive = StandardMaterial3D.new()
-	mat_olive.albedo_color = Color("3d4c33")
-	mat_olive.roughness = 0.42
-	mat_olive.metallic = 0.36
-	mat_olive.rim_enabled = true
-	mat_olive.rim = 0.28
+	# 4. 좌측 다기능레이더(MFR) 차량 + 우측 교전통제소(ECS) 차량 (남산 다리 왼쪽 잔디공원에 배치해 도로 겹침 0%)
+	_apply_radar_and_ecs(launcher, font)
 
-	var mat_dark = StandardMaterial3D.new()
-	mat_dark.albedo_color = Color("222b1d")
-	mat_dark.roughness = 0.46
-	mat_dark.metallic = 0.42
-	mat_dark.rim_enabled = true
-	mat_dark.rim = 0.25
+	# 5. 실시간 애니메이션 드라이버 (레이더 회전·탐지 링·경광등·사이렌·3단 직각 콜드런치)
+	_ensure_runtime_driver(launcher)
 
-	var mat_brown = StandardMaterial3D.new()
-	mat_brown.albedo_color = Color("553e2a")
-	mat_brown.roughness = 0.50
-	mat_brown.metallic = 0.24
 
-	var mat_black = StandardMaterial3D.new()
-	mat_black.albedo_color = Color("161a15")
-	mat_black.roughness = 0.36
-	mat_black.metallic = 0.52
+static func _mat(col: String, rough: float = 0.65, metal: float = 0.25, emis: String = "", emis_e: float = 0.0, alpha: float = 1.0) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	var c := Color(col)
+	c.a = alpha
+	m.albedo_color = c
+	m.roughness = rough
+	m.metallic = metal
+	if alpha < 0.999:
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	if emis != "":
+		m.emission_enabled = true
+		m.emission = Color(emis)
+		m.emission_energy_multiplier = emis_e
+	return m
 
-	var mat_chrome = StandardMaterial3D.new()
-	mat_chrome.albedo_color = Color("e6f0fa")
-	mat_chrome.roughness = 0.10
-	mat_chrome.metallic = 0.96
 
-	var mat_rubber = StandardMaterial3D.new()
-	mat_rubber.albedo_color = Color("141715")
-	mat_rubber.roughness = 0.78
+static func _box(parent: Node3D, sz: Vector3, pos: Vector3, mat: Material, rot_deg: Vector3 = Vector3.ZERO, nm: String = "") -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	if nm != "":
+		mi.name = nm
+	var bm := BoxMesh.new()
+	bm.size = sz
+	mi.mesh = bm
+	mi.position = pos
+	mi.rotation_degrees = rot_deg
+	mi.material_override = mat
+	parent.add_child(mi)
+	return mi
 
-	var mat_pad = StandardMaterial3D.new()
-	mat_pad.albedo_color = Color("1f262e")
-	mat_pad.roughness = 0.38
-	mat_pad.metallic = 0.35
-	mat_pad.clearcoat_enabled = true
-	mat_pad.clearcoat = 0.55
 
-	var mat_pad_line = StandardMaterial3D.new()
-	mat_pad_line.albedo_color = Color("f0b428")
-	mat_pad_line.roughness = 0.32
-	mat_pad_line.emission_enabled = true
-	mat_pad_line.emission = Color("ffaa11")
-	mat_pad_line.emission_energy_multiplier = 0.65
+static func _cyl(parent: Node3D, r_top: float, r_bot: float, h: float, pos: Vector3, mat: Material, rot_deg: Vector3 = Vector3.ZERO, segs: int = 24, nm: String = "") -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	if nm != "":
+		mi.name = nm
+	var cm := CylinderMesh.new()
+	cm.top_radius = r_top
+	cm.bottom_radius = r_bot
+	cm.height = h
+	cm.radial_segments = segs
+	mi.mesh = cm
+	mi.position = pos
+	mi.rotation_degrees = rot_deg
+	mi.material_override = mat
+	parent.add_child(mi)
+	return mi
 
-	var mat_glass = StandardMaterial3D.new()
-	mat_glass.albedo_color = Color(0.35, 0.72, 0.95, 0.90)
-	mat_glass.roughness = 0.08
-	mat_glass.metallic = 0.82
-	mat_glass.emission_enabled = true
-	mat_glass.emission = Color("2e78b0")
-	mat_glass.emission_energy_multiplier = 0.75
 
-	var mat_radar = StandardMaterial3D.new()
-	mat_radar.albedo_color = Color("226872")
-	mat_radar.roughness = 0.18
-	mat_radar.metallic = 0.72
-	mat_radar.emission_enabled = true
-	mat_radar.emission = Color("00f2ff")
-	mat_radar.emission_energy_multiplier = 1.65
+static func _sphere(parent: Node3D, r: float, h: float, pos: Vector3, mat: Material, nm: String = "") -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	if nm != "":
+		mi.name = nm
+	var sm := SphereMesh.new()
+	sm.radius = r
+	sm.height = h
+	mi.mesh = sm
+	mi.position = pos
+	mi.material_override = mat
+	parent.add_child(mi)
+	return mi
 
-	var mat_strobe_red = StandardMaterial3D.new()
-	mat_strobe_red.albedo_color = Color("ff2200")
-	mat_strobe_red.emission_enabled = true
-	mat_strobe_red.emission = Color("ff3311")
-	mat_strobe_red.emission_energy_multiplier = 6.5
 
-	var mat_strobe_amber = StandardMaterial3D.new()
-	mat_strobe_amber.albedo_color = Color("ff9900")
-	mat_strobe_amber.emission_enabled = true
-	mat_strobe_amber.emission = Color("ffaa11")
-	mat_strobe_amber.emission_energy_multiplier = 6.5
+static func _torus(parent: Node3D, inner_r: float, outer_r: float, pos: Vector3, mat: Material, rot_deg: Vector3 = Vector3.ZERO, nm: String = "") -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	if nm != "":
+		mi.name = nm
+	var tm := TorusMesh.new()
+	tm.inner_radius = inner_r
+	tm.outer_radius = outer_r
+	mi.mesh = tm
+	mi.position = pos
+	mi.rotation_degrees = rot_deg
+	mi.material_override = mat
+	parent.add_child(mi)
+	return mi
 
-	var mat_strobe_off = StandardMaterial3D.new()
-	mat_strobe_off.albedo_color = Color("3a1810")
-	mat_strobe_off.roughness = 0.40
 
-	# 차체(Chassis) 기존 트럭 메시들도 고품질 PBR 밀리터리 클리어코트로 리마스터링
-	for raw_cmi in chassis.find_children("*", "MeshInstance3D", true, false):
-		var ch_mi = _v(raw_cmi)
-		if ch_mi is MeshInstance3D:
-			var cm_mesh = _v(ch_mi.mesh)
-			if ch_mi.name != "Designation_KM-SAM" and is_instance_valid(cm_mesh) and not (cm_mesh is TextMesh):
-				var c_mat = _v(ch_mi.get_active_material(0))
-				if c_mat is StandardMaterial3D:
-					var nm = _v(c_mat.duplicate())
-					if nm is StandardMaterial3D:
-						nm.roughness = clampf(nm.roughness * 0.55, 0.18, 0.48)
-						nm.metallic = clampf(maxf(nm.metallic, 0.35), 0.28, 0.85)
-						nm.rim_enabled = true
-						nm.rim = 0.32
-						ch_mi.material_override = nm
+static func _build_tel_details(chassis: Node3D) -> void:
+	if chassis.has_node("TelDetails"):
+		return
+	var det := Node3D.new()
+	det.name = "TelDetails"
+	chassis.add_child(det)
 
-	var key_light = OmniLight3D.new()
-	key_light.name = "CheongungKeyLight"
-	key_light.light_color = Color("dceeff")
-	key_light.light_energy = 2.6
-	key_light.omni_range = 26.0
-	key_light.position = Vector3(-3.5, 6.8, 2.0)
-	chassis.add_child(key_light)
+	var dark_metal := _mat("1e241b", 0.50, 0.65)
+	var chrome_mat := _mat("d8e2dc", 0.20, 0.90)
+	var warn_mat := _mat("e89923", 0.40, 0.20, "e89923", 0.65)
+	var pad_mat := _mat("14202e", 0.75, 0.30, "1c6ea4", 0.45)
+	var pad_line_mat := _mat("38bdf8", 0.30, 0.20, "38bdf8", 1.85)
 
-	# ========================================================================
-	# A. 천궁-II (KM-SAM) 90° 완전 수직 8연장 발사대 (실물 고증)
-	# ========================================================================
-	var erector = Node3D.new()
-	erector.name = "CheongungVerticalErector"
-	chassis.add_child(erector)
+	_box(det, Vector3(4.50, 0.05, 8.80), Vector3(0.0, 0.02, 0.0), pad_mat)
+	_box(det, Vector3(4.62, 0.06, 0.10), Vector3(0.0, 0.03, -4.40), pad_line_mat)
+	_box(det, Vector3(4.62, 0.06, 0.10), Vector3(0.0, 0.03, 4.40), pad_line_mat)
+	_box(det, Vector3(0.10, 0.06, 8.80), Vector3(-2.26, 0.03, 0.0), pad_line_mat)
+	_box(det, Vector3(0.10, 0.06, 8.80), Vector3(2.26, 0.03, 0.0), pad_line_mat)
 
-	erector.add_child(_box(Vector3(2.38, 1.58, 1.55), mat_olive, Vector3(0.0, 2.04, -0.62)))
-	erector.add_child(_box(Vector3(2.42, 0.58, 0.82), mat_brown, Vector3(0.0, 2.12, -0.48)))
-	erector.add_child(_box(Vector3(2.44, 0.48, 0.42), mat_black, Vector3(0.0, 2.20, -0.98)))
-	erector.add_child(_cyl(0.54, 0.54, 0.36, mat_rubber, Vector3(-1.12, 1.88, -1.62), Vector3(0.0, 0.0, PI * 0.5)))
+	for sx in [-1.0, 1.0]:
+		for sz in [-2.65, 2.55]:
+			_box(det, Vector3(0.75, 0.18, 0.28), Vector3(sx * 1.72, 0.52, sz), dark_metal)
+			_cyl(det, 0.09, 0.09, 0.56, Vector3(sx * 2.02, 0.28, sz), chrome_mat)
+			_cyl(det, 0.24, 0.28, 0.08, Vector3(sx * 2.02, 0.04, sz), dark_metal)
+			_box(det, Vector3(0.18, 0.08, 0.30), Vector3(sx * 2.02, 0.56, sz), warn_mat)
 
-	var rack = Node3D.new()
-	rack.name = "VerticalCanisterRack90"
-	rack.position = Vector3(0.0, 1.28, 2.15)
-	erector.add_child(rack)
+	var gen_olive := _mat("333e2c", 0.68, 0.28)
+	_box(det, Vector3(2.50, 1.45, 1.38), Vector3(0.0, 1.68, -1.05), gen_olive)
+	_box(det, Vector3(2.56, 0.12, 1.44), Vector3(0.0, 2.42, -1.05), dark_metal)
 
-	rack.add_child(_box(Vector3(2.60, 0.38, 2.15), mat_black, Vector3(0.0, 0.16, 0.0)))
+	var beacon_root := Node3D.new()
+	beacon_root.name = "TelStrobeBeacon"
+	beacon_root.position = Vector3(0.0, 2.88, -2.95)
+	det.add_child(beacon_root)
+	_cyl(beacon_root, 0.22, 0.26, 0.10, Vector3.ZERO, dark_metal)
 
-	var z_cols = [-0.81, -0.27, 0.27, 0.81]
-	var x_rows = [-0.52, 0.52]
-	var tube_h = 4.65
-	var tube_r = 0.24
-	var muzzles = []
+	var dome_mat := _mat("ff2a1a", 0.15, 0.10, "ff3b1f", 3.8, 0.92)
+	_sphere(beacon_root, 0.22, 0.44, Vector3(0.0, 0.16, 0.0), dome_mat, "StrobeDome")
 
-	for rx in x_rows:
-		for cz in z_cols:
-			var t_node = Node3D.new()
-			t_node.position = Vector3(rx, 0.34, cz)
-			rack.add_child(t_node)
+	var beam_pivot := Node3D.new()
+	beam_pivot.name = "StrobeBeamPivot"
+	beacon_root.add_child(beam_pivot)
+	var cone_mat := _mat("ff3b1f", 0.20, 0.0, "ff2a1a", 2.6, 0.28)
+	_cyl(beam_pivot, 0.06, 0.95, 2.40, Vector3(0.0, 0.18, 1.25), cone_mat, Vector3(90.0, 0.0, 0.0), 16, "StrobeConeA")
+	_cyl(beam_pivot, 0.06, 0.95, 2.40, Vector3(0.0, 0.18, -1.25), cone_mat, Vector3(-90.0, 0.0, 0.0), 16, "StrobeConeB")
 
-			t_node.add_child(_cyl(tube_r, tube_r, tube_h, mat_olive, Vector3(0.0, tube_h * 0.5, 0.0)))
-			t_node.add_child(_cyl(tube_r + 0.006, tube_r + 0.006, 1.12, mat_brown, Vector3(0.0, tube_h * 0.30, 0.0)))
-			t_node.add_child(_cyl(tube_r + 0.006, tube_r + 0.006, 1.12, mat_dark, Vector3(0.0, tube_h * 0.70, 0.0)))
 
-			t_node.add_child(_cyl(tube_r * 0.96, tube_r * 0.70, 0.26, mat_black, Vector3(0.0, -0.10, 0.0)))
-			t_node.add_child(_cyl(tube_r * 0.92, tube_r * 1.04, 0.14, mat_dark, Vector3(0.0, tube_h + 0.05, 0.0)))
+static func _apply_cheongung_canisters(pod_rack: Node3D, font: Font) -> void:
+	if pod_rack.has_node("CheongungAssembly"):
+		return
 
-			var muz = Node3D.new()
-			muz.position = Vector3(0.0, tube_h + 0.18, 0.0)
-			t_node.add_child(muz)
-			muzzles.append(muz)
+	for child in pod_rack.get_children():
+		if child is VisualInstance3D:
+			child.visible = false
+		for sub in child.find_children("*", "VisualInstance3D", true, false):
+			if sub is VisualInstance3D:
+				sub.visible = false
 
-	for tier_y in [0.55, 1.50, 2.45, 3.40, 4.38]:
-		rack.add_child(_box(Vector3(1.70, 0.17, 2.32), mat_dark, Vector3(0.0, tier_y, 0.0)))
+	var assembly := Node3D.new()
+	assembly.name = "CheongungAssembly"
+	# 천궁-II 실물과 동일한 90도 완전 수직 기립 발사 자세
+	assembly.rotation.x = deg_to_rad(-90.0)
+	assembly.position = Vector3(0.0, -0.35, 1.15)
+	pod_rack.add_child(assembly)
 
-	for sz in [-1.10, -0.54, 0.0, 0.54, 1.10]:
-		for sx in [-0.80, 0.80]:
-			rack.add_child(_box(Vector3(0.10, 4.45, 0.10), mat_black, Vector3(sx, 2.50, sz)))
+	var olive_mat := _mat("3a4733", 0.62, 0.24)
+	var camo_tan := _mat("6e6249", 0.68, 0.18)
+	var camo_dark := _mat("22291f", 0.58, 0.35)
+	var cap_mat := _mat("57654e", 0.52, 0.32)
+	var chrome_mat := _mat("dce5df", 0.18, 0.92)
+	var gold_accent := _mat("d4a843", 0.35, 0.70, "d4a843", 0.45)
 
-	rack.add_child(_box(Vector3(1.62, 3.55, 0.08), mat_olive, Vector3(0.0, 2.10, -1.12)))
+	_box(assembly, Vector3(2.52, 0.28, 4.75), Vector3(0.0, 0.02, 0.0), camo_dark)
+	for sx in [-0.72, 0.72]:
+		_cyl(assembly, 0.13, 0.15, 2.25, Vector3(sx, -0.45, 0.85), camo_dark, Vector3(35.0, 0.0, 0.0))
+		_cyl(assembly, 0.09, 0.09, 2.15, Vector3(sx, -0.25, 1.25), chrome_mat, Vector3(35.0, 0.0, 0.0))
+
+	for z_offset in [-1.95, -0.65, 0.65, 1.95]:
+		_box(assembly, Vector3(2.64, 1.38, 0.22), Vector3(0.0, 0.72, z_offset), camo_dark)
+		_box(assembly, Vector3(2.70, 0.14, 0.26), Vector3(0.0, 1.38, z_offset), gold_accent)
+
+	var x_offsets := [-0.87, -0.29, 0.29, 0.87]
+	var y_offsets := [0.42, 1.00]
+	var tube_length := 4.75
+	var tube_radius := 0.258
+
+	for r_idx in range(y_offsets.size()):
+		var row_y: float = y_offsets[r_idx]
+		for c_idx in range(x_offsets.size()):
+			var col_x: float = x_offsets[c_idx]
+			var tube_root := Node3D.new()
+			tube_root.name = "Canister_%d_%d" % [r_idx, c_idx]
+			tube_root.position = Vector3(col_x, row_y, 0.0)
+			assembly.add_child(tube_root)
+
+			_cyl(tube_root, tube_radius, tube_radius, tube_length, Vector3.ZERO, olive_mat, Vector3(90.0, 0.0, 0.0), 28)
+			_cyl(tube_root, tube_radius + 0.004, tube_radius + 0.004, 1.15, Vector3(0.0, 0.0, -0.85), camo_tan, Vector3(90.0, 0.0, 0.0), 28)
+			_cyl(tube_root, tube_radius + 0.004, tube_radius + 0.004, 0.95, Vector3(0.0, 0.0, 1.05), camo_tan, Vector3(90.0, 0.0, 0.0), 28)
+
+			for ring_z in [-2.15, -1.42, -0.70, 0.0, 0.70, 1.42, 2.15]:
+				_cyl(tube_root, tube_radius + 0.020, tube_radius + 0.020, 0.13, Vector3(0.0, 0.0, ring_z), camo_dark, Vector3(90.0, 0.0, 0.0), 28)
+
+			_cyl(tube_root, tube_radius * 0.90, tube_radius * 1.02, 0.12, Vector3(0.0, 0.0, -tube_length * 0.5 - 0.05), cap_mat, Vector3(90.0, 0.0, 0.0), 28)
+			_box(tube_root, Vector3(tube_radius * 1.65, 0.03, 0.03), Vector3(0.0, 0.0, -tube_length * 0.5 - 0.11), camo_dark)
+			_box(tube_root, Vector3(0.03, tube_radius * 1.65, 0.03), Vector3(0.0, 0.0, -tube_length * 0.5 - 0.11), camo_dark)
+			_cyl(tube_root, tube_radius * 1.03, tube_radius * 0.96, 0.16, Vector3(0.0, 0.0, tube_length * 0.5 + 0.05), camo_dark, Vector3(90.0, 0.0, 0.0), 28)
+
+	var muzzle_flash := Node3D.new()
+	muzzle_flash.name = "ColdLaunchMuzzlePlume"
+	muzzle_flash.position = Vector3(0.0, 0.72, -tube_length * 0.5 - 0.30)
+	muzzle_flash.visible = false
+	assembly.add_child(muzzle_flash)
+	var plume_mat := _mat("ffaa22", 0.20, 0.0, "ff7711", 4.5, 0.80)
+	var smoke_ring_mat := _mat("e2e8f0", 0.85, 0.0, "94a3b8", 0.6, 0.55)
+	_sphere(muzzle_flash, 0.85, 1.70, Vector3.ZERO, plume_mat, "PlumeCore")
+	_torus(muzzle_flash, 0.55, 1.25, Vector3(0.0, 0.0, -0.25), smoke_ring_mat, Vector3(90.0, 0.0, 0.0), "PlumeRing")
 
 	if font:
-		var r_badge = MeshInstance3D.new()
-		var r_tm = TextMesh.new()
-		r_tm.text = "천궁-II KM-SAM"
-		r_tm.font = font
-		r_tm.font_size = 54
-		r_tm.pixel_size = 0.0072
-		r_tm.depth = 0.002
-		r_badge.mesh = r_tm
-		r_badge.position = Vector3(-0.88, 2.98, 0.0)
-		r_badge.rotation.y = -PI * 0.5
-		r_badge.material_override = paint
-		rack.add_child(r_badge)
+		var stencil := _mat("f8f3dc", 0.45, 0.10, "f8f3dc", 0.45)
+		for side_sign in [-1.0, 1.0]:
+			var badge := MeshInstance3D.new()
+			var badge_text := TextMesh.new()
+			badge_text.text = "천궁-II KM-SAM"
+			badge_text.font = font
+			badge_text.font_size = 54
+			badge_text.pixel_size = 0.0072
+			badge_text.depth = 0.003
+			badge.mesh = badge_text
+			badge.position = Vector3(side_sign * 1.35, 0.72, 0.0)
+			badge.rotation.y = -PI * 0.5 if side_sign < 0.0 else PI * 0.5
+			badge.material_override = stencil
+			badge.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			assembly.add_child(badge)
 
-	for px in [-0.62, 0.62]:
-		erector.add_child(_cyl(0.13, 0.13, 1.80, mat_olive, Vector3(px, 1.98, 0.42), Vector3(deg_to_rad(38.0), 0.0, 0.0)))
-		erector.add_child(_cyl(0.085, 0.085, 2.05, mat_chrome, Vector3(px, 2.98, 1.20), Vector3(deg_to_rad(38.0), 0.0, 0.0)))
+		var rear_badge := MeshInstance3D.new()
+		var rear_text := TextMesh.new()
+		rear_text.text = "천궁-II KM-SAM"
+		rear_text.font = font
+		rear_text.font_size = 50
+		rear_text.pixel_size = 0.0072
+		rear_text.depth = 0.003
+		rear_badge.mesh = rear_text
+		rear_badge.position = Vector3(0.0, 1.44, -0.35)
+		rear_badge.rotation.x = PI * 0.5
+		rear_badge.material_override = stencil
+		rear_badge.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		assembly.add_child(rear_badge)
 
-	for jz in [-0.55, 2.95]:
-		for jx in [-1.52, 1.52]:
-			erector.add_child(_box(Vector3(0.26, 1.20, 0.26), mat_dark, Vector3(jx, 0.88, jz)))
-			erector.add_child(_cyl(0.08, 0.08, 0.70, mat_chrome, Vector3(jx, 0.32, jz)))
-			erector.add_child(_cyl(0.30, 0.32, 0.10, mat_black, Vector3(jx, 0.04, jz)))
 
-	var lad = Node3D.new()
-	lad.position = Vector3(-1.50, 0.68, 0.92)
-	lad.rotation.z = -deg_to_rad(14.0)
-	erector.add_child(lad)
-	lad.add_child(_box(Vector3(0.04, 1.32, 0.04), mat_black, Vector3(0.0, 0.0, -0.18)))
-	lad.add_child(_box(Vector3(0.04, 1.32, 0.04), mat_black, Vector3(0.0, 0.0, 0.18)))
-	for ri in range(5):
-		lad.add_child(_box(Vector3(0.04, 0.035, 0.36), mat_chrome, Vector3(0.0, -0.48 + float(ri) * 0.24, 0.0)))
+static func _build_tactical_truck_base(root: Node3D, pad_glow_col: String) -> void:
+	var olive := _mat("384531", 0.65, 0.25)
+	var camo_tan := _mat("6b5f47", 0.70, 0.18)
+	var dark_metal := _mat("1c2219", 0.52, 0.60)
+	var glass_mat := _mat("38bdf8", 0.15, 0.85, "0ea5e9", 0.65, 0.75)
+	var tire_mat := _mat("141715", 0.88, 0.10)
+	var rim_mat := _mat("4a5546", 0.45, 0.75)
+	var head_mat := _mat("fef08a", 0.15, 0.10, "fde047", 3.2)
+	var pad_mat := _mat("111b27", 0.80, 0.30, pad_glow_col, 0.35)
+	var line_mat := _mat(pad_glow_col, 0.25, 0.20, pad_glow_col, 2.1)
 
-	# ========================================================================
-	# B. 다기능레이더(MFR) 및 교전통제소(ECS) — 스테이지별 자동 비율 스케일링 & 남산 도로 겹침 원천 차단!
-	# ========================================================================
-	var strobe_list = []
-	_build_strobe(erector, Vector3(-0.58, 3.04, -2.65), mat_black, mat_strobe_red, mat_strobe_off, true, strobe_list)
-	_build_strobe(erector, Vector3(0.58, 3.04, -2.65), mat_black, mat_strobe_amber, mat_strobe_off, false, strobe_list)
+	_box(root, Vector3(3.40, 0.05, 6.90), Vector3(0.0, -0.02, 0.0), pad_mat)
+	_box(root, Vector3(3.48, 0.06, 0.09), Vector3(0.0, 0.0, -3.45), line_mat)
+	_box(root, Vector3(3.48, 0.06, 0.09), Vector3(0.0, 0.0, 3.45), line_mat)
+	_box(root, Vector3(0.09, 0.06, 6.90), Vector3(-1.72, 0.0, 0.0), line_mat)
+	_box(root, Vector3(0.09, 0.06, 6.90), Vector3(1.72, 0.0, 0.0), line_mat)
 
-	# 1) 다기능레이더(MFR) 차량
-	var mfr = Node3D.new()
-	mfr.name = "CheongungMFRVehicle"
-	mfr.position = Vector3(-6.2, 0.10, -0.45)
-	mfr.rotation.y = deg_to_rad(52.0)
-	mfr.scale = Vector3(0.30, 0.30, 0.30)
+	_box(root, Vector3(2.36, 0.38, 6.10), Vector3(0.0, 0.56, 0.0), dark_metal)
+	_box(root, Vector3(2.42, 0.24, 0.18), Vector3(0.0, 0.52, -3.08), dark_metal)
+
+	_box(root, Vector3(2.32, 1.48, 1.72), Vector3(0.0, 1.42, -2.12), olive)
+	_box(root, Vector3(2.34, 0.52, 0.82), Vector3(0.0, 1.15, -1.55), camo_tan)
+	_box(root, Vector3(2.08, 0.58, 0.06), Vector3(0.0, 1.66, -2.99), glass_mat)
+	_box(root, Vector3(0.04, 0.60, 0.08), Vector3(0.0, 1.66, -3.00), dark_metal)
+
+	for sx in [-0.82, 0.82]:
+		_box(root, Vector3(0.32, 0.16, 0.06), Vector3(sx, 0.88, -3.00), head_mat)
+
+	for sx in [-1.0, 1.0]:
+		for wz in [-2.22, -1.02, 1.02, 2.22]:
+			_cyl(root, 0.46, 0.46, 0.36, Vector3(sx * 1.18, 0.46, wz), tire_mat, Vector3(0.0, 0.0, 90.0), 20)
+			_cyl(root, 0.24, 0.24, 0.38, Vector3(sx * 1.18, 0.46, wz), rim_mat, Vector3(0.0, 0.0, 90.0), 16)
+		for sz in [-2.05, 2.05]:
+			_box(root, Vector3(0.55, 0.14, 0.22), Vector3(sx * 1.38, 0.38, sz), dark_metal)
+			_cyl(root, 0.16, 0.20, 0.06, Vector3(sx * 1.60, 0.03, sz), dark_metal)
+
+	var stb := Node3D.new()
+	stb.name = "VehicleStrobe"
+	stb.position = Vector3(0.0, 2.22, -2.35)
+	root.add_child(stb)
+	var dome_mat := _mat("ff3b1f", 0.15, 0.10, "ff2a1a", 3.6, 0.92)
+	_sphere(stb, 0.16, 0.32, Vector3.ZERO, dome_mat, "Dome")
+	var pivot := Node3D.new()
+	pivot.name = "BeamPivot"
+	stb.add_child(pivot)
+	var cone_mat := _mat("ff3b1f", 0.20, 0.0, "ff2a1a", 2.2, 0.25)
+	_cyl(pivot, 0.04, 0.68, 1.75, Vector3(0.0, 0.0, 0.90), cone_mat, Vector3(90.0, 0.0, 0.0), 14)
+	_cyl(pivot, 0.04, 0.68, 1.75, Vector3(0.0, 0.0, -0.90), cone_mat, Vector3(-90.0, 0.0, 0.0), 14)
+
+
+static func _apply_radar_and_ecs(launcher: Node3D, font: Font) -> void:
+	if launcher.has_node("CheongungMFR"):
+		return
+
+	var olive := _mat("384531", 0.62, 0.26)
+	var camo_tan := _mat("6e6249", 0.68, 0.20)
+	var dark_metal := _mat("1e251b", 0.48, 0.62)
+	var radar_face_mat := _mat("264653", 0.28, 0.72, "2dd4bf", 0.75)
+	var radar_grid_mat := _mat("5eead4", 0.22, 0.80, "5eead4", 1.95)
+	var wave_mat := _mat("2dd4bf", 0.20, 0.10, "14b8a6", 2.8, 0.30)
+	var ring_mat := _mat("38bdf8", 0.20, 0.10, "0ea5e9", 3.2, 0.72)
+	var label_mat := _mat("e2f1ff", 0.35, 0.10, "38bdf8", 0.85)
+
+	# 1) 좌측 다기능레이더(MFR) 차량 (X = -5.80, Z = -0.35, scale = 0.36)
+	var mfr := Node3D.new()
+	mfr.name = "CheongungMFR"
+	mfr.position = Vector3(-5.80, 0.08, -0.35)
+	mfr.scale = Vector3(0.36, 0.36, 0.36)
+	mfr.rotation_degrees = Vector3(0.0, 14.0, 0.0)
 	launcher.add_child(mfr)
 
-	mfr.add_child(_box(Vector3(3.40, 0.36, 7.00), mat_pad, Vector3(0.0, -0.18, 0.0)))
-	mfr.add_child(_box(Vector3(3.48, 0.08, 7.08), mat_pad_line, Vector3(0.0, -0.02, 0.0)))
+	_build_tactical_truck_base(mfr, "14b8a6")
+	_box(mfr, Vector3(2.24, 1.16, 3.65), Vector3(0.0, 1.32, 0.85), olive)
+	_box(mfr, Vector3(2.28, 0.45, 1.45), Vector3(0.0, 1.35, 1.55), camo_tan)
 
-	mfr.add_child(_box(Vector3(2.35, 0.55, 6.10), mat_dark, Vector3(0.0, 0.85, 0.0)))
-	mfr.add_child(_box(Vector3(2.30, 1.45, 1.75), mat_olive, Vector3(0.0, 1.85, -2.10)))
-	mfr.add_child(_box(Vector3(2.10, 0.62, 0.08), mat_glass, Vector3(0.0, 2.02, -2.98)))
-	mfr.add_child(_box(Vector3(2.32, 1.40, 3.55), mat_olive, Vector3(0.0, 1.82, 0.85)))
-	mfr.add_child(_box(Vector3(2.34, 0.65, 1.55), mat_brown, Vector3(0.0, 1.85, 0.60)))
-	for wz in [-2.20, -0.90, 0.90, 2.20]:
-		for wx in [-1.18, 1.18]:
-			mfr.add_child(_cyl(0.52, 0.52, 0.36, mat_rubber, Vector3(wx, 0.52, wz), Vector3(0.0, 0.0, PI * 0.5)))
-
-	var radar_head = Node3D.new()
-	radar_head.name = "MFRRotatingAntenna"
-	radar_head.position = Vector3(0.0, 2.65, 1.20)
+	var radar_head := Node3D.new()
+	radar_head.name = "MFRRadarHead"
+	radar_head.position = Vector3(0.0, 2.10, 1.05)
 	mfr.add_child(radar_head)
-	radar_head.add_child(_cyl(0.78, 0.88, 0.45, mat_black, Vector3(0.0, 0.22, 0.0)))
-	radar_head.add_child(_box(Vector3(1.65, 1.15, 1.20), mat_olive, Vector3(0.0, 1.05, 0.45)))
 
-	var array_panel = Node3D.new()
-	array_panel.position = Vector3(0.0, 1.60, -0.25)
-	array_panel.rotation.x = deg_to_rad(-28.0)
-	radar_head.add_child(array_panel)
-	array_panel.add_child(_box(Vector3(2.35, 2.65, 0.28), mat_dark, Vector3.ZERO))
-	array_panel.add_child(_box(Vector3(2.12, 2.42, 0.08), mat_radar, Vector3(0.0, 0.0, -0.16)))
+	_cyl(radar_head, 0.68, 0.78, 0.42, Vector3(0.0, 0.0, 0.0), dark_metal)
+	_box(radar_head, Vector3(1.12, 0.78, 0.92), Vector3(0.0, 0.52, 0.15), olive)
 
-	var beam_mat = StandardMaterial3D.new()
-	beam_mat.albedo_color = Color(0.0, 0.92, 1.0, 0.18)
-	beam_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	beam_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	beam_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	beam_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	array_panel.add_child(_cyl(2.2, 0.20, 10.5, beam_mat, Vector3(0.0, 0.2, -5.3), Vector3(PI * 0.5, 0.0, 0.0)))
+	var array_pivot := Node3D.new()
+	array_pivot.name = "PhasedArrayPanel"
+	array_pivot.position = Vector3(0.0, 1.25, 0.0)
+	array_pivot.rotation_degrees = Vector3(-22.0, 0.0, 0.0)
+	radar_head.add_child(array_pivot)
 
-	var r_tw = radar_head.create_tween().set_loops()
-	r_tw.tween_property(radar_head, "rotation:y", TAU, 2.6).from(0.0)
+	_box(array_pivot, Vector3(2.15, 2.38, 0.34), Vector3.ZERO, olive)
+	_box(array_pivot, Vector3(1.92, 2.14, 0.06), Vector3(0.0, 0.0, -0.19), radar_face_mat)
+	for gx in [-0.65, 0.0, 0.65]:
+		_box(array_pivot, Vector3(0.04, 2.10, 0.08), Vector3(gx, 0.0, -0.20), radar_grid_mat)
+	for gy in [-0.72, 0.0, 0.72]:
+		_box(array_pivot, Vector3(1.88, 0.04, 0.08), Vector3(0.0, gy, -0.20), radar_grid_mat)
 
-	for wi in range(4):
-		var w_ring = MeshInstance3D.new()
-		var w_torus = TorusMesh.new()
-		w_torus.inner_radius = 0.62
-		w_torus.outer_radius = 0.72
-		w_ring.mesh = w_torus
-		var w_mat = StandardMaterial3D.new()
-		w_mat.albedo_color = Color(0.0, 0.95, 1.0, 0.78)
-		w_mat.emission_enabled = true
-		w_mat.emission = Color("00f2ff")
-		w_mat.emission_energy_multiplier = 4.2
-		w_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		w_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-		w_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		w_ring.material_override = w_mat
-		mfr.add_child(w_ring)
-		_animate_radar_wave(w_ring, w_mat, float(wi) * 0.45)
+	var wave_emitter := Node3D.new()
+	wave_emitter.name = "RadarWaveEmitter"
+	wave_emitter.position = Vector3(0.0, 0.0, -0.25)
+	array_pivot.add_child(wave_emitter)
 
-	_build_strobe(mfr, Vector3(-0.62, 2.72, -2.50), mat_black, mat_strobe_red, mat_strobe_off, true, strobe_list)
-	_build_strobe(mfr, Vector3(0.62, 2.72, -2.50), mat_black, mat_strobe_amber, mat_strobe_off, false, strobe_list)
+	_cyl(wave_emitter, 0.08, 1.85, 5.20, Vector3(0.0, 0.0, -2.65), wave_mat, Vector3(90.0, 0.0, 0.0), 24, "ScanBeamCone")
 
-	# 2) 교전통제소(ECS) 지휘차량 + 4연장 통신 안테나
-	var ecs = Node3D.new()
-	ecs.name = "CheongungECSVehicle"
-	ecs.position = Vector3(2.35, 0.10, -0.45)
-	ecs.rotation.y = deg_to_rad(-52.0)
-	ecs.scale = Vector3(0.30, 0.30, 0.30)
+	for idx in range(3):
+		var pulse_ring := _torus(wave_emitter, 0.35 + idx * 0.25, 0.44 + idx * 0.25, Vector3(0.0, 0.0, -0.8 - idx * 1.3), ring_mat, Vector3(90.0, 0.0, 0.0), "RadarPulse_%d" % idx)
+		pulse_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+	var sky_dome := Node3D.new()
+	sky_dome.name = "SkyLockRings"
+	sky_dome.position = Vector3(0.0, 4.40, 0.0)
+	mfr.add_child(sky_dome)
+	_torus(sky_dome, 2.10, 2.24, Vector3(0.0, 0.0, 0.0), ring_mat, Vector3(12.0, 0.0, -8.0), "SkyRingOuter")
+	_torus(sky_dome, 1.25, 1.36, Vector3(0.0, 0.85, 0.0), radar_grid_mat, Vector3(-10.0, 0.0, 12.0), "SkyRingInner")
+
+	if font:
+		var mfr_lbl := MeshInstance3D.new()
+		var mfr_tm := TextMesh.new()
+		mfr_tm.text = "다기능레이더 MFR"
+		mfr_tm.font = font
+		mfr_tm.font_size = 46
+		mfr_tm.pixel_size = 0.0080
+		mfr_tm.depth = 0.003
+		mfr_lbl.mesh = mfr_tm
+		mfr_lbl.position = Vector3(0.0, 4.15, 0.0)
+		mfr_lbl.material_override = label_mat
+		mfr_lbl.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mfr.add_child(mfr_lbl)
+
+	# 2) 우측 교전통제소(ECS) 지휘차량 (X = +1.85, Z = -0.35, scale = 0.36 -> 남산 다리 왼쪽 잔디공원에 배치되어 다리 도로 겹침 0%!)
+	var ecs := Node3D.new()
+	ecs.name = "CheongungECS"
+	ecs.position = Vector3(1.85, 0.08, -0.35)
+	ecs.scale = Vector3(0.36, 0.36, 0.36)
+	ecs.rotation_degrees = Vector3(0.0, -14.0, 0.0)
 	launcher.add_child(ecs)
 
-	ecs.add_child(_box(Vector3(3.40, 0.36, 7.00), mat_pad, Vector3(0.0, -0.18, 0.0)))
-	ecs.add_child(_box(Vector3(3.48, 0.08, 7.08), mat_pad_line, Vector3(0.0, -0.02, 0.0)))
+	_build_tactical_truck_base(ecs, "38bdf8")
 
-	ecs.add_child(_box(Vector3(2.35, 0.55, 6.10), mat_dark, Vector3(0.0, 0.85, 0.0)))
-	ecs.add_child(_box(Vector3(2.30, 1.45, 1.75), mat_olive, Vector3(0.0, 1.85, -2.10)))
-	ecs.add_child(_box(Vector3(2.10, 0.62, 0.08), mat_glass, Vector3(0.0, 2.02, -2.98)))
-	ecs.add_child(_box(Vector3(2.42, 1.95, 3.85), mat_olive, Vector3(0.0, 2.10, 0.90)))
-	ecs.add_child(_box(Vector3(2.44, 0.85, 1.85), mat_brown, Vector3(0.0, 2.05, 0.80)))
+	_box(ecs, Vector3(2.34, 1.72, 3.95), Vector3(0.0, 1.62, 0.82), olive)
+	_box(ecs, Vector3(2.38, 0.56, 1.65), Vector3(0.0, 1.55, 1.25), camo_tan)
+	_box(ecs, Vector3(1.55, 0.32, 1.85), Vector3(0.0, 2.58, 0.65), dark_metal)
+
+	var ant_mat := _mat("cbd5e1", 0.25, 0.88)
+	var tip_mat := _mat("38bdf8", 0.15, 0.20, "38bdf8", 3.5)
 	for az in [-0.65, 0.35, 1.35, 2.35]:
-		ecs.add_child(_cyl(0.03, 0.05, 3.55, mat_chrome, Vector3(-1.05, 4.80, az)))
-		ecs.add_child(_sphere(0.10, mat_radar, Vector3(-1.05, 6.60, az)))
-	for wz in [-2.20, -0.90, 0.90, 2.20]:
-		for wx in [-1.18, 1.18]:
-			ecs.add_child(_cyl(0.52, 0.52, 0.36, mat_rubber, Vector3(wx, 0.52, wz), Vector3(0.0, 0.0, PI * 0.5)))
+		var side_x := -1.06 if (az < 0.8) else 1.06
+		_cyl(ecs, 0.025, 0.045, 2.65, Vector3(side_x, 3.65, az), ant_mat)
+		_sphere(ecs, 0.075, 0.15, Vector3(side_x, 5.00, az), tip_mat, "AntTip_%d" % int((az + 1.0) * 10.0))
 
-	_build_strobe(ecs, Vector3(-0.62, 2.72, -2.50), mat_black, mat_strobe_amber, mat_strobe_off, false, strobe_list)
-	_build_strobe(ecs, Vector3(0.62, 2.72, -2.50), mat_black, mat_strobe_red, mat_strobe_off, true, strobe_list)
+	var sat_pivot := Node3D.new()
+	sat_pivot.name = "ECSSatDish"
+	sat_pivot.position = Vector3(0.0, 2.85, 2.05)
+	ecs.add_child(sat_pivot)
+	_cyl(sat_pivot, 0.52, 0.14, 0.22, Vector3(0.0, 0.15, 0.0), ant_mat, Vector3(-38.0, 0.0, 0.0), 20)
 
-	# 3) 데이터링크 광파 펄스 노드 (스테이지별 MFR/ECS/TEL 위치에 맞춰 실시간 이동)
-	var pulses_a = []
-	var pulses_b = []
-	for di in range(5):
-		var pulse_a = _sphere(0.08, mat_radar, Vector3.ZERO)
-		pulse_a.name = "CheongungPulseA_" + str(di)
-		launcher.add_child(pulse_a)
-		pulses_a.append(pulse_a)
+	if font:
+		var ecs_lbl := MeshInstance3D.new()
+		var ecs_tm := TextMesh.new()
+		ecs_tm.text = "교전통제소 ECS"
+		ecs_tm.font = font
+		ecs_tm.font_size = 46
+		ecs_tm.pixel_size = 0.0080
+		ecs_tm.depth = 0.003
+		ecs_lbl.mesh = ecs_tm
+		ecs_lbl.position = Vector3(0.0, 4.15, 0.0)
+		ecs_lbl.material_override = label_mat
+		ecs_lbl.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		ecs.add_child(ecs_lbl)
 
-		var pulse_b = _sphere(0.08, mat_radar, Vector3.ZERO)
-		pulse_b.name = "CheongungPulseB_" + str(di)
-		launcher.add_child(pulse_b)
-		pulses_b.append(pulse_b)
+	# 3) 다기능레이더(MFR) -> 유도탄발사대(TEL) -> 교전통제소(ECS) 데이터링크 광파 펄스
+	var dl_root := Node3D.new()
+	dl_root.name = "DataLinkPulses"
+	launcher.add_child(dl_root)
+	for i in range(8):
+		var dot := _sphere(dl_root, 0.048, 0.096, Vector3(-5.20 + i * 0.95, 0.55, -0.35), tip_mat, "LinkDot_%d" % i)
+		dot.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 	# 4) 방공 경보 사이렌 오디오 스트림 생성
-	var audio_player = AudioStreamPlayer.new()
-	audio_player.name = "CheongungSirenPlayer"
-	var gen = AudioStreamGenerator.new()
-	gen.mix_rate = 22050.0
-	gen.buffer_length = 0.25
-	audio_player.stream = gen
-	audio_player.volume_db = -9.0
-	launcher.add_child(audio_player)
-	audio_player.play()
-
-	if is_instance_valid(main_scene) and muzzles.size() > 0:
-		var new_socks = []
-		for raw_m in muzzles:
-			var m_node = _v(raw_m)
-			new_socks.append(launcher.to_local(m_node.global_position))
-		if "launcher_sockets" in main_scene:
-			main_scene.set("launcher_sockets", new_socks)
-
-	var state = {
-		"launcher": launcher,
-		"chassis": chassis,
-		"pod_rack": pod_rack,
-		"rack": rack,
-		"mfr": mfr,
-		"ecs": ecs,
-		"pulses_a": pulses_a,
-		"pulses_b": pulses_b,
-		"main": main_scene,
-		"muzzles": muzzles,
-		"mfr_head": array_panel,
-		"strobes": strobe_list,
-		"mat_black": mat_black,
-		"mat_radar": mat_radar,
-		"audio_player": audio_player,
-		"next_tube": 0,
-		"time": 0.0,
-		"beam_timer": 0.0,
-		"siren_timer": 0.0,
-		"siren_phase": 0.0,
-		"prev_threats": 0,
-		"remaster_timer": 0.0,
-		"is_namsan": true,
-		"last_dogleg_time": -10.0,
-		"styled_meshes": {},
-		"searchlights": [],
-		"lock_rings": {},
-		"doglegs": [],
-		"hidden_projectiles": {},
-		"pending_nodes": []
-	}
-
-	# 5) 3D 월드 전체 고퀄리티 그래픽 리마스터링 (하늘/조명/한강수면/빌딩/남산타워/광화문/대공탐조등/별자리) 즉시 실행!
-	if is_instance_valid(main_scene):
-		_setup_world_3d_overhaul(main_scene, state)
-		_remaster_all_scene_meshes(main_scene, state)
-
-	if tree:
-		tree.node_added.connect(_on_scene_node_added.bind(state))
-		tree.process_frame.connect(_on_pre_process.bind(state))
-		RenderingServer.frame_pre_draw.connect(_on_pre_draw.bind(state))
+	_create_siren_player(launcher)
 
 
-# ============================================================================
-# C. 전반적인 3D 그래픽 고퀄리티 리마스터링 엔진
-# ============================================================================
-static func _setup_world_3d_overhaul(main_scene: Node, state: Dictionary) -> void:
-	if main_scene.has_node("CheongungWorld3DOverhaul"):
+static func _create_siren_player(launcher: Node3D) -> void:
+	if launcher.has_node("AirDefenseSiren"):
 		return
-	var env_root = Node3D.new()
-	env_root.name = "CheongungWorld3DOverhaul"
-	main_scene.add_child(env_root)
+	var player := AudioStreamPlayer.new()
+	player.name = "AirDefenseSiren"
+	player.volume_db = -11.5
 
-	for raw_dl in main_scene.find_children("*", "DirectionalLight3D", true, false):
-		var dlight = _v(raw_dl)
-		if dlight is DirectionalLight3D:
-			dlight.shadow_enabled = true
-			dlight.light_energy = maxf(dlight.light_energy, 1.35)
-			dlight.light_color = Color("e4f0ff")
+	var mix_rate := 22050
+	var duration_sec := 1.6
+	var total_samples := int(mix_rate * duration_sec)
+	var pcm := PackedByteArray()
+	pcm.resize(total_samples * 2)
 
-	var rim_sun = DirectionalLight3D.new()
-	rim_sun.name = "CheongungRimSun"
-	rim_sun.light_color = Color("ff9e58")
-	rim_sun.light_energy = 0.88
-	rim_sun.shadow_enabled = false
-	rim_sun.rotation_degrees = Vector3(-24.0, 142.0, 0.0)
-	env_root.add_child(rim_sun)
+	for i in range(total_samples):
+		var t := float(i) / float(mix_rate)
+		var sweep := 0.5 - 0.5 * cos(t * TAU / duration_sec)
+		var freq := 520.0 + 420.0 * sweep
+		var phase := t * freq * TAU
+		var env := sin( clampf(t / duration_sec, 0.0, 1.0) * PI )
+		var val := (sin(phase) * 0.65 + sin(phase * 2.0) * 0.22) * env
+		var sample_int := clampi(int(val * 14000.0), -32767, 32767)
+		pcm.encode_s16(i * 2, sample_int)
 
-	var tower_light = OmniLight3D.new()
-	tower_light.name = "CheongungLandmarkLight"
-	tower_light.light_color = Color("00f5ff")
-	tower_light.light_energy = 6.5
-	tower_light.omni_range = 42.0
-	tower_light.position = Vector3(0.0, 16.5, -24.0)
-	env_root.add_child(tower_light)
-
-	var palace_light = OmniLight3D.new()
-	palace_light.name = "CheongungPalaceWarmLight"
-	palace_light.light_color = Color("ffbb55")
-	palace_light.light_energy = 5.2
-	palace_light.omni_range = 38.0
-	palace_light.position = Vector3(0.0, 8.5, -18.0)
-	env_root.add_child(palace_light)
-
-	for rx in [-16.0, 0.0, 16.0]:
-		var river_glow = OmniLight3D.new()
-		river_glow.light_color = Color("2299ff") if rx != 0.0 else Color("ffaa44")
-		river_glow.light_energy = 3.2
-		river_glow.omni_range = 24.0
-		river_glow.position = Vector3(rx, 3.2, -6.5)
-		env_root.add_child(river_glow)
-
-	var sl_mat = StandardMaterial3D.new()
-	sl_mat.albedo_color = Color(0.55, 0.88, 1.0, 0.11)
-	sl_mat.emission_enabled = true
-	sl_mat.emission = Color("88ddff")
-	sl_mat.emission_energy_multiplier = 2.2
-	sl_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	sl_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	sl_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	sl_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-
-	var sl_positions = [
-		Vector3(-24.0, 1.5, -22.0),
-		Vector3(-11.0, 1.5, -25.0),
-		Vector3(11.0, 1.5, -25.0),
-		Vector3(24.0, 1.5, -22.0)
-	]
-	var sl_list = []
-	for si in range(sl_positions.size()):
-		var sl_pivot = Node3D.new()
-		sl_pivot.name = "CheongungSearchlight_" + str(si)
-		sl_pivot.position = sl_positions[si]
-		env_root.add_child(sl_pivot)
-		var beam = _cyl(3.2, 0.18, 36.0, sl_mat, Vector3(0.0, 18.0, 0.0))
-		sl_pivot.add_child(beam)
-		sl_list.append(sl_pivot)
-	state["searchlights"] = sl_list
-
-	var star_mat_a = StandardMaterial3D.new()
-	star_mat_a.albedo_color = Color("ffffff")
-	star_mat_a.emission_enabled = true
-	star_mat_a.emission = Color("d8ecff")
-	star_mat_a.emission_energy_multiplier = 5.5
-	star_mat_a.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-
-	var star_mat_b = StandardMaterial3D.new()
-	star_mat_b.albedo_color = Color("ffe8b0")
-	star_mat_b.emission_enabled = true
-	star_mat_b.emission = Color("ffcc66")
-	star_mat_b.emission_energy_multiplier = 4.8
-	star_mat_b.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-
-	for idx in range(42):
-		var sx = -44.0 + fmod(float(idx) * 17.3, 88.0)
-		var sy = 16.0 + fmod(float(idx) * 7.9, 22.0)
-		var sz = -34.0 - fmod(float(idx) * 5.7, 18.0)
-		var sr = 0.06 + fmod(float(idx) * 0.03, 0.08)
-		var smat = star_mat_a if (idx % 3 != 0) else star_mat_b
-		var star = _sphere(sr, smat, Vector3(sx, sy, sz))
-		env_root.add_child(star)
+	var wav := AudioStreamWAV.new()
+	wav.format = AudioStreamWAV.FORMAT_16_BITS
+	wav.mix_rate = mix_rate
+	wav.stereo = false
+	wav.data = pcm
+	player.stream = wav
+	launcher.add_child(player)
 
 
-static func _enforce_world_environment(main_scene: Node) -> void:
-	var wenv = _v(main_scene.find_child("*", "WorldEnvironment", true, false))
-	if is_instance_valid(wenv) and wenv is WorldEnvironment:
-		var env = _v(wenv.environment)
-		if is_instance_valid(env) and env is Environment:
-			env.tonemap_mode = Environment.TONE_MAPPER_ACES
-			env.tonemap_exposure = 1.18
-			env.glow_enabled = true
-			env.glow_intensity = 1.42
-			env.glow_strength = 1.12
-			env.glow_bloom = 0.28
-			env.adjustment_enabled = true
-			env.adjustment_brightness = 1.03
-			env.adjustment_contrast = 1.20
-			env.adjustment_saturation = 1.26
-			env.fog_enabled = true
-			env.fog_light_color = Color("182c52")
-			env.fog_light_energy = 0.55
-			env.fog_density = 0.0030
-			env.fog_aerial_perspective = 0.42
-
-
-static func _remaster_all_scene_meshes(main_scene: Node, state: Dictionary) -> void:
-	var styled = state["styled_meshes"]
-	var launcher = state["launcher"]
-	var all_meshes = main_scene.find_children("*", "MeshInstance3D", true, false)
-
-	var win_gold = StandardMaterial3D.new()
-	win_gold.albedo_color = Color("ffe6a3")
-	win_gold.emission_enabled = true
-	win_gold.emission = Color("ffbb44")
-	win_gold.emission_energy_multiplier = 3.6
-
-	var win_cyan = StandardMaterial3D.new()
-	win_cyan.albedo_color = Color("a8f5ff")
-	win_cyan.emission_enabled = true
-	win_cyan.emission = Color("00e5ff")
-	win_cyan.emission_energy_multiplier = 3.4
-
-	var beacon_mat = StandardMaterial3D.new()
-	beacon_mat.albedo_color = Color("ff2211")
-	beacon_mat.emission_enabled = true
-	beacon_mat.emission = Color("ff2200")
-	beacon_mat.emission_energy_multiplier = 6.0
-	beacon_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-
-	for raw_mi in all_meshes:
-		var mi = _v(raw_mi)
-		if not is_instance_valid(mi) or not (mi is MeshInstance3D):
-			continue
-		var m_obj = _v(mi.mesh)
-		if not is_instance_valid(m_obj):
-			continue
-		var mid = mi.get_instance_id()
-		if styled.has(mid):
-			continue
-		if is_instance_valid(launcher) and (mi == launcher or launcher.is_ancestor_of(mi)):
-			styled[mid] = true
-			continue
-		var p_node = _v(mi.get_parent())
-		if mi.name.begins_with("Cheongung") or (is_instance_valid(p_node) and p_node.name.begins_with("Cheongung")):
-			styled[mid] = true
-			continue
-		if m_obj is TextMesh:
-			styled[mid] = true
-			continue
-		var mname = mi.name.to_lower()
-		if "label" in mname or "text" in mname or "word" in mname or "hud" in mname or "prompt" in mname:
-			styled[mid] = true
-			continue
-
-		var src_mat = _v(mi.material_override)
-		if not is_instance_valid(src_mat) and m_obj.get_surface_count() > 0:
-			src_mat = _v(mi.get_active_material(0))
-		if not is_instance_valid(src_mat) or not (src_mat is StandardMaterial3D):
-			styled[mid] = true
-			continue
-		if src_mat.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
-			styled[mid] = true
-			continue
-
-		styled[mid] = true
-		var mat = _v(src_mat.duplicate())
-		if not (mat is StandardMaterial3D):
-			continue
-
-		var c = mat.albedo_color
-		var lum = c.r * 0.299 + c.g * 0.587 + c.b * 0.114
-		var aabb = mi.get_aabb()
-		var gscale = mi.global_transform.basis.get_scale()
-		var wx = absf(aabb.size.x * gscale.x)
-		var wy = absf(aabb.size.y * gscale.y)
-		var wz = absf(aabb.size.z * gscale.z)
-		var wmax = maxf(wx, wz)
-		var gpos = mi.global_position
-
-		# 1) 한강 수면 (Han River Water Surface — 거울 반사 & 딥 사파이어 클리어코트)
-		if c.b > c.r * 1.25 and c.g > c.r * 1.10 and wmax > 18.0 and wy < 2.5:
-			mat.albedo_color = Color("0b2844")
-			mat.metallic = 0.88
-			mat.roughness = 0.07
-			mat.metallic_specular = 1.0
-			mat.clearcoat_enabled = true
-			mat.clearcoat = 1.0
-			mat.clearcoat_roughness = 0.04
-			mat.rim_enabled = true
-			mat.rim = 0.45
-			mat.emission_enabled = true
-			mat.emission = Color("08223a")
-			mat.emission_energy_multiplier = 0.42
-			mi.material_override = mat
-			continue
-
-		# 2) 빌딩 창문 / 가로등 / 타워 조명 / 차량 라이트 -> 고휘도 야간 네온/골드 발광
-		if mat.emission_enabled or (gpos.z < -4.5 and wy < 0.95 and wmax < 1.35 and gpos.y > 0.6):
-			mat.emission_enabled = true
-			if (mid % 3) == 0:
-				mat.albedo_color = Color("99f2ff")
-				mat.emission = Color("00e5ff")
-			else:
-				mat.albedo_color = Color("ffe699")
-				mat.emission = Color("ffbb33")
-			mat.emission_energy_multiplier = maxf(mat.emission_energy_multiplier * 2.5, 3.4)
-			mat.roughness = 0.12
-			mat.metallic = 0.40
-			mi.material_override = mat
-			continue
-
-		# 3) 도로 아스팔트 및 한강 대교 상판 (젖은 아스팔트 스페큘러 반사광 PBR)
-		if gpos.y < 2.2 and wy < 1.1 and wmax > 3.8 and lum < 0.46 and absf(c.r - c.b) < 0.12:
-			mat.albedo_color = c.darkened(0.26)
-			mat.roughness = 0.18
-			mat.metallic = 0.42
-			mat.metallic_specular = 0.92
-			mat.clearcoat_enabled = true
-			mat.clearcoat = 0.82
-			mat.clearcoat_roughness = 0.14
-			mat.rim_enabled = true
-			mat.rim = 0.30
-			mi.material_override = mat
-			continue
-
-		# 4) 남산서울타워 상단 전망대 및 안테나 첨탑 (고고도 랜드마크 네온 발광)
-		if gpos.y > 8.5 and gpos.z < -14.0 and absf(gpos.x) < 6.5:
-			mat.roughness = 0.18
-			mat.metallic = 0.72
-			mat.clearcoat_enabled = true
-			mat.clearcoat = 0.75
-			if gpos.y > 12.5:
-				mat.emission_enabled = true
-				mat.emission = Color("00f5ff") if (mid % 2 == 0) else Color("ff3366")
-				mat.emission_energy_multiplier = 2.8
-			mi.material_override = mat
-			continue
-
-		# 5) 도심 빌딩 본체 (다크 사파이어/스틸 유리 커튼월 PBR + 옥상 네온 크라운 & 항공장애등 부착)
-		if gpos.z < -5.5 and wy >= 1.4 and wx >= 0.8 and wz >= 0.8 and not (c.g > c.r * 1.25 and c.g > c.b * 1.15):
-			var tint = Color(0.76, 0.86, 1.06, 1.0) if (mid % 2 == 0) else Color(0.88, 0.90, 0.98, 1.0)
-			mat.albedo_color = c.darkened(0.32) * tint
-			mat.roughness = 0.16
-			mat.metallic = 0.74
-			mat.metallic_specular = 0.92
-			mat.clearcoat_enabled = true
-			mat.clearcoat = 0.68
-			mat.clearcoat_roughness = 0.15
-			mat.rim_enabled = true
-			mat.rim = 0.45
-			mat.rim_tint = 0.35
-			mi.material_override = mat
-
-			if m_obj is BoxMesh and wy >= 2.6 and not mi.has_node("CheongungRoofTrim"):
-				var bsz = m_obj.size
-				var trim_holder = Node3D.new()
-				trim_holder.name = "CheongungRoofTrim"
-				mi.add_child(trim_holder)
-				var crown_mat = win_cyan if (mid % 2 == 0) else win_gold
-				trim_holder.add_child(_box(Vector3(bsz.x * 1.02, bsz.y * 0.045, bsz.z * 1.02), crown_mat, Vector3(0.0, bsz.y * 0.46, 0.0)))
-				if wy >= 3.8:
-					trim_holder.add_child(_sphere(minf(bsz.x, bsz.z) * 0.08, beacon_mat, Vector3(0.0, bsz.y * 0.54, 0.0)))
-			continue
-
-		# 6) 남산 산자락 / 잔디 공원 / 가로수 (입체 포레스트 림 셰이딩)
-		if c.g > c.r * 1.10 and c.g > c.b * 1.08:
-			mat.albedo_color = c.darkened(0.10)
-			mat.roughness = 0.56
-			mat.metallic = 0.14
-			mat.rim_enabled = true
-			mat.rim = 0.38
-			mat.rim_tint = 0.45
-			mi.material_override = mat
-			continue
-
-		# 7) 기타 모든 3D 오브젝트 (주행 버스/승용차, 교량 난간, 광화문 성벽/기와 등 — 고광택 PBR 리마스터)
-		mat.roughness = clampf(mat.roughness * 0.48, 0.14, 0.48)
-		mat.metallic = clampf(maxf(mat.metallic, 0.42), 0.30, 0.88)
-		mat.metallic_specular = 0.85
-		mat.clearcoat_enabled = true
-		mat.clearcoat = 0.55
-		mat.rim_enabled = true
-		mat.rim = 0.32
-		mi.material_override = mat
-
-
-# ============================================================================
-# D. 남산/광화문 스테이지 자동 감지 및 비율·배치 보정 + 3단계 직각 콜드런치(Dogleg) 엔진
-# ============================================================================
-static func _detect_is_namsan(main_scene: Node) -> bool:
-	if not is_instance_valid(main_scene):
-		return true
-	for p in main_scene.get_property_list():
-		var raw_v = main_scene.get(p["name"])
-		if typeof(raw_v) == TYPE_STRING or typeof(raw_v) == TYPE_STRING_NAME:
-			var val = str(raw_v).to_lower()
-			if "namsan" in val:
-				return true
-			if "gwang" in val:
-				return false
-	for raw_ch in main_scene.find_children("*", "Node3D", true, false):
-		var ch = _v(raw_ch)
-		if ch is Node3D and ch.is_visible_in_tree():
-			var cn = ch.name.to_lower()
-			if "namsan" in cn:
-				return true
-			if "gwanghwamun" in cn:
-				return false
-	return true
-
-
-static func _apply_stage_scale_and_layout(state: Dictionary) -> void:
-	var main_scene = state.get("main")
-	var launcher = state.get("launcher")
-	var chassis = state.get("chassis")
-	var mfr = state.get("mfr")
-	var ecs = state.get("ecs")
-	if not is_instance_valid(launcher) or not is_instance_valid(chassis) or not is_instance_valid(mfr) or not is_instance_valid(ecs):
+static func _ensure_runtime_driver(launcher: Node3D) -> void:
+	if launcher.has_meta("cheongung_v7_driver"):
 		return
-
-	var is_namsan = _detect_is_namsan(main_scene)
-	state["is_namsan"] = is_namsan
-
-	if is_namsan:
-		chassis.position = Vector3(-1.65, 0.0, -0.25)
-		chassis.scale = Vector3(0.42, 0.42, 0.42)
-		mfr.position = Vector3(-6.20, 0.08, -0.45)
-		mfr.scale = Vector3(0.30, 0.30, 0.30)
-		ecs.position = Vector3(2.35, 0.08, -0.45)
-		ecs.scale = Vector3(0.30, 0.30, 0.30)
-
-		for raw_ch in launcher.get_children():
-			var ch = _v(raw_ch)
-			if ch is Node3D and ch != chassis and ch != mfr and ch != ecs and ch != state.get("pod_rack") and not ch.name.begins_with("Cheongung"):
-				ch.position = Vector3(-1.65, ch.position.y, -0.25)
-				ch.scale = Vector3(0.42, 0.42, 0.42)
-	else:
-		chassis.position = Vector3(0.0, 0.0, 0.0)
-		chassis.scale = Vector3(0.82, 0.82, 0.82)
-		mfr.position = Vector3(-9.20, 0.14, -0.35)
-		mfr.scale = Vector3(0.46, 0.46, 0.46)
-		ecs.position = Vector3(9.20, 0.14, -0.35)
-		ecs.scale = Vector3(0.46, 0.46, 0.46)
-
-		for raw_ch in launcher.get_children():
-			var ch = _v(raw_ch)
-			if ch is Node3D and ch != chassis and ch != mfr and ch != ecs and ch != state.get("pod_rack") and not ch.name.begins_with("Cheongung"):
-				ch.position = Vector3(0.0, ch.position.y, 0.0)
-				ch.scale = Vector3(0.82, 0.82, 0.82)
-
-
-static func _on_scene_node_added(node: Node, state: Dictionary) -> void:
-	var n = _v(node)
-	if not is_instance_valid(n) or not (n is Node3D):
-		return
-	if n.name.begins_with("Cheongung"):
-		return
-	var launcher = state.get("launcher")
-	if is_instance_valid(launcher) and (n == launcher or launcher.is_ancestor_of(n)):
-		return
-	state["pending_nodes"].append({"node": n, "frames": 0})
-
-
-static func _hide_engine_projectile_visuals(node: Node3D) -> void:
-	var n = _v(node)
-	if not is_instance_valid(n):
-		return
-	var nname = n.name.to_lower()
-	if "label" in nname or "text" in nname or "word" in nname:
-		return
-	if n is MeshInstance3D:
-		var nm = _v(n.mesh)
-		if not (nm is TextMesh):
-			n.visible = false
-	for raw_ch in n.find_children("*", "VisualInstance3D", true, false):
-		var ch = _v(raw_ch)
-		if ch is VisualInstance3D:
-			var cn = ch.name.to_lower()
-			if "label" in cn or "text" in cn or "word" in cn or (ch is Label3D):
-				continue
-			if ch is MeshInstance3D:
-				var cm = _v(ch.mesh)
-				if not (cm is TextMesh):
-					ch.visible = false
-			else:
-				ch.visible = false
-
-
-static func _animate_radar_wave(w_ring: MeshInstance3D, w_mat: StandardMaterial3D, delay_sec: float) -> void:
-	var tw = w_ring.create_tween().set_loops()
-	if delay_sec > 0.0:
-		tw.tween_interval(delay_sec)
-	tw.tween_callback(func():
-		w_ring.position = Vector3(0.0, 4.2, 0.8)
-		w_ring.scale = Vector3(0.5, 1.0, 0.5)
-		w_mat.albedo_color.a = 0.78
-	)
-	tw.tween_property(w_ring, "position", Vector3(0.0, 14.0, -5.5), 1.8)
-	tw.parallel().tween_property(w_ring, "scale", Vector3(6.8, 1.0, 6.8), 1.8)
-	tw.parallel().tween_property(w_mat, "albedo_color:a", 0.0, 1.8)
-
-
-static func _build_strobe(parent: Node3D, pos: Vector3, mat_base: Material, mat_on: Material, mat_off: Material, is_red: bool, list: Array) -> void:
-	parent.add_child(_cyl(0.12, 0.14, 0.08, mat_base, pos))
-	var dome = _cyl(0.09, 0.11, 0.18, mat_off, pos + Vector3(0.0, 0.12, 0.0))
-	parent.add_child(dome)
-
-	var light = OmniLight3D.new()
-	light.light_color = Color("ff2200") if is_red else Color("ff9900")
-	light.light_energy = 0.0
-	light.omni_range = 12.0
-	light.position = pos + Vector3(0.0, 0.26, 0.0)
-	parent.add_child(light)
-
-	var rotor = Node3D.new()
-	rotor.position = pos + Vector3(0.0, 0.14, 0.0)
-	if is_red:
-		rotor.rotation.y = PI
-	parent.add_child(rotor)
-
-	var cone_mat = StandardMaterial3D.new()
-	cone_mat.albedo_color = Color(1.0, 0.18, 0.05, 0.28) if is_red else Color(1.0, 0.62, 0.05, 0.28)
-	cone_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	cone_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	cone_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	rotor.add_child(_cyl(0.85, 0.06, 3.0, cone_mat, Vector3(0.0, 0.0, 1.55), Vector3(PI * 0.5, 0.0, 0.0)))
-	rotor.visible = false
-
-	list.append({"dome": dome, "light": light, "rotor": rotor, "mat_on": mat_on, "mat_off": mat_off, "is_red": is_red})
-
-
-static func _on_pre_process(state: Dictionary) -> void:
-	var chassis = state["chassis"]
-	if not is_instance_valid(chassis):
-		return
-	var pod_rack = _v(state["pod_rack"])
-	var rack = _v(state["rack"])
-	if is_instance_valid(pod_rack) and is_instance_valid(rack) and (pod_rack is Node3D):
-		pod_rack.visible = false
-		pod_rack.global_position = rack.global_position + Vector3(0.0, 3.2, 0.0)
-		pod_rack.rotation = Vector3(deg_to_rad(89.0), 0.0, 0.0)
-
-
-static func _on_pre_draw(state: Dictionary) -> void:
-	var chassis = state["chassis"]
-	if not is_instance_valid(chassis):
-		return
-	var delta = chassis.get_process_delta_time()
-	var t = float(state["time"]) + delta
-	state["time"] = t
-
-	chassis.rotation = Vector3(0.0, PI * 0.5, 0.0)
-	_apply_stage_scale_and_layout(state)
-
-	var pod_rack = _v(state["pod_rack"])
-	var rack = _v(state["rack"])
-	if is_instance_valid(pod_rack) and is_instance_valid(rack) and (pod_rack is Node3D):
-		pod_rack.visible = false
-		pod_rack.global_position = rack.global_position + Vector3(0.0, 3.2, 0.0)
-		pod_rack.rotation = Vector3(deg_to_rad(89.0), 0.0, 0.0)
-
-	var main_scene = state.get("main")
-	if not is_instance_valid(main_scene):
-		return
-
-	_enforce_world_environment(main_scene)
-
-	var sl_list = state["searchlights"]
-	for si in range(sl_list.size()):
-		var sl = _v(sl_list[si])
-		if is_instance_valid(sl) and (sl is Node3D):
-			var phase = t * (0.55 + float(si) * 0.12) + float(si) * 1.4
-			sl.rotation.z = deg_to_rad(sin(phase) * 28.0)
-			sl.rotation.x = deg_to_rad(12.0 + cos(phase * 0.8) * 10.0)
-
-	var rt = float(state["remaster_timer"]) + delta
-	if rt >= 0.45:
-		rt = 0.0
-		_remaster_all_scene_meshes(main_scene, state)
-	state["remaster_timer"] = rt
-
-	var mfr = state["mfr"]
-	var ecs = state["ecs"]
-	var pa_list = state["pulses_a"]
-	var pb_list = state["pulses_b"]
-	if is_instance_valid(mfr) and is_instance_valid(ecs):
-		var p_mfr = mfr.position + Vector3(0.0, 0.75, 0.0)
-		var p_ecs = ecs.position + Vector3(0.0, 0.75, 0.0)
-		var p_tel = chassis.position + Vector3(0.0, 0.85, 0.0)
-		for di in range(pa_list.size()):
-			var u_a = fmod(t * 0.95 + float(di) * 0.20, 1.0)
-			var u_b = fmod(t * 1.15 + float(di) * 0.20, 1.0)
-			var pa = _v(pa_list[di])
-			var pb = _v(pb_list[di])
-			if is_instance_valid(pa):
-				pa.position = p_mfr.lerp(p_ecs, u_a)
-			if is_instance_valid(pb):
-				pb.position = p_ecs.lerp(p_tel, u_b)
-
-	var threats = []
-	var active_int_nodes = []
-	_collect_missiles_and_interceptors(main_scene, state["launcher"], threats, active_int_nodes)
-
-	var pending = state["pending_nodes"]
-	var still_pending = []
-	if pending.size() > 0:
-		var ch_gpos = chassis.global_position
-		for item in pending:
-			var pnode = _v(item["node"])
-			var fcnt = int(item["frames"]) + 1
-			if is_instance_valid(pnode) and (pnode is Node3D):
-				var d_l = pnode.global_position.distance_to(ch_gpos)
-				var dy = pnode.global_position.y - ch_gpos.y
-				if d_l < 16.0 and dy > -1.0 and dy < 9.5 and pnode.global_position.length_squared() > 0.001:
-					_hide_engine_projectile_visuals(pnode)
-					state["hidden_projectiles"][pnode.get_instance_id()] = pnode
-					if t - float(state["last_dogleg_time"]) > 0.07:
-						state["last_dogleg_time"] = t
-						_spawn_dogleg_cold_launch(main_scene, state, threats, pnode)
-				elif fcnt < 4:
-					still_pending.append({"node": pnode, "frames": fcnt})
-		state["pending_nodes"] = still_pending
-
-	var hidden_map = state["hidden_projectiles"]
-	for raw_in in active_int_nodes:
-		var inode = _v(raw_in)
-		if is_instance_valid(inode) and (inode is Node3D):
-			var iid = inode.get_instance_id()
-			_hide_engine_projectile_visuals(inode)
-			if not hidden_map.has(iid):
-				hidden_map[iid] = inode
-				if t - float(state["last_dogleg_time"]) > 0.07:
-					state["last_dogleg_time"] = t
-					_spawn_dogleg_cold_launch(main_scene, state, threats, inode)
-
-	for hid in hidden_map.keys():
-		var hnode = _v(hidden_map[hid])
-		if is_instance_valid(hnode) and (hnode is Node3D):
-			_hide_engine_projectile_visuals(hnode)
-		else:
-			hidden_map.erase(hid)
-
-	var has_threats = threats.size() > 0
-	if threats.size() > int(state["prev_threats"]):
-		state["siren_timer"] = 2.6
-	state["prev_threats"] = threats.size()
-
-	var strobes = state["strobes"]
-	for i in range(strobes.size()):
-		var sb = strobes[i]
-		var l = _v(sb["light"])
-		var d = _v(sb["dome"])
-		var r = _v(sb["rotor"])
-		if not is_instance_valid(l):
-			continue
-		if has_threats:
-			var on_now = sin(t * 18.0 + float(i) * PI) > 0.0
-			l.light_energy = 10.0 if on_now else 0.8
-			d.material_override = sb["mat_on"] if on_now else sb["mat_off"]
-			r.visible = true
-			r.rotation.y += delta * 12.0
-		else:
-			l.light_energy = 0.0
-			d.material_override = sb["mat_off"]
-			r.visible = false
-
-	var s_timer = float(state["siren_timer"])
-	if s_timer > 0.0:
-		state["siren_timer"] = s_timer - delta
-		var ap = _v(state.get("audio_player"))
-		if has_threats and is_instance_valid(ap) and ap.playing:
-			var pb = _v(ap.get_stream_playback())
-			if is_instance_valid(pb):
-				var avail = pb.get_frames_available()
-				var ph = float(state["siren_phase"])
-				for _k in range(min(avail, 512)):
-					ph += 1.0 / 22050.0
-					var lfo = 0.5 + 0.5 * sin(ph * TAU * 1.5)
-					var freq = lerp(520.0, 880.0, lfo)
-					var smp = sin(ph * TAU * freq) * 0.13
-					if fmod(ph, 0.60) < 0.05:
-						smp += sin(ph * TAU * 1720.0) * 0.11
-					pb.push_frame(Vector2(smp, smp))
-				state["siren_phase"] = ph
-
-	var lock_rings = state["lock_rings"]
-	var active_t_ids = {}
-	var ring_scale_base = 0.52 if bool(state["is_namsan"]) else 0.85
-	for raw_m in threats:
-		var m_node = _v(raw_m)
-		if is_instance_valid(m_node) and (m_node is Node3D):
-			var tid = m_node.get_instance_id()
-			active_t_ids[tid] = true
-			_upgrade_threat_missile_visuals(m_node)
-			if not lock_rings.has(tid):
-				lock_rings[tid] = _create_target_lock_rings(main_scene)
-			var h_node = _v(lock_rings[tid])
-			if is_instance_valid(h_node):
-				h_node.global_position = m_node.global_position
-				var s_pulse = ring_scale_base * (0.85 + 0.30 * (0.5 + 0.5 * sin(t * 7.5)))
-				h_node.scale = Vector3(s_pulse, 1.0, s_pulse)
-
-	var bt = float(state["beam_timer"]) + delta
-	var mfr_head = _v(state.get("mfr_head"))
-	if has_threats and bt >= 0.50 and is_instance_valid(mfr_head):
-		bt = 0.0
-		var tgt = _v(threats[randi() % threats.size()])
-		if is_instance_valid(tgt):
-			_spawn_lock_beam(main_scene, mfr_head.global_position, tgt.global_position)
-	state["beam_timer"] = bt
-
-	for tid in lock_rings.keys():
-		if not active_t_ids.has(tid):
-			var old_h = _v(lock_rings[tid])
-			if is_instance_valid(old_h):
-				if old_h.global_position.y > 2.5:
-					if t - float(state["last_dogleg_time"]) > 0.25:
-						state["last_dogleg_time"] = t
-						_spawn_dogleg_cold_launch(main_scene, state, [], old_h)
-					_spawn_interception_explosion(main_scene, old_h.global_position)
-				old_h.queue_free()
-			lock_rings.erase(tid)
-
-	var doglegs = state["doglegs"]
-	var remaining_doglegs = []
-	for dl in doglegs:
-		if _update_dogleg_missile(main_scene, dl, delta):
-			remaining_doglegs.append(dl)
-	state["doglegs"] = remaining_doglegs
-
-
-static func _spawn_dogleg_cold_launch(main_scene: Node, state: Dictionary, threats: Array, eng_node: Node3D) -> void:
-	var muzzles = state["muzzles"]
-	var chassis = state["chassis"]
-	var m_pos = chassis.global_position + Vector3(0.0, 2.6, 0.0)
-	if muzzles.size() > 0:
-		var idx = int(state["next_tube"]) % muzzles.size()
-		state["next_tube"] = idx + 1
-		var mz = _v(muzzles[idx])
-		if is_instance_valid(mz):
-			m_pos = mz.global_position
-
-	var is_namsan = bool(state["is_namsan"])
-	var rise_h = 3.8 if is_namsan else 6.2
-	var apex_pos = m_pos + Vector3(0.0, rise_h, 0.0)
-
-	var tgt_node = null
-	var tgt_pos = apex_pos + Vector3(0.0, 6.0, -14.0)
-	if is_instance_valid(eng_node) and eng_node.name == "CheongungTargetLockRing":
-		tgt_pos = eng_node.global_position
-	elif threats.size() > 0:
-		var best_d = 999999.0
-		var ref_p = eng_node.global_position if is_instance_valid(eng_node) else m_pos
-		for raw_th in threats:
-			var th = _v(raw_th)
-			if is_instance_valid(th):
-				var d = th.global_position.distance_to(ref_p)
-				if d < best_d:
-					best_d = d
-					tgt_node = th
-		if is_instance_valid(tgt_node):
-			tgt_pos = tgt_node.global_position
-
-	var m_scale = 0.55 if is_namsan else 0.90
-	var missile_root = _create_cheongung_missile_node(main_scene, state["mat_black"], m_scale)
-	missile_root.global_position = m_pos
-	_orient_missile_along(missile_root, Vector3.UP)
-
-	_spawn_cold_launch_fx(main_scene, m_pos, apex_pos, m_scale)
-
-	state["doglegs"].append({
-		"node": missile_root,
-		"eng_node": eng_node,
-		"tgt_node": tgt_node,
-		"muzzle": m_pos,
-		"apex": apex_pos,
-		"target_pos": tgt_pos,
-		"scale": m_scale,
-		"age": 0.0,
-		"dacs_done": false,
-		"booster_done": false,
-		"trail_timer": 0.0
-	})
-
-
-static func _update_dogleg_missile(main_scene: Node, dl: Dictionary, delta: float) -> bool:
-	var m_node = _v(dl["node"])
-	if not is_instance_valid(m_node):
-		return false
-
-	var age = float(dl["age"]) + delta
-	dl["age"] = age
-	var m_pos = dl["muzzle"]
-	var apex_pos = dl["apex"]
-	var m_scale = float(dl["scale"])
-
-	var tgt_node = _v(dl.get("tgt_node"))
-	var eng_node = _v(dl.get("eng_node"))
-	if is_instance_valid(tgt_node):
-		dl["target_pos"] = tgt_node.global_position
-	elif is_instance_valid(eng_node) and eng_node.global_position.distance_to(m_pos) > 3.5:
-		dl["target_pos"] = eng_node.global_position
-	var target_pos = dl["target_pos"]
-
-	if age < 0.15:
-		var u1 = clampf(age / 0.15, 0.0, 1.0)
-		var ease_u1 = 1.0 - pow(1.0 - u1, 2.8)
-		m_node.global_position = Vector3(m_pos.x, lerpf(m_pos.y, apex_pos.y, ease_u1), m_pos.z)
-		_orient_missile_along(m_node, Vector3.UP)
-		return true
-
-	elif age < 0.27:
-		if not bool(dl["dacs_done"]):
-			dl["dacs_done"] = true
-			_spawn_dacs_side_thrusters(main_scene, apex_pos, m_scale)
-		m_node.global_position = apex_pos
-		var u2 = clampf((age - 0.15) / 0.12, 0.0, 1.0)
-		var aim_dir = (target_pos - apex_pos).normalized()
-		if aim_dir.length_squared() < 0.01:
-			aim_dir = Vector3(0.0, 0.4, -0.9).normalized()
-		var turn_u = clampf(u2 * 1.35, 0.0, 1.0)
-		var cur_dir = Vector3.UP.lerp(aim_dir, turn_u).normalized()
-		_orient_missile_along(m_node, cur_dir)
-		return true
-
-	elif age < 0.44:
-		var aim_dir = (target_pos - apex_pos).normalized()
-		if aim_dir.length_squared() < 0.01:
-			aim_dir = Vector3(0.0, 0.4, -0.9).normalized()
-		if not bool(dl["booster_done"]):
-			dl["booster_done"] = true
-			_spawn_booster_ring(main_scene, apex_pos, m_scale)
-			_spawn_straight_contrail_beam(main_scene, apex_pos, target_pos, m_scale)
-			var pl = _v(m_node.find_child("CheongungPlume", true, false))
-			if is_instance_valid(pl):
-				pl.visible = true
-
-		var u3 = clampf((age - 0.27) / 0.17, 0.0, 1.0)
-		var accel_u3 = u3 * u3
-		var cur_pos = apex_pos.lerp(target_pos, accel_u3)
-		m_node.global_position = cur_pos
-		_orient_missile_along(m_node, aim_dir)
-
-		var tr = float(dl["trail_timer"]) + delta
-		if tr >= 0.022:
-			tr = 0.0
-			_spawn_smoke_puff(main_scene, cur_pos, m_scale)
-		dl["trail_timer"] = tr
-		return true
-
-	else:
-		_spawn_interception_explosion(main_scene, target_pos)
-		m_node.queue_free()
-		return false
-
-
-static func _create_cheongung_missile_node(main_scene: Node, mat_body: Material, m_scale: float) -> Node3D:
-	var root = Node3D.new()
-	root.name = "CheongungDoglegMissile"
-	root.scale = Vector3(m_scale, m_scale, m_scale)
-	main_scene.add_child(root)
-
-	var mat_w = StandardMaterial3D.new()
-	mat_w.albedo_color = Color("f5f8fc")
-	mat_w.roughness = 0.22
-	mat_w.metallic = 0.45
-	mat_w.emission_enabled = true
-	mat_w.emission = Color("dceeff")
-	mat_w.emission_energy_multiplier = 0.65
-
-	var mat_r = StandardMaterial3D.new()
-	mat_r.albedo_color = Color("ff2e1f")
-	mat_r.emission_enabled = true
-	mat_r.emission = Color("ff3b28")
-	mat_r.emission_energy_multiplier = 2.4
-
-	root.add_child(_cyl(0.0, 0.15, 0.65, mat_w, Vector3(0.0, 0.0, -1.25), Vector3(PI * 0.5, 0.0, 0.0)))
-	root.add_child(_cyl(0.155, 0.155, 0.28, mat_r, Vector3(0.0, 0.0, -0.80), Vector3(PI * 0.5, 0.0, 0.0)))
-	root.add_child(_cyl(0.15, 0.15, 1.70, mat_w, Vector3(0.0, 0.0, 0.15), Vector3(PI * 0.5, 0.0, 0.0)))
-	root.add_child(_box(Vector3(0.68, 0.03, 0.38), mat_body, Vector3(0.0, 0.0, 0.72)))
-	root.add_child(_box(Vector3(0.03, 0.68, 0.38), mat_body, Vector3(0.0, 0.0, 0.72)))
-
-	var plume = Node3D.new()
-	plume.name = "CheongungPlume"
-	plume.position = Vector3(0.0, 0.0, 1.02)
-	plume.visible = false
-	root.add_child(plume)
-
-	var c_mat = StandardMaterial3D.new()
-	c_mat.albedo_color = Color(1.0, 0.98, 0.85, 0.98)
-	c_mat.emission_enabled = true
-	c_mat.emission = Color("fff6cc")
-	c_mat.emission_energy_multiplier = 9.5
-	c_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-
-	var o_mat = StandardMaterial3D.new()
-	o_mat.albedo_color = Color(1.0, 0.45, 0.08, 0.88)
-	o_mat.emission_enabled = true
-	o_mat.emission = Color("ff5500")
-	o_mat.emission_energy_multiplier = 7.0
-	o_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	o_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	o_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-
-	plume.add_child(_cyl(0.14, 0.01, 1.45, c_mat, Vector3(0.0, 0.0, 0.72), Vector3(PI * 0.5, 0.0, 0.0)))
-	plume.add_child(_cyl(0.30, 0.02, 2.75, o_mat, Vector3(0.0, 0.0, 1.38), Vector3(PI * 0.5, 0.0, 0.0)))
-
-	var tl = OmniLight3D.new()
-	tl.light_color = Color("ff8822")
-	tl.light_energy = 7.5
-	tl.omni_range = 14.0
-	plume.add_child(tl)
-	return root
-
-
-static func _upgrade_threat_missile_visuals(m_node: Node3D) -> void:
-	if not is_instance_valid(m_node) or m_node.has_node("CheongungThreatUpgrade"):
-		return
-	var tag = Node3D.new()
-	tag.name = "CheongungThreatUpgrade"
-	m_node.add_child(tag)
-
-	var t_light = OmniLight3D.new()
-	t_light.light_color = Color("ff3311")
-	t_light.light_energy = 3.6
-	t_light.omni_range = 9.0
-	tag.add_child(t_light)
-
-	for raw_mi in m_node.find_children("*", "MeshInstance3D", true, false):
-		var mi = _v(raw_mi)
-		if mi is MeshInstance3D:
-			var mm = _v(mi.mesh)
-			if is_instance_valid(mm) and not (mm is TextMesh):
-				var nm = mi.name.to_lower()
-				if "label" in nm or "text" in nm or "word" in nm:
-					continue
-				var smat = _v(mi.get_active_material(0))
-				if smat is StandardMaterial3D:
-					var dup = _v(smat.duplicate())
-					if dup is StandardMaterial3D:
-						dup.metallic = 0.78
-						dup.roughness = 0.18
-						dup.emission_enabled = true
-						dup.emission = Color("ff3311")
-						dup.emission_energy_multiplier = 1.45
-						mi.material_override = dup
-
-
-static func _orient_missile_along(i_node: Node3D, dir: Vector3) -> void:
-	if dir.length_squared() < 0.0001:
-		return
-	var d = dir.normalized()
-	var up_ref = Vector3.FORWARD if absf(d.dot(Vector3.UP)) > 0.96 else Vector3.UP
-	i_node.look_at(i_node.global_position + d, up_ref)
-
-
-static func _collect_missiles_and_interceptors(main_scene: Node, launcher: Node3D, threats: Array, interceptors: Array) -> void:
-	var seen_t = {}
-	var seen_i = {}
-
-	var raw_m = main_scene.get("missiles")
-	if raw_m is Array:
-		for item in raw_m:
-			var n = _v(_find_node3d(item))
-			if is_instance_valid(n) and n.visible:
-				seen_t[n.get_instance_id()] = true
-				threats.append(n)
-
-	for prop_name in ["interceptors", "active_interceptors", "shots", "rockets", "projectiles"]:
-		var raw_i = main_scene.get(prop_name)
-		if raw_i is Array:
-			for item in raw_i:
-				var n = _v(_find_node3d(item))
-				if is_instance_valid(n) and not seen_t.has(n.get_instance_id()) and not seen_i.has(n.get_instance_id()):
-					seen_i[n.get_instance_id()] = true
-					interceptors.append(n)
-
-	if interceptors.is_empty():
-		for p_info in main_scene.get_property_list():
-			var pname = p_info["name"]
-			if pname == "missiles" or pname == "vehicle_templates" or pname == "models":
-				continue
-			var val = main_scene.get(pname)
-			if val is Array and val.size() > 0:
-				for item in val:
-					var n = _v(_find_node3d(item))
-					if is_instance_valid(n) and n != launcher and not launcher.is_ancestor_of(n) and not n.name.begins_with("Cheongung"):
-						var nid = n.get_instance_id()
-						if not seen_t.has(nid) and not seen_i.has(nid):
-							if "intercept" in n.name.to_lower() or "rocket" in n.name.to_lower() or "shot" in n.name.to_lower() or n.global_position.distance_to(launcher.global_position) < 22.0:
-								seen_i[nid] = true
-								interceptors.append(n)
-
-
-static func _find_node3d(item) -> Node3D:
-	if item is Node3D:
-		return item
-	if item is Dictionary:
-		for k in ["node", "mesh", "instance", "root", "visual", "missile", "interceptor", "rocket", "body"]:
-			if item.has(k) and item[k] is Node3D:
-				return item[k]
-		for v in item.values():
-			if v is Node3D:
-				return v
-	if item is Object:
-		for k in ["node", "mesh", "instance", "root", "visual", "missile", "interceptor"]:
-			var val = item.get(k)
-			if val is Node3D:
-				return val
+	launcher.set_meta("cheongung_v7_driver", true)
+
+	var cb := Callable(DefenseLauncherMarking, "_on_pre_draw").bind(launcher)
+	if not RenderingServer.frame_pre_draw.is_connected(cb):
+		RenderingServer.frame_pre_draw.connect(cb)
+
+
+static func _find_battlefield(node: Node) -> Node3D:
+	var cur := node
+	while cur != null:
+		if cur is Node3D and cur.get("_missile_node") != null:
+			return cur as Node3D
+		cur = cur.get_parent()
 	return null
 
 
-static func _create_target_lock_rings(main_scene: Node) -> Node3D:
-	var holder = Node3D.new()
-	holder.name = "CheongungTargetLockRing"
-	main_scene.add_child(holder)
-
-	var m1 = StandardMaterial3D.new()
-	m1.albedo_color = Color(1.0, 0.18, 0.22, 0.88)
-	m1.emission_enabled = true
-	m1.emission = Color("ff2233")
-	m1.emission_energy_multiplier = 4.5
-	m1.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	m1.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	m1.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-
-	var r1 = MeshInstance3D.new()
-	var t1 = TorusMesh.new()
-	t1.inner_radius = 0.85
-	t1.outer_radius = 0.98
-	r1.mesh = t1
-	r1.rotation.x = PI * 0.5
-	r1.material_override = m1
-	holder.add_child(r1)
-
-	var m2 = StandardMaterial3D.new()
-	m2.albedo_color = Color(0.0, 0.95, 1.0, 0.78)
-	m2.emission_enabled = true
-	m2.emission = Color("00f0ff")
-	m2.emission_energy_multiplier = 3.8
-	m2.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	m2.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	m2.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-
-	var r2 = MeshInstance3D.new()
-	var t2 = TorusMesh.new()
-	t2.inner_radius = 1.28
-	t2.outer_radius = 1.38
-	r2.mesh = t2
-	r2.rotation.x = PI * 0.5
-	r2.material_override = m2
-	holder.add_child(r2)
-	return holder
-
-
-static func _spawn_lock_beam(main_scene: Node, p0: Vector3, p1: Vector3) -> void:
-	var d = p0.distance_to(p1)
-	if d < 0.5:
+static func _ensure_cold_launch_vfx(battlefield: Node3D) -> void:
+	if battlefield.has_node("CheongungColdLaunchVFX"):
 		return
-	var mat = StandardMaterial3D.new()
-	mat.albedo_color = Color(0.0, 0.96, 1.0, 0.65)
-	mat.emission_enabled = true
-	mat.emission = Color("00f5ff")
-	mat.emission_energy_multiplier = 4.8
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 
-	var pivot = Node3D.new()
-	pivot.name = "CheongungLockBeam"
-	main_scene.add_child(pivot)
-	pivot.global_position = (p0 + p1) * 0.5
-	pivot.look_at(p1, Vector3.UP)
-	pivot.add_child(_cyl(0.05, 0.12, d, mat, Vector3.ZERO, Vector3(PI * 0.5, 0.0, 0.0)))
+	var vfx := Node3D.new()
+	vfx.name = "CheongungColdLaunchVFX"
+	battlefield.add_child(vfx)
 
-	var tw = pivot.create_tween()
-	tw.tween_property(mat, "albedo_color:a", 0.0, 0.24)
-	tw.tween_callback(pivot.queue_free)
+	var body_mat := _mat("f8fafc", 0.30, 0.45)
+	var nose_mat := _mat("ef4444", 0.25, 0.30, "ef4444", 1.25)
+	var fin_mat := _mat("1e293b", 0.50, 0.70)
+	var dacs_mat := _mat("ffaa1d", 0.15, 0.0, "ff6b00", 5.5, 0.90)
+	var plume_mat := _mat("38bdf8", 0.15, 0.0, "0ea5e9", 5.2, 0.88)
+	var core_mat := _mat("ffffff", 0.10, 0.0, "fffbeb", 6.5, 0.96)
+	var smoke_mat := _mat("e2e8f0", 0.85, 0.0, "94a3b8", 0.8, 0.38)
+	var lock_mat := _mat("ff3b30", 0.20, 0.10, "ff2d55", 4.2, 0.82)
 
+	var dart := Node3D.new()
+	dart.name = "InterceptorDart"
+	dart.visible = false
+	vfx.add_child(dart)
 
-static func _spawn_cold_launch_fx(main_scene: Node, m_pos: Vector3, apex_pos: Vector3, m_scale: float) -> void:
-	var fl = OmniLight3D.new()
-	fl.name = "CheongungColdLight"
-	fl.light_color = Color("ffaa44")
-	fl.light_energy = 9.5
-	fl.omni_range = 14.0
-	main_scene.add_child(fl)
-	fl.global_position = m_pos + Vector3(0.0, 0.5, 0.0)
-	var tw_l = fl.create_tween()
-	tw_l.tween_property(fl, "light_energy", 0.0, 0.35)
-	tw_l.tween_callback(fl.queue_free)
+	_cyl(dart, 0.11, 0.13, 1.65, Vector3(0.0, 0.0, 0.0), body_mat, Vector3(90.0, 0.0, 0.0), 20)
+	_cyl(dart, 0.01, 0.11, 0.52, Vector3(0.0, 0.0, -1.08), nose_mat, Vector3(90.0, 0.0, 0.0), 20)
+	_box(dart, Vector3(0.58, 0.03, 0.36), Vector3(0.0, 0.0, 0.55), fin_mat)
+	_box(dart, Vector3(0.03, 0.58, 0.36), Vector3(0.0, 0.0, 0.55), fin_mat)
 
-	var col_h = m_pos.distance_to(apex_pos)
-	var col_mat = StandardMaterial3D.new()
-	col_mat.albedo_color = Color(0.88, 0.92, 0.96, 0.72)
-	col_mat.emission_enabled = true
-	col_mat.emission = Color("d8e6f2")
-	col_mat.emission_energy_multiplier = 1.6
-	col_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	var dacs := Node3D.new()
+	dacs.name = "DACSThrusterRing"
+	dacs.position = Vector3(0.0, 0.0, -0.52)
+	dart.add_child(dacs)
+	_box(dacs, Vector3(1.35, 0.10, 0.10), Vector3.ZERO, dacs_mat)
+	_box(dacs, Vector3(0.10, 1.35, 0.10), Vector3.ZERO, dacs_mat)
 
-	var v_col = _cyl(0.14 * m_scale, 0.28 * m_scale, col_h, col_mat, (m_pos + apex_pos) * 0.5)
-	v_col.name = "CheongungVerticalSmokeColumn"
-	main_scene.add_child(v_col)
-	v_col.global_position = (m_pos + apex_pos) * 0.5
-	var tw_c = v_col.create_tween()
-	tw_c.tween_property(v_col, "scale", Vector3(2.2, 1.0, 2.2), 0.55)
-	tw_c.parallel().tween_property(col_mat, "albedo_color:a", 0.0, 0.55)
-	tw_c.tween_callback(v_col.queue_free)
+	var booster := Node3D.new()
+	booster.name = "MainBoosterPlume"
+	booster.position = Vector3(0.0, 0.0, 1.35)
+	dart.add_child(booster)
+	_cyl(booster, 0.18, 0.02, 1.45, Vector3.ZERO, plume_mat, Vector3(90.0, 0.0, 0.0), 16)
+	_cyl(booster, 0.09, 0.01, 0.95, Vector3(0.0, 0.0, -0.20), core_mat, Vector3(90.0, 0.0, 0.0), 14)
 
-	for i in range(8):
-		var p_mat = StandardMaterial3D.new()
-		p_mat.albedo_color = Color(0.88, 0.91, 0.95, 0.82)
-		p_mat.emission_enabled = true
-		p_mat.emission = Color("ffaa55") if i < 2 else Color("d5dee6")
-		p_mat.emission_energy_multiplier = 2.4 if i < 2 else 0.65
-		p_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	var trail := _cyl(vfx, 0.10, 0.24, 1.0, Vector3.ZERO, smoke_mat, Vector3.ZERO, 14, "VerticalSmokeColumn")
+	trail.visible = false
 
-		var start_p = m_pos.lerp(apex_pos, float(i) / 8.0)
-		var puff = _sphere((0.22 + float(i % 2) * 0.08) * m_scale, p_mat, start_p)
-		puff.name = "CheongungColdPuff"
-		main_scene.add_child(puff)
-		puff.global_position = start_p
-
-		var tw = puff.create_tween()
-		tw.tween_property(puff, "scale", Vector3(2.4, 2.4, 2.4), 0.52)
-		tw.parallel().tween_property(p_mat, "albedo_color:a", 0.0, 0.52)
-		tw.tween_callback(puff.queue_free)
+	var reticle := Node3D.new()
+	reticle.name = "TargetLockReticle"
+	reticle.visible = false
+	vfx.add_child(reticle)
+	_torus(reticle, 0.72, 0.82, Vector3.ZERO, lock_mat, Vector3(90.0, 0.0, 0.0), "LockRingOuter")
+	_torus(reticle, 0.38, 0.45, Vector3.ZERO, dacs_mat, Vector3(90.0, 0.0, 0.0), "LockRingInner")
 
 
-static func _spawn_dacs_side_thrusters(main_scene: Node, apex_pos: Vector3, m_scale: float) -> void:
-	var dl = OmniLight3D.new()
-	dl.name = "CheongungDACSLight"
-	dl.light_color = Color("ffaa22")
-	dl.light_energy = 14.0
-	dl.omni_range = 18.0
-	main_scene.add_child(dl)
-	dl.global_position = apex_pos
-	var tw_l = dl.create_tween()
-	tw_l.tween_property(dl, "light_energy", 0.0, 0.25)
-	tw_l.tween_callback(dl.queue_free)
-
-	var rot_list = [
-		Vector3(0.0, 0.0, PI * 0.5),
-		Vector3(0.0, 0.0, -PI * 0.5),
-		Vector3(PI * 0.5, 0.0, 0.0),
-		Vector3(-PI * 0.5, 0.0, 0.0)
-	]
-	for rot_v in rot_list:
-		var j_mat = StandardMaterial3D.new()
-		j_mat.albedo_color = Color(1.0, 0.76, 0.20, 0.96)
-		j_mat.emission_enabled = true
-		j_mat.emission = Color("ff9911")
-		j_mat.emission_energy_multiplier = 8.5
-		j_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		j_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-		j_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-
-		var jet = _cyl(0.04 * m_scale, 0.38 * m_scale, 2.10 * m_scale, j_mat, apex_pos, rot_v)
-		jet.name = "CheongungDACSJet"
-		main_scene.add_child(jet)
-		jet.global_position = apex_pos
-		var tw = jet.create_tween()
-		tw.tween_property(jet, "scale", Vector3(2.2, 2.2, 2.2), 0.22)
-		tw.parallel().tween_property(j_mat, "albedo_color:a", 0.0, 0.22)
-		tw.tween_callback(jet.queue_free)
-
-
-static func _spawn_booster_ring(main_scene: Node, pos: Vector3, m_scale: float) -> void:
-	var r_mat = StandardMaterial3D.new()
-	r_mat.albedo_color = Color(1.0, 0.85, 0.45, 0.92)
-	r_mat.emission_enabled = true
-	r_mat.emission = Color("ffbb44")
-	r_mat.emission_energy_multiplier = 7.0
-	r_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	r_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	r_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-
-	var ring = MeshInstance3D.new()
-	ring.name = "CheongungBoosterRing"
-	var torus = TorusMesh.new()
-	torus.inner_radius = 0.32 * m_scale
-	torus.outer_radius = 0.48 * m_scale
-	ring.mesh = torus
-	ring.material_override = r_mat
-	main_scene.add_child(ring)
-	ring.global_position = pos
-
-	var tw = ring.create_tween()
-	tw.tween_property(ring, "scale", Vector3(5.8, 5.8, 5.8), 0.34)
-	tw.parallel().tween_property(r_mat, "albedo_color:a", 0.0, 0.34)
-	tw.tween_callback(ring.queue_free)
-
-
-static func _spawn_straight_contrail_beam(main_scene: Node, p0: Vector3, p1: Vector3, m_scale: float) -> void:
-	var d = p0.distance_to(p1)
-	if d < 0.5:
+static func _on_pre_draw(launcher: Node3D) -> void:
+	if not is_instance_valid(launcher):
 		return
-	var mat = StandardMaterial3D.new()
-	mat.albedo_color = Color(0.95, 0.97, 1.0, 0.68)
-	mat.emission_enabled = true
-	mat.emission = Color("ffddaa")
-	mat.emission_energy_multiplier = 2.5
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 
-	var pivot = Node3D.new()
-	pivot.name = "CheongungStraightTrail"
-	main_scene.add_child(pivot)
-	pivot.global_position = (p0 + p1) * 0.5
-	pivot.look_at(p1, Vector3.UP)
-	pivot.add_child(_cyl(0.08 * m_scale, 0.14 * m_scale, d, mat, Vector3.ZERO, Vector3(PI * 0.5, 0.0, 0.0)))
+	var t_sec := float(Time.get_ticks_msec()) * 0.001
 
-	var tw = pivot.create_tween()
-	tw.tween_property(mat, "albedo_color:a", 0.0, 0.48)
-	tw.tween_callback(pivot.queue_free)
+	# 남산 다리 왼쪽 강변 잔디공원 배치 및 스케일 유지 (도로 겹침 0% 보장)
+	var chassis := launcher.get_node_or_null("Chassis") as Node3D
+	if is_instance_valid(chassis):
+		chassis.scale = Vector3(0.55, 0.55, 0.55)
+		if absf(chassis.position.x - (-1.45)) > 0.35:
+			chassis.position = Vector3(-1.45, 0.0, -0.25)
 
+	# 1. 다기능레이더(MFR) 위상배열 안테나 360도 회전 및 전파 파동 확산
+	var mfr := launcher.get_node_or_null("CheongungMFR") as Node3D
+	if is_instance_valid(mfr):
+		mfr.position = Vector3(-5.80, 0.08, -0.35)
+		mfr.scale = Vector3(0.36, 0.36, 0.36)
+		var r_head := mfr.get_node_or_null("MFRRadarHead") as Node3D
+		if is_instance_valid(r_head):
+			r_head.rotation.y = t_sec * 2.55
+			var emitter := r_head.find_child("RadarWaveEmitter", true, false) as Node3D
+			if is_instance_valid(emitter):
+				for idx in range(3):
+					var pr := emitter.get_node_or_null("RadarPulse_%d" % idx) as Node3D
+					if is_instance_valid(pr):
+						var cyc := fmod(t_sec * 1.45 + float(idx) * 0.33, 1.0)
+						pr.position.z = -0.45 - cyc * 4.65
+						var sc := 0.45 + cyc * 1.75
+						pr.scale = Vector3(sc, 1.0, sc)
 
-static func _spawn_smoke_puff(main_scene: Node, pos: Vector3, m_scale: float) -> void:
-	var s_mat = StandardMaterial3D.new()
-	s_mat.albedo_color = Color(0.94, 0.96, 1.0, 0.68)
-	s_mat.emission_enabled = true
-	s_mat.emission = Color("ffbb77")
-	s_mat.emission_energy_multiplier = 0.85
-	s_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		var sky_dome := mfr.get_node_or_null("SkyLockRings") as Node3D
+		if is_instance_valid(sky_dome):
+			sky_dome.rotation.y = -t_sec * 1.35
+			var pulse_s := 1.0 + 0.14 * sin(t_sec * 4.2)
+			sky_dome.scale = Vector3(pulse_s, 1.0, pulse_s)
 
-	var puff = _sphere(0.20 * m_scale, s_mat, pos)
-	puff.name = "CheongungSmokePuff"
-	main_scene.add_child(puff)
-	puff.global_position = pos
+		var mfr_stb := mfr.find_child("BeamPivot", true, false) as Node3D
+		if is_instance_valid(mfr_stb):
+			mfr_stb.rotation.y = t_sec * 9.5
 
-	var tw = puff.create_tween()
-	tw.tween_property(puff, "scale", Vector3(2.2, 2.2, 2.2), 0.48)
-	tw.parallel().tween_property(s_mat, "albedo_color:a", 0.0, 0.48)
-	tw.tween_callback(puff.queue_free)
+	# 2. 교전통제소(ECS) 위성 안테나 및 경광등 회전
+	var ecs := launcher.get_node_or_null("CheongungECS") as Node3D
+	if is_instance_valid(ecs):
+		ecs.position = Vector3(1.85, 0.08, -0.35)
+		ecs.scale = Vector3(0.36, 0.36, 0.36)
+		var dish := ecs.get_node_or_null("ECSSatDish") as Node3D
+		if is_instance_valid(dish):
+			dish.rotation.y = sin(t_sec * 1.8) * 0.85
+		var ecs_stb := ecs.find_child("BeamPivot", true, false) as Node3D
+		if is_instance_valid(ecs_stb):
+			ecs_stb.rotation.y = -t_sec * 9.5
 
+	# 3. 발사대(TEL) 경광등 회전 및 데이터링크 펄스 이동
+	var tel_stb := launcher.find_child("StrobeBeamPivot", true, false) as Node3D
+	if is_instance_valid(tel_stb):
+		tel_stb.rotation.y = t_sec * 10.5
 
-static func _spawn_interception_explosion(main_scene: Node, pos: Vector3) -> void:
-	var el = OmniLight3D.new()
-	el.name = "CheongungExpLight"
-	el.light_color = Color("ff7722")
-	el.light_energy = 16.0
-	el.omni_range = 30.0
-	main_scene.add_child(el)
-	el.global_position = pos
-	var tw_l = el.create_tween()
-	tw_l.tween_property(el, "light_energy", 0.0, 0.55)
-	tw_l.tween_callback(el.queue_free)
+	var dl := launcher.get_node_or_null("DataLinkPulses") as Node3D
+	if is_instance_valid(dl):
+		for i in range(8):
+			var dot := dl.get_node_or_null("LinkDot_%d" % i) as Node3D
+			if is_instance_valid(dot):
+				var wave := fmod(t_sec * 2.4 + float(i) * 0.125, 1.0)
+				dot.position.x = -5.45 + wave * 7.10
+				var s_dot := 0.85 + 0.45 * sin(wave * PI)
+				dot.scale = Vector3(s_dot, s_dot, s_dot)
 
-	var c_mat = StandardMaterial3D.new()
-	c_mat.albedo_color = Color(1.0, 0.85, 0.35, 0.95)
-	c_mat.emission_enabled = true
-	c_mat.emission = Color("ffaa22")
-	c_mat.emission_energy_multiplier = 7.5
-	c_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	c_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	c_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	# 4. 천궁-II 3단계 직각 콜드런치(수직 사출 -> 공중 정점 정지·측면추력기 방향 전환 -> 곡률 0% 일직선 고속 타격)
+	var battlefield := _find_battlefield(launcher)
+	if not is_instance_valid(battlefield):
+		return
 
-	var fb = _sphere(0.75, c_mat, pos)
-	fb.name = "CheongungExpFireball"
-	main_scene.add_child(fb)
-	fb.global_position = pos
-	var tw_f = fb.create_tween()
-	tw_f.tween_property(fb, "scale", Vector3(5.8, 5.8, 5.8), 0.45)
-	tw_f.parallel().tween_property(c_mat, "albedo_color:a", 0.0, 0.45)
-	tw_f.tween_callback(fb.queue_free)
+	_ensure_cold_launch_vfx(battlefield)
+	var vfx := battlefield.get_node_or_null("CheongungColdLaunchVFX") as Node3D
+	var dart := vfx.get_node_or_null("InterceptorDart") as Node3D if is_instance_valid(vfx) else null
+	var trail := vfx.get_node_or_null("VerticalSmokeColumn") as Node3D if is_instance_valid(vfx) else null
+	var reticle := vfx.get_node_or_null("TargetLockReticle") as Node3D if is_instance_valid(vfx) else null
+	var muzzle := launcher.find_child("ColdLaunchMuzzlePlume", true, false) as Node3D
 
-	for r_rot in [Vector3.ZERO, Vector3(PI * 0.35, 0.0, PI * 0.25)]:
-		var sw_mat = c_mat.duplicate()
-		var sw = MeshInstance3D.new()
-		sw.name = "CheongungExpShockwave"
-		var torus = TorusMesh.new()
-		torus.inner_radius = 0.48
-		torus.outer_radius = 0.62
-		sw.mesh = torus
-		sw.rotation = r_rot
-		sw.material_override = sw_mat
-		main_scene.add_child(sw)
-		sw.global_position = pos
-		var tw_s = sw.create_tween()
-		tw_s.tween_property(sw, "scale", Vector3(8.2, 8.2, 8.2), 0.50)
-		tw_s.parallel().tween_property(sw_mat, "albedo_color:a", 0.0, 0.50)
-		tw_s.tween_callback(sw.queue_free)
+	var orig_missile := battlefield.get("_missile_node") as Node3D
+	var orig_smoke := battlefield.get("_missile_smoke_node") as Node3D
+	var flight = battlefield.get("_missile_flight")
 
+	if flight is Dictionary and not flight.is_empty():
+		if is_instance_valid(orig_missile):
+			orig_missile.visible = false
+		if is_instance_valid(orig_smoke):
+			orig_smoke.visible = false
 
-static func _box(sz: Vector3, mat: Material, pos: Vector3, rot: Vector3 = Vector3.ZERO) -> MeshInstance3D:
-	var mi = MeshInstance3D.new()
-	var bm = BoxMesh.new()
-	bm.size = sz
-	mi.mesh = bm
-	mi.material_override = mat
-	mi.position = pos
-	mi.rotation = rot
-	return mi
+		var start_pos: Vector3 = flight.get("start", Vector3.ZERO)
+		var target_pos: Vector3 = flight.get("target", Vector3.ZERO)
+		var elapsed: float = float(flight.get("elapsed", 0.0))
+		var duration: float = maxf(float(flight.get("duration", 0.36)), 0.001)
 
+		if elapsed < 0.05:
+			var siren := launcher.get_node_or_null("AirDefenseSiren") as AudioStreamPlayer
+			if is_instance_valid(siren) and not siren.playing:
+				siren.play()
 
-static func _cyl(top_r: float, bot_r: float, h: float, mat: Material, pos: Vector3, rot: Vector3 = Vector3.ZERO) -> MeshInstance3D:
-	var mi = MeshInstance3D.new()
-	var cm = CylinderMesh.new()
-	cm.top_radius = top_r
-	cm.bottom_radius = bot_r
-	cm.height = h
-	cm.radial_segments = 20
-	mi.mesh = cm
-	mi.material_override = mat
-	mi.position = pos
-	mi.rotation = rot
-	return mi
+		var launch_base := launcher.global_position + Vector3(-1.45, 2.35, -0.25)
+		var apex_pos := launch_base + Vector3(0.0, 4.85, 0.0)
+		var to_target := target_pos - apex_pos
+		var flat_dir := Vector3(to_target.x, 0.0, to_target.z)
+		if flat_dir.length() > 0.001:
+			flat_dir = flat_dir.normalized()
+		else:
+			flat_dir = Vector3(0.0, 0.0, -1.0)
+		var aim_dir := to_target.normalized() if to_target.length() > 0.001 else flat_dir
 
+		var draw_pos := launch_base
+		var draw_dir := Vector3.UP
+		var dacs_active := false
+		var booster_active := false
 
-static func _sphere(r: float, mat: Material, pos: Vector3) -> MeshInstance3D:
-	var mi = MeshInstance3D.new()
-	var sm = SphereMesh.new()
-	sm.radius = r
-	sm.height = r * 2.0
-	sm.radial_segments = 14
-	sm.rings = 8
-	mi.mesh = sm
-	mi.material_override = mat
-	mi.position = pos
-	return mi
+		if elapsed < 0.15:
+			# 1단계: 90도 수직 콜드런치 가스 사출 (하늘로 수직 치솟음)
+			var u1 := clampf(elapsed / 0.15, 0.0, 1.0)
+			var ease_u1 := 1.0 - pow(1.0 - u1, 2.2)
+			draw_pos = launch_base.lerp(apex_pos, ease_u1)
+			draw_dir = Vector3.UP
+		elif elapsed < 0.27:
+			# 2단계: 공중 정점(apex_pos)에 멈춰 서서 측면추력기(DACS) 점화로 탄두 방향만 표적으로 꺾기
+			var u2 := clampf((elapsed - 0.15) / 0.12, 0.0, 1.0)
+			draw_pos = apex_pos + Vector3(0.0, 0.10 * sin(u2 * PI), 0.0)
+			draw_dir = Vector3.UP.lerp(aim_dir, u2).normalized()
+			dacs_active = true
+		else:
+			# 3단계: 주 로켓 점화 후 표적까지 포물선 곡률 0% 일직선 초고속 타격
+			var u3 := clampf((elapsed - 0.27) / maxf(duration - 0.27, 0.04), 0.0, 1.0)
+			var smooth_u3 := 1.0 - pow(1.0 - u3, 2.15)
+			draw_pos = apex_pos.lerp(target_pos, smooth_u3)
+			draw_dir = aim_dir
+			booster_active = true
+
+		if is_instance_valid(dart):
+			dart.visible = true
+			dart.global_position = draw_pos
+			var up_vec := Vector3.FORWARD if absf(draw_dir.dot(Vector3.UP)) > 0.96 else Vector3.UP
+			dart.look_at(draw_pos + draw_dir, up_vec)
+
+			var dacs_node := dart.get_node_or_null("DACSThrusterRing") as Node3D
+			if is_instance_valid(dacs_node):
+				dacs_node.visible = dacs_active
+				if dacs_active:
+					dacs_node.rotation.z = t_sec * 28.0
+					var ds := 0.85 + 0.55 * sin(t_sec * 45.0)
+					dacs_node.scale = Vector3(ds, ds, ds)
+
+			var booster_node := dart.get_node_or_null("MainBoosterPlume") as Node3D
+			if is_instance_valid(booster_node):
+				booster_node.visible = booster_active
+				if booster_active:
+					var bs := 0.90 + 0.30 * sin(t_sec * 50.0)
+					booster_node.scale = Vector3(bs, bs, 1.0 + 0.35 * sin(t_sec * 40.0))
+
+		if is_instance_valid(muzzle):
+			muzzle.visible = elapsed < 0.24
+			if muzzle.visible:
+				var ms := 0.70 + elapsed * 3.5
+				muzzle.scale = Vector3(ms, ms, ms)
+
+		if is_instance_valid(trail):
+			trail.visible = true
+			var col_top := draw_pos if elapsed < 0.27 else apex_pos
+			var col_h := maxf(col_top.y - launch_base.y, 0.25)
+			trail.global_position = Vector3(launch_base.x, launch_base.y + col_h * 0.5, launch_base.z)
+			trail.scale = Vector3(1.0, col_h, 1.0)
+
+		if is_instance_valid(reticle):
+			reticle.visible = true
+			reticle.global_position = target_pos
+			reticle.rotation.y = t_sec * 6.0
+			var rs := 0.85 + 0.25 * sin(t_sec * 18.0)
+			reticle.scale = Vector3(rs, rs, rs)
+	else:
+		if is_instance_valid(dart):
+			dart.visible = false
+		if is_instance_valid(trail):
+			trail.visible = false
+		if is_instance_valid(reticle):
+			reticle.visible = false
+		if is_instance_valid(muzzle):
+			muzzle.visible = false
