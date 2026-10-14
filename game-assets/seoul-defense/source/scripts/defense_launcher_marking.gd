@@ -1,5 +1,10 @@
 extends RefCounted
 
+# Godot 4.6 정적 타입 분석기 우회 헬퍼 (모든 Node/Resource/Mesh/Material 접근을 Variant 동적 디스패치로 안전하게 처리)
+static func _v(x):
+	return x
+
+
 static func apply(chassis: Node3D, font: Font) -> void:
 	if not is_instance_valid(chassis) or chassis.has_node("K239Marking"):
 		return
@@ -71,20 +76,23 @@ static func _build_full_cheongung_battery(chassis: Node3D, font: Font, paint: St
 	var main_scene = tree.current_scene if tree else launcher.get_parent()
 
 	# 기존 천무(Chunmoo) 대각선 사각 포드(PodRack)의 모든 메시를 완전히 제거(mesh = null)
-	var pod_rack = launcher.find_child("PodRack", true, false)
+	var pod_rack = _v(launcher.find_child("PodRack", true, false))
 	if is_instance_valid(pod_rack):
 		if pod_rack is MeshInstance3D:
 			pod_rack.mesh = null
-		pod_rack.visible = false
-		for ch in pod_rack.get_children():
+		if pod_rack is VisualInstance3D or pod_rack is Node3D:
+			pod_rack.visible = false
+		for raw_ch in pod_rack.get_children():
+			var ch = _v(raw_ch)
 			if ch is MeshInstance3D:
 				ch.mesh = null
-			if ch is VisualInstance3D:
+			if ch is VisualInstance3D or ch is Node3D:
 				ch.visible = false
-			for sub in ch.find_children("*", "VisualInstance3D", true, false):
+			for raw_sub in ch.find_children("*", "VisualInstance3D", true, false):
+				var sub = _v(raw_sub)
 				if sub is MeshInstance3D:
 					sub.mesh = null
-				if sub is VisualInstance3D:
+				if sub is VisualInstance3D or sub is Node3D:
 					sub.visible = false
 
 	# 공용 PBR 고품질 재질 (Clearcoat & Specular Rim 적용)
@@ -168,16 +176,20 @@ static func _build_full_cheongung_battery(chassis: Node3D, font: Font, paint: St
 	mat_strobe_off.roughness = 0.40
 
 	# 차체(Chassis) 기존 트럭 메시들도 고품질 PBR 밀리터리 클리어코트로 리마스터링
-	for ch_mi in chassis.find_children("*", "MeshInstance3D", true, false):
-		if ch_mi.name != "Designation_KM-SAM" and is_instance_valid(ch_mi.mesh) and not (ch_mi.mesh is TextMesh):
-			var c_mat = ch_mi.get_active_material(0)
-			if c_mat is StandardMaterial3D:
-				var nm = c_mat.duplicate()
-				nm.roughness = clampf(nm.roughness * 0.55, 0.18, 0.48)
-				nm.metallic = clampf(maxf(nm.metallic, 0.35), 0.28, 0.85)
-				nm.rim_enabled = true
-				nm.rim = 0.32
-				ch_mi.material_override = nm
+	for raw_cmi in chassis.find_children("*", "MeshInstance3D", true, false):
+		var ch_mi = _v(raw_cmi)
+		if ch_mi is MeshInstance3D:
+			var cm_mesh = _v(ch_mi.mesh)
+			if ch_mi.name != "Designation_KM-SAM" and is_instance_valid(cm_mesh) and not (cm_mesh is TextMesh):
+				var c_mat = _v(ch_mi.get_active_material(0))
+				if c_mat is StandardMaterial3D:
+					var nm = _v(c_mat.duplicate())
+					if nm is StandardMaterial3D:
+						nm.roughness = clampf(nm.roughness * 0.55, 0.18, 0.48)
+						nm.metallic = clampf(maxf(nm.metallic, 0.35), 0.28, 0.85)
+						nm.rim_enabled = true
+						nm.rim = 0.32
+						ch_mi.material_override = nm
 
 	var key_light = OmniLight3D.new()
 	key_light.name = "CheongungKeyLight"
@@ -398,7 +410,8 @@ static func _build_full_cheongung_battery(chassis: Node3D, font: Font, paint: St
 
 	if is_instance_valid(main_scene) and muzzles.size() > 0:
 		var new_socks = []
-		for m_node in muzzles:
+		for raw_m in muzzles:
+			var m_node = _v(raw_m)
 			new_socks.append(launcher.to_local(m_node.global_position))
 		if "launcher_sockets" in main_scene:
 			main_scene.set("launcher_sockets", new_socks)
@@ -449,7 +462,6 @@ static func _build_full_cheongung_battery(chassis: Node3D, font: Font, paint: St
 
 # ============================================================================
 # C. 전반적인 3D 그래픽 고퀄리티 리마스터링 엔진
-#    (HDR 환경 · 3점 조명 · 한강 거울수면 · 고층빌딩 유리커튼월 & 야간창문 · 랜드마크 조명 · 대공탐조등)
 # ============================================================================
 static func _setup_world_3d_overhaul(main_scene: Node, state: Dictionary) -> void:
 	if main_scene.has_node("CheongungWorld3DOverhaul"):
@@ -458,13 +470,10 @@ static func _setup_world_3d_overhaul(main_scene: Node, state: Dictionary) -> voi
 	env_root.name = "CheongungWorld3DOverhaul"
 	main_scene.add_child(env_root)
 
-	# 1) 시네마틱 3점 조명: 골든 호라이즌 림라이트 + 문라이트 키라이트 + 도시 스카이라인 업라이트
-	for dlight in main_scene.find_children("*", "DirectionalLight3D", true, false):
+	for raw_dl in main_scene.find_children("*", "DirectionalLight3D", true, false):
+		var dlight = _v(raw_dl)
 		if dlight is DirectionalLight3D:
 			dlight.shadow_enabled = true
-			dlight.shadow_bias = 0.03
-			dlight.shadow_normal_bias = 1.2
-			dlight.shadow_blur = 1.35
 			dlight.light_energy = maxf(dlight.light_energy, 1.35)
 			dlight.light_color = Color("e4f0ff")
 
@@ -476,7 +485,6 @@ static func _setup_world_3d_overhaul(main_scene: Node, state: Dictionary) -> voi
 	rim_sun.rotation_degrees = Vector3(-24.0, 142.0, 0.0)
 	env_root.add_child(rim_sun)
 
-	# 2) 랜드마크(남산서울타워 / 광화문) 및 한강 수면 하이라이트 포인트 광원
 	var tower_light = OmniLight3D.new()
 	tower_light.name = "CheongungLandmarkLight"
 	tower_light.light_color = Color("00f5ff")
@@ -501,7 +509,6 @@ static func _setup_world_3d_overhaul(main_scene: Node, state: Dictionary) -> voi
 		river_glow.position = Vector3(rx, 3.2, -6.5)
 		env_root.add_child(river_glow)
 
-	# 3) 도심 후방 대공 탐조등(Anti-Aircraft Sky Searchlights) 4기 — 밤하늘을 가로지르는 입체 볼류메트릭 서치라이트
 	var sl_mat = StandardMaterial3D.new()
 	sl_mat.albedo_color = Color(0.55, 0.88, 1.0, 0.11)
 	sl_mat.emission_enabled = true
@@ -529,7 +536,6 @@ static func _setup_world_3d_overhaul(main_scene: Node, state: Dictionary) -> voi
 		sl_list.append(sl_pivot)
 	state["searchlights"] = sl_list
 
-	# 4) 입체 3D 밤하늘 별자리 & 고고도 대기 네온 성운(Starfield)
 	var star_mat_a = StandardMaterial3D.new()
 	star_mat_a.albedo_color = Color("ffffff")
 	star_mat_a.emission_enabled = true
@@ -554,32 +560,26 @@ static func _setup_world_3d_overhaul(main_scene: Node, state: Dictionary) -> voi
 		env_root.add_child(star)
 
 
-static func _enforce_world_environment(main_scene: Node, t: float) -> void:
-	var wenv = main_scene.find_child("*", "WorldEnvironment", true, false)
-	var env = null
-	if is_instance_valid(wenv) and wenv is WorldEnvironment and is_instance_valid(wenv.environment):
-		env = wenv.environment
-	elif main_scene.get_viewport() and main_scene.get_viewport().world_3d:
-		env = main_scene.get_viewport().world_3d.environment
-
-	if is_instance_valid(env):
-		env.tonemap_mode = Environment.TONE_MAPPER_ACES
-		env.tonemap_exposure = 1.18
-		env.tonemap_white = 5.2
-		env.glow_enabled = true
-		env.glow_intensity = 1.45
-		env.glow_strength = 1.14
-		env.glow_bloom = 0.30
-		env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
-		env.adjustment_enabled = true
-		env.adjustment_brightness = 1.03
-		env.adjustment_contrast = 1.22
-		env.adjustment_saturation = 1.28
-		env.fog_enabled = true
-		env.fog_light_color = Color("182c52")
-		env.fog_light_energy = 0.58
-		env.fog_density = 0.0030
-		env.fog_aerial_perspective = 0.45
+static func _enforce_world_environment(main_scene: Node) -> void:
+	var wenv = _v(main_scene.find_child("*", "WorldEnvironment", true, false))
+	if is_instance_valid(wenv) and wenv is WorldEnvironment:
+		var env = _v(wenv.environment)
+		if is_instance_valid(env) and env is Environment:
+			env.tonemap_mode = Environment.TONE_MAPPER_ACES
+			env.tonemap_exposure = 1.18
+			env.glow_enabled = true
+			env.glow_intensity = 1.42
+			env.glow_strength = 1.12
+			env.glow_bloom = 0.28
+			env.adjustment_enabled = true
+			env.adjustment_brightness = 1.03
+			env.adjustment_contrast = 1.20
+			env.adjustment_saturation = 1.26
+			env.fog_enabled = true
+			env.fog_light_color = Color("182c52")
+			env.fog_light_energy = 0.55
+			env.fog_density = 0.0030
+			env.fog_aerial_perspective = 0.42
 
 
 static func _remaster_all_scene_meshes(main_scene: Node, state: Dictionary) -> void:
@@ -606,8 +606,12 @@ static func _remaster_all_scene_meshes(main_scene: Node, state: Dictionary) -> v
 	beacon_mat.emission_energy_multiplier = 6.0
 	beacon_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 
-	for mi in all_meshes:
-		if not (mi is MeshInstance3D) or not is_instance_valid(mi) or not is_instance_valid(mi.mesh):
+	for raw_mi in all_meshes:
+		var mi = _v(raw_mi)
+		if not is_instance_valid(mi) or not (mi is MeshInstance3D):
+			continue
+		var m_obj = _v(mi.mesh)
+		if not is_instance_valid(m_obj):
 			continue
 		var mid = mi.get_instance_id()
 		if styled.has(mid):
@@ -615,10 +619,11 @@ static func _remaster_all_scene_meshes(main_scene: Node, state: Dictionary) -> v
 		if is_instance_valid(launcher) and (mi == launcher or launcher.is_ancestor_of(mi)):
 			styled[mid] = true
 			continue
-		if mi.name.begins_with("Cheongung") or (mi.get_parent() and mi.get_parent().name.begins_with("Cheongung")):
+		var p_node = _v(mi.get_parent())
+		if mi.name.begins_with("Cheongung") or (is_instance_valid(p_node) and p_node.name.begins_with("Cheongung")):
 			styled[mid] = true
 			continue
-		if mi.mesh is TextMesh:
+		if m_obj is TextMesh:
 			styled[mid] = true
 			continue
 		var mname = mi.name.to_lower()
@@ -626,10 +631,10 @@ static func _remaster_all_scene_meshes(main_scene: Node, state: Dictionary) -> v
 			styled[mid] = true
 			continue
 
-		var src_mat = mi.material_override
-		if not is_instance_valid(src_mat) and mi.mesh.get_surface_count() > 0:
-			src_mat = mi.get_active_material(0)
-		if not (src_mat is StandardMaterial3D):
+		var src_mat = _v(mi.material_override)
+		if not is_instance_valid(src_mat) and m_obj.get_surface_count() > 0:
+			src_mat = _v(mi.get_active_material(0))
+		if not is_instance_valid(src_mat) or not (src_mat is StandardMaterial3D):
 			styled[mid] = true
 			continue
 		if src_mat.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
@@ -637,7 +642,10 @@ static func _remaster_all_scene_meshes(main_scene: Node, state: Dictionary) -> v
 			continue
 
 		styled[mid] = true
-		var mat = src_mat.duplicate()
+		var mat = _v(src_mat.duplicate())
+		if not (mat is StandardMaterial3D):
+			continue
+
 		var c = mat.albedo_color
 		var lum = c.r * 0.299 + c.g * 0.587 + c.b * 0.114
 		var aabb = mi.get_aabb()
@@ -665,7 +673,7 @@ static func _remaster_all_scene_meshes(main_scene: Node, state: Dictionary) -> v
 			mi.material_override = mat
 			continue
 
-		# 2) 빌딩 창문 / 가로등 / 타워 조명 / 차량 라이트 (작은 메쉬 또는 발광 메쉬 -> 고휘도 야간 네온/골드 창문으로 변환!)
+		# 2) 빌딩 창문 / 가로등 / 타워 조명 / 차량 라이트 -> 고휘도 야간 네온/골드 발광
 		if mat.emission_enabled or (gpos.z < -4.5 and wy < 0.95 and wmax < 1.35 and gpos.y > 0.6):
 			mat.emission_enabled = true
 			if (mid % 3) == 0:
@@ -707,7 +715,7 @@ static func _remaster_all_scene_meshes(main_scene: Node, state: Dictionary) -> v
 			mi.material_override = mat
 			continue
 
-		# 5) 도심 빌딩 본체 (세련된 다크 사파이어/스틸 유리 커튼월 PBR + 옥상 네온 크라운 & 항공장애등 부착)
+		# 5) 도심 빌딩 본체 (다크 사파이어/스틸 유리 커튼월 PBR + 옥상 네온 크라운 & 항공장애등 부착)
 		if gpos.z < -5.5 and wy >= 1.4 and wx >= 0.8 and wz >= 0.8 and not (c.g > c.r * 1.25 and c.g > c.b * 1.15):
 			var tint = Color(0.76, 0.86, 1.06, 1.0) if (mid % 2 == 0) else Color(0.88, 0.90, 0.98, 1.0)
 			mat.albedo_color = c.darkened(0.32) * tint
@@ -722,9 +730,8 @@ static func _remaster_all_scene_meshes(main_scene: Node, state: Dictionary) -> v
 			mat.rim_tint = 0.35
 			mi.material_override = mat
 
-			# 일정 높이 이상 빌딩에 옥상 네온 라인 및 적색 항공장애등 추가
-			if mi.mesh is BoxMesh and wy >= 2.6 and not mi.has_node("CheongungRoofTrim"):
-				var bsz = mi.mesh.size
+			if m_obj is BoxMesh and wy >= 2.6 and not mi.has_node("CheongungRoofTrim"):
+				var bsz = m_obj.size
 				var trim_holder = Node3D.new()
 				trim_holder.name = "CheongungRoofTrim"
 				mi.add_child(trim_holder)
@@ -770,7 +777,8 @@ static func _detect_is_namsan(main_scene: Node) -> bool:
 				return true
 			if "gwang" in val:
 				return false
-	for ch in main_scene.find_children("*", "Node3D", true, false):
+	for raw_ch in main_scene.find_children("*", "Node3D", true, false):
+		var ch = _v(raw_ch)
 		if ch is Node3D and ch.is_visible_in_tree():
 			var cn = ch.name.to_lower()
 			if "namsan" in cn:
@@ -793,10 +801,6 @@ static func _apply_stage_scale_and_layout(state: Dictionary) -> void:
 	state["is_namsan"] = is_namsan
 
 	if is_namsan:
-		# [남산 스테이지]:
-		# 1) 주변 건물 및 다리 위 차량/버스와 완벽한 비례를 이루도록 발사대(0.42배) 및 레이더/통제소(0.30배) 축소!
-		# 2) 우측 한강대교 도로(X ≈ +4.8 ~ +11.0)와 절대 겹치지 않도록,
-		#    강변 좌측 넓고 평탄한 잔디 공원 구역(X = -6.2 ~ +2.35, Z = -0.45) 안에 여유 있는 간격으로 배치!
 		chassis.position = Vector3(-1.65, 0.0, -0.25)
 		chassis.scale = Vector3(0.42, 0.42, 0.42)
 		mfr.position = Vector3(-6.20, 0.08, -0.45)
@@ -804,15 +808,12 @@ static func _apply_stage_scale_and_layout(state: Dictionary) -> void:
 		ecs.position = Vector3(2.35, 0.08, -0.45)
 		ecs.scale = Vector3(0.30, 0.30, 0.30)
 
-		# 발사대 하단 기본 붉은 바닥 패드(GroundPad 등)도 남산 비율(0.42배)에 맞춰 함께 축소·정렬
-		for ch in launcher.get_children():
+		for raw_ch in launcher.get_children():
+			var ch = _v(raw_ch)
 			if ch is Node3D and ch != chassis and ch != mfr and ch != ecs and ch != state.get("pod_rack") and not ch.name.begins_with("Cheongung"):
-				ch.position.x = -1.65
-				ch.position.z = -0.25
+				ch.position = Vector3(-1.65, ch.position.y, -0.25)
 				ch.scale = Vector3(0.42, 0.42, 0.42)
 	else:
-		# [광화문 스테이지]:
-		# 광화문 광장 스케일에 맞춰 발사대(0.82배)와 좌우 레이더/교전통제소(0.46배, X = ±9.2m)를 여유 있게 배치!
 		chassis.position = Vector3(0.0, 0.0, 0.0)
 		chassis.scale = Vector3(0.82, 0.82, 0.82)
 		mfr.position = Vector3(-9.20, 0.14, -0.35)
@@ -820,40 +821,48 @@ static func _apply_stage_scale_and_layout(state: Dictionary) -> void:
 		ecs.position = Vector3(9.20, 0.14, -0.35)
 		ecs.scale = Vector3(0.46, 0.46, 0.46)
 
-		for ch in launcher.get_children():
+		for raw_ch in launcher.get_children():
+			var ch = _v(raw_ch)
 			if ch is Node3D and ch != chassis and ch != mfr and ch != ecs and ch != state.get("pod_rack") and not ch.name.begins_with("Cheongung"):
-				ch.position.x = 0.0
-				ch.position.z = 0.0
+				ch.position = Vector3(0.0, ch.position.y, 0.0)
 				ch.scale = Vector3(0.82, 0.82, 0.82)
 
 
 static func _on_scene_node_added(node: Node, state: Dictionary) -> void:
-	if not (node is Node3D) or not is_instance_valid(node):
+	var n = _v(node)
+	if not is_instance_valid(n) or not (n is Node3D):
 		return
-	if node.name.begins_with("Cheongung"):
+	if n.name.begins_with("Cheongung"):
 		return
 	var launcher = state.get("launcher")
-	if is_instance_valid(launcher) and (node == launcher or launcher.is_ancestor_of(node)):
+	if is_instance_valid(launcher) and (n == launcher or launcher.is_ancestor_of(n)):
 		return
-	state["pending_nodes"].append({"node": node, "frames": 0})
+	state["pending_nodes"].append({"node": n, "frames": 0})
 
 
 static func _hide_engine_projectile_visuals(node: Node3D) -> void:
-	if not is_instance_valid(node):
+	var n = _v(node)
+	if not is_instance_valid(n):
 		return
-	var nname = node.name.to_lower()
+	var nname = n.name.to_lower()
 	if "label" in nname or "text" in nname or "word" in nname:
 		return
-	if node is MeshInstance3D and not (node.mesh is TextMesh):
-		node.visible = false
-	for ch in node.find_children("*", "VisualInstance3D", true, false):
-		var cn = ch.name.to_lower()
-		if "label" in cn or "text" in cn or "word" in cn:
-			continue
-		if ch is MeshInstance3D and not (ch.mesh is TextMesh):
-			ch.visible = false
-		elif not (ch is Label3D):
-			ch.visible = false
+	if n is MeshInstance3D:
+		var nm = _v(n.mesh)
+		if not (nm is TextMesh):
+			n.visible = false
+	for raw_ch in n.find_children("*", "VisualInstance3D", true, false):
+		var ch = _v(raw_ch)
+		if ch is VisualInstance3D:
+			var cn = ch.name.to_lower()
+			if "label" in cn or "text" in cn or "word" in cn or (ch is Label3D):
+				continue
+			if ch is MeshInstance3D:
+				var cm = _v(ch.mesh)
+				if not (cm is TextMesh):
+					ch.visible = false
+			else:
+				ch.visible = false
 
 
 static func _animate_radar_wave(w_ring: MeshInstance3D, w_mat: StandardMaterial3D, delay_sec: float) -> void:
@@ -903,9 +912,9 @@ static func _on_pre_process(state: Dictionary) -> void:
 	var chassis = state["chassis"]
 	if not is_instance_valid(chassis):
 		return
-	var pod_rack = state["pod_rack"]
-	var rack = state["rack"]
-	if is_instance_valid(pod_rack) and is_instance_valid(rack):
+	var pod_rack = _v(state["pod_rack"])
+	var rack = _v(state["rack"])
+	if is_instance_valid(pod_rack) and is_instance_valid(rack) and (pod_rack is Node3D):
 		pod_rack.visible = false
 		pod_rack.global_position = rack.global_position + Vector3(0.0, 3.2, 0.0)
 		pod_rack.rotation = Vector3(deg_to_rad(89.0), 0.0, 0.0)
@@ -919,13 +928,12 @@ static func _on_pre_draw(state: Dictionary) -> void:
 	var t = float(state["time"]) + delta
 	state["time"] = t
 
-	# 1. 차체 회전 고정 및 스테이지(남산/광화문)별 스케일·좌표 완벽 동기화
 	chassis.rotation = Vector3(0.0, PI * 0.5, 0.0)
 	_apply_stage_scale_and_layout(state)
 
-	var pod_rack = state["pod_rack"]
-	var rack = state["rack"]
-	if is_instance_valid(pod_rack) and is_instance_valid(rack):
+	var pod_rack = _v(state["pod_rack"])
+	var rack = _v(state["rack"])
+	if is_instance_valid(pod_rack) and is_instance_valid(rack) and (pod_rack is Node3D):
 		pod_rack.visible = false
 		pod_rack.global_position = rack.global_position + Vector3(0.0, 3.2, 0.0)
 		pod_rack.rotation = Vector3(deg_to_rad(89.0), 0.0, 0.0)
@@ -934,13 +942,12 @@ static func _on_pre_draw(state: Dictionary) -> void:
 	if not is_instance_valid(main_scene):
 		return
 
-	# 2. 3D 월드 HDR 환경 유지, 대공 탐조등 스윕 애니메이션 및 주기적 PBR 메쉬 리마스터링
-	_enforce_world_environment(main_scene, t)
+	_enforce_world_environment(main_scene)
 
 	var sl_list = state["searchlights"]
 	for si in range(sl_list.size()):
-		var sl = sl_list[si]
-		if is_instance_valid(sl):
+		var sl = _v(sl_list[si])
+		if is_instance_valid(sl) and (sl is Node3D):
 			var phase = t * (0.55 + float(si) * 0.12) + float(si) * 1.4
 			sl.rotation.z = deg_to_rad(sin(phase) * 28.0)
 			sl.rotation.x = deg_to_rad(12.0 + cos(phase * 0.8) * 10.0)
@@ -951,7 +958,6 @@ static func _on_pre_draw(state: Dictionary) -> void:
 		_remaster_all_scene_meshes(main_scene, state)
 	state["remaster_timer"] = rt
 
-	# 데이터링크 광파 펄스 애니메이션 (MFR -> ECS -> TEL)
 	var mfr = state["mfr"]
 	var ecs = state["ecs"]
 	var pa_list = state["pulses_a"]
@@ -963,25 +969,25 @@ static func _on_pre_draw(state: Dictionary) -> void:
 		for di in range(pa_list.size()):
 			var u_a = fmod(t * 0.95 + float(di) * 0.20, 1.0)
 			var u_b = fmod(t * 1.15 + float(di) * 0.20, 1.0)
-			if is_instance_valid(pa_list[di]):
-				pa_list[di].position = p_mfr.lerp(p_ecs, u_a)
-			if is_instance_valid(pb_list[di]):
-				pb_list[di].position = p_ecs.lerp(p_tel, u_b)
+			var pa = _v(pa_list[di])
+			var pb = _v(pb_list[di])
+			if is_instance_valid(pa):
+				pa.position = p_mfr.lerp(p_ecs, u_a)
+			if is_instance_valid(pb):
+				pb.position = p_ecs.lerp(p_tel, u_b)
 
-	# 3. 적 위협 미사일(threats) 및 아군 발사체 수집
 	var threats = []
 	var active_int_nodes = []
 	_collect_missiles_and_interceptors(main_scene, state["launcher"], threats, active_int_nodes)
 
-	# 새로 추가된 씬 노드(최대 4프레임 추적) 중 발사대 근처에서 생성된 기본 곡사포(Chunmoo) 미사일/연기 노드를 즉시 감지하여 숨기고 직각 콜드런치 미사일 발사!
 	var pending = state["pending_nodes"]
 	var still_pending = []
 	if pending.size() > 0:
 		var ch_gpos = chassis.global_position
 		for item in pending:
-			var pnode = item["node"]
+			var pnode = _v(item["node"])
 			var fcnt = int(item["frames"]) + 1
-			if is_instance_valid(pnode) and pnode is Node3D:
+			if is_instance_valid(pnode) and (pnode is Node3D):
 				var d_l = pnode.global_position.distance_to(ch_gpos)
 				var dy = pnode.global_position.y - ch_gpos.y
 				if d_l < 16.0 and dy > -1.0 and dy < 9.5 and pnode.global_position.length_squared() > 0.001:
@@ -994,10 +1000,10 @@ static func _on_pre_draw(state: Dictionary) -> void:
 					still_pending.append({"node": pnode, "frames": fcnt})
 		state["pending_nodes"] = still_pending
 
-	# 엔진 프로퍼티에서 감지된 기본 요격미사일도 곡사포 메쉬를 숨기고 직각 콜드런치 발사 트리거!
 	var hidden_map = state["hidden_projectiles"]
-	for inode in active_int_nodes:
-		if is_instance_valid(inode):
+	for raw_in in active_int_nodes:
+		var inode = _v(raw_in)
+		if is_instance_valid(inode) and (inode is Node3D):
 			var iid = inode.get_instance_id()
 			_hide_engine_projectile_visuals(inode)
 			if not hidden_map.has(iid):
@@ -1007,8 +1013,8 @@ static func _on_pre_draw(state: Dictionary) -> void:
 					_spawn_dogleg_cold_launch(main_scene, state, threats, inode)
 
 	for hid in hidden_map.keys():
-		var hnode = hidden_map[hid]
-		if is_instance_valid(hnode):
+		var hnode = _v(hidden_map[hid])
+		if is_instance_valid(hnode) and (hnode is Node3D):
 			_hide_engine_projectile_visuals(hnode)
 		else:
 			hidden_map.erase(hid)
@@ -1018,13 +1024,12 @@ static func _on_pre_draw(state: Dictionary) -> void:
 		state["siren_timer"] = 2.6
 	state["prev_threats"] = threats.size()
 
-	# 비상 경광등 6기 점멸 및 회전
 	var strobes = state["strobes"]
 	for i in range(strobes.size()):
 		var sb = strobes[i]
-		var l = sb["light"]
-		var d = sb["dome"]
-		var r = sb["rotor"]
+		var l = _v(sb["light"])
+		var d = _v(sb["dome"])
+		var r = _v(sb["rotor"])
 		if not is_instance_valid(l):
 			continue
 		if has_threats:
@@ -1038,14 +1043,13 @@ static func _on_pre_draw(state: Dictionary) -> void:
 			d.material_override = sb["mat_off"]
 			r.visible = false
 
-	# 방공 사이렌 및 레이더 감지음 합성
 	var s_timer = float(state["siren_timer"])
 	if s_timer > 0.0:
 		state["siren_timer"] = s_timer - delta
-		var ap = state.get("audio_player")
+		var ap = _v(state.get("audio_player"))
 		if has_threats and is_instance_valid(ap) and ap.playing:
-			var pb = ap.get_stream_playback()
-			if pb:
+			var pb = _v(ap.get_stream_playback())
+			if is_instance_valid(pb):
 				var avail = pb.get_frames_available()
 				var ph = float(state["siren_phase"])
 				for _k in range(min(avail, 512)):
@@ -1058,36 +1062,37 @@ static func _on_pre_draw(state: Dictionary) -> void:
 					pb.push_frame(Vector2(smp, smp))
 				state["siren_phase"] = ph
 
-	# 적 탄도미사일 3D 플라즈마 탄두 업그레이드 & 2중 레이더 감지 파장 링 업데이트
 	var lock_rings = state["lock_rings"]
 	var active_t_ids = {}
 	var ring_scale_base = 0.52 if bool(state["is_namsan"]) else 0.85
-	for m_node in threats:
-		var tid = m_node.get_instance_id()
-		active_t_ids[tid] = true
-		_upgrade_threat_missile_visuals(m_node)
-		if not lock_rings.has(tid):
-			lock_rings[tid] = _create_target_lock_rings(main_scene)
-		var h_node = lock_rings[tid]
-		if is_instance_valid(h_node):
-			h_node.global_position = m_node.global_position
-			var s_pulse = ring_scale_base * (0.85 + 0.30 * (0.5 + 0.5 * sin(t * 7.5)))
-			h_node.scale = Vector3(s_pulse, 1.0, s_pulse)
+	for raw_m in threats:
+		var m_node = _v(raw_m)
+		if is_instance_valid(m_node) and (m_node is Node3D):
+			var tid = m_node.get_instance_id()
+			active_t_ids[tid] = true
+			_upgrade_threat_missile_visuals(m_node)
+			if not lock_rings.has(tid):
+				lock_rings[tid] = _create_target_lock_rings(main_scene)
+			var h_node = _v(lock_rings[tid])
+			if is_instance_valid(h_node):
+				h_node.global_position = m_node.global_position
+				var s_pulse = ring_scale_base * (0.85 + 0.30 * (0.5 + 0.5 * sin(t * 7.5)))
+				h_node.scale = Vector3(s_pulse, 1.0, s_pulse)
 
 	var bt = float(state["beam_timer"]) + delta
-	var mfr_head = state.get("mfr_head")
+	var mfr_head = _v(state.get("mfr_head"))
 	if has_threats and bt >= 0.50 and is_instance_valid(mfr_head):
 		bt = 0.0
-		var tgt = threats[randi() % threats.size()]
-		_spawn_lock_beam(main_scene, mfr_head.global_position, tgt.global_position)
+		var tgt = _v(threats[randi() % threats.size()])
+		if is_instance_valid(tgt):
+			_spawn_lock_beam(main_scene, mfr_head.global_position, tgt.global_position)
 	state["beam_timer"] = bt
 
 	for tid in lock_rings.keys():
 		if not active_t_ids.has(tid):
-			var old_h = lock_rings[tid]
+			var old_h = _v(lock_rings[tid])
 			if is_instance_valid(old_h):
 				if old_h.global_position.y > 2.5:
-					# 만약 엔진이 발사체 노드 없이 즉시 타격 처리했더라도 직각 콜드런치 모션그래픽이 반드시 보이도록 보장!
 					if t - float(state["last_dogleg_time"]) > 0.25:
 						state["last_dogleg_time"] = t
 						_spawn_dogleg_cold_launch(main_scene, state, [], old_h)
@@ -1095,10 +1100,6 @@ static func _on_pre_draw(state: Dictionary) -> void:
 				old_h.queue_free()
 			lock_rings.erase(tid)
 
-	# ========================================================================
-	# 4. 천궁-II 직각 콜드런치(Dogleg Cold-Launch) 미사일 업데이트!
-	#    (절대 곡사포처럼 휘어지지 않고: ① 90° 수직 치솟음 │ -> ② 공중 정지 및 DACS 직각 방향 꺾기 ┌ -> ③ 일직선 초음속 타격 ─>)
-	# ========================================================================
 	var doglegs = state["doglegs"]
 	var remaining_doglegs = []
 	for dl in doglegs:
@@ -1114,15 +1115,14 @@ static func _spawn_dogleg_cold_launch(main_scene: Node, state: Dictionary, threa
 	if muzzles.size() > 0:
 		var idx = int(state["next_tube"]) % muzzles.size()
 		state["next_tube"] = idx + 1
-		if is_instance_valid(muzzles[idx]):
-			m_pos = muzzles[idx].global_position
+		var mz = _v(muzzles[idx])
+		if is_instance_valid(mz):
+			m_pos = mz.global_position
 
 	var is_namsan = bool(state["is_namsan"])
-	# 수직 콜드런치 사출 높이: 발사관 직상방(+Y)으로만 수직 상승!
 	var rise_h = 3.8 if is_namsan else 6.2
 	var apex_pos = m_pos + Vector3(0.0, rise_h, 0.0)
 
-	# 타격할 목표 적 미사일 탐색
 	var tgt_node = null
 	var tgt_pos = apex_pos + Vector3(0.0, 6.0, -14.0)
 	if is_instance_valid(eng_node) and eng_node.name == "CheongungTargetLockRing":
@@ -1130,7 +1130,8 @@ static func _spawn_dogleg_cold_launch(main_scene: Node, state: Dictionary, threa
 	elif threats.size() > 0:
 		var best_d = 999999.0
 		var ref_p = eng_node.global_position if is_instance_valid(eng_node) else m_pos
-		for th in threats:
+		for raw_th in threats:
+			var th = _v(raw_th)
 			if is_instance_valid(th):
 				var d = th.global_position.distance_to(ref_p)
 				if d < best_d:
@@ -1162,7 +1163,7 @@ static func _spawn_dogleg_cold_launch(main_scene: Node, state: Dictionary, threa
 
 
 static func _update_dogleg_missile(main_scene: Node, dl: Dictionary, delta: float) -> bool:
-	var m_node = dl["node"]
+	var m_node = _v(dl["node"])
 	if not is_instance_valid(m_node):
 		return false
 
@@ -1172,8 +1173,8 @@ static func _update_dogleg_missile(main_scene: Node, dl: Dictionary, delta: floa
 	var apex_pos = dl["apex"]
 	var m_scale = float(dl["scale"])
 
-	var tgt_node = dl.get("tgt_node")
-	var eng_node = dl.get("eng_node")
+	var tgt_node = _v(dl.get("tgt_node"))
+	var eng_node = _v(dl.get("eng_node"))
 	if is_instance_valid(tgt_node):
 		dl["target_pos"] = tgt_node.global_position
 	elif is_instance_valid(eng_node) and eng_node.global_position.distance_to(m_pos) > 3.5:
@@ -1181,7 +1182,6 @@ static func _update_dogleg_missile(main_scene: Node, dl: Dictionary, delta: floa
 	var target_pos = dl["target_pos"]
 
 	if age < 0.15:
-		# [1단계: 90° 완전 수직 치솟음 (0.00s ~ 0.15s) — X, Z 이동 0%! 오직 하늘(+Y)로만 일직선 사출 후 정점 감속!]
 		var u1 = clampf(age / 0.15, 0.0, 1.0)
 		var ease_u1 = 1.0 - pow(1.0 - u1, 2.8)
 		m_node.global_position = Vector3(m_pos.x, lerpf(m_pos.y, apex_pos.y, ease_u1), m_pos.z)
@@ -1189,8 +1189,6 @@ static func _update_dogleg_missile(main_scene: Node, dl: Dictionary, delta: floa
 		return true
 
 	elif age < 0.27:
-		# [2단계: 상공 정점(apex_pos) 완전 정지 호버링 & 측면 추력기(DACS) 직각 방향 꺾기 (0.15s ~ 0.27s)]
-		# 공중 한 점(apex_pos)에 멈춰 서서 측추력기 화염을 뿜으며 기수 각도를 수직(UP)에서 표적 직선 방향으로 휙 꺾음!
 		if not bool(dl["dacs_done"]):
 			dl["dacs_done"] = true
 			_spawn_dacs_side_thrusters(main_scene, apex_pos, m_scale)
@@ -1205,7 +1203,6 @@ static func _update_dogleg_missile(main_scene: Node, dl: Dictionary, delta: floa
 		return true
 
 	elif age < 0.44:
-		# [3단계: 주 로켓 엔진 공중 점화 & 표적까지 100% 일직선(곡률 0%) 초음속 직격! (0.27s ~ 0.44s)]
 		var aim_dir = (target_pos - apex_pos).normalized()
 		if aim_dir.length_squared() < 0.01:
 			aim_dir = Vector3(0.0, 0.4, -0.9).normalized()
@@ -1213,13 +1210,12 @@ static func _update_dogleg_missile(main_scene: Node, dl: Dictionary, delta: floa
 			dl["booster_done"] = true
 			_spawn_booster_ring(main_scene, apex_pos, m_scale)
 			_spawn_straight_contrail_beam(main_scene, apex_pos, target_pos, m_scale)
-			var pl = m_node.find_child("CheongungPlume", true, false)
+			var pl = _v(m_node.find_child("CheongungPlume", true, false))
 			if is_instance_valid(pl):
 				pl.visible = true
 
 		var u3 = clampf((age - 0.27) / 0.17, 0.0, 1.0)
 		var accel_u3 = u3 * u3
-		# 곡사포 곡률(arc_lift)을 완전히 배제한 100% 직선 궤적!
 		var cur_pos = apex_pos.lerp(target_pos, accel_u3)
 		m_node.global_position = cur_pos
 		_orient_missile_along(m_node, aim_dir)
@@ -1260,7 +1256,6 @@ static func _create_cheongung_missile_node(main_scene: Node, mat_body: Material,
 	root.add_child(_cyl(0.0, 0.15, 0.65, mat_w, Vector3(0.0, 0.0, -1.25), Vector3(PI * 0.5, 0.0, 0.0)))
 	root.add_child(_cyl(0.155, 0.155, 0.28, mat_r, Vector3(0.0, 0.0, -0.80), Vector3(PI * 0.5, 0.0, 0.0)))
 	root.add_child(_cyl(0.15, 0.15, 1.70, mat_w, Vector3(0.0, 0.0, 0.15), Vector3(PI * 0.5, 0.0, 0.0)))
-	# 십자형 조종 날개 4매
 	root.add_child(_box(Vector3(0.68, 0.03, 0.38), mat_body, Vector3(0.0, 0.0, 0.72)))
 	root.add_child(_box(Vector3(0.03, 0.68, 0.38), mat_body, Vector3(0.0, 0.0, 0.72)))
 
@@ -1310,20 +1305,24 @@ static func _upgrade_threat_missile_visuals(m_node: Node3D) -> void:
 	t_light.omni_range = 9.0
 	tag.add_child(t_light)
 
-	for mi in m_node.find_children("*", "MeshInstance3D", true, false):
-		if mi is MeshInstance3D and is_instance_valid(mi.mesh) and not (mi.mesh is TextMesh):
-			var nm = mi.name.to_lower()
-			if "label" in nm or "text" in nm or "word" in nm:
-				continue
-			var smat = mi.get_active_material(0)
-			if smat is StandardMaterial3D:
-				var dup = smat.duplicate()
-				dup.metallic = 0.78
-				dup.roughness = 0.18
-				dup.emission_enabled = true
-				dup.emission = Color("ff3311")
-				dup.emission_energy_multiplier = 1.45
-				mi.material_override = dup
+	for raw_mi in m_node.find_children("*", "MeshInstance3D", true, false):
+		var mi = _v(raw_mi)
+		if mi is MeshInstance3D:
+			var mm = _v(mi.mesh)
+			if is_instance_valid(mm) and not (mm is TextMesh):
+				var nm = mi.name.to_lower()
+				if "label" in nm or "text" in nm or "word" in nm:
+					continue
+				var smat = _v(mi.get_active_material(0))
+				if smat is StandardMaterial3D:
+					var dup = _v(smat.duplicate())
+					if dup is StandardMaterial3D:
+						dup.metallic = 0.78
+						dup.roughness = 0.18
+						dup.emission_enabled = true
+						dup.emission = Color("ff3311")
+						dup.emission_energy_multiplier = 1.45
+						mi.material_override = dup
 
 
 static func _orient_missile_along(i_node: Node3D, dir: Vector3) -> void:
@@ -1341,7 +1340,7 @@ static func _collect_missiles_and_interceptors(main_scene: Node, launcher: Node3
 	var raw_m = main_scene.get("missiles")
 	if raw_m is Array:
 		for item in raw_m:
-			var n = _find_node3d(item)
+			var n = _v(_find_node3d(item))
 			if is_instance_valid(n) and n.visible:
 				seen_t[n.get_instance_id()] = true
 				threats.append(n)
@@ -1350,7 +1349,7 @@ static func _collect_missiles_and_interceptors(main_scene: Node, launcher: Node3
 		var raw_i = main_scene.get(prop_name)
 		if raw_i is Array:
 			for item in raw_i:
-				var n = _find_node3d(item)
+				var n = _v(_find_node3d(item))
 				if is_instance_valid(n) and not seen_t.has(n.get_instance_id()) and not seen_i.has(n.get_instance_id()):
 					seen_i[n.get_instance_id()] = true
 					interceptors.append(n)
@@ -1363,7 +1362,7 @@ static func _collect_missiles_and_interceptors(main_scene: Node, launcher: Node3
 			var val = main_scene.get(pname)
 			if val is Array and val.size() > 0:
 				for item in val:
-					var n = _find_node3d(item)
+					var n = _v(_find_node3d(item))
 					if is_instance_valid(n) and n != launcher and not launcher.is_ancestor_of(n) and not n.name.begins_with("Cheongung"):
 						var nid = n.get_instance_id()
 						if not seen_t.has(nid) and not seen_i.has(nid):
@@ -1459,7 +1458,6 @@ static func _spawn_lock_beam(main_scene: Node, p0: Vector3, p1: Vector3) -> void
 
 
 static func _spawn_cold_launch_fx(main_scene: Node, m_pos: Vector3, apex_pos: Vector3, m_scale: float) -> void:
-	# 1단계: 90° 수직 콜드런치 가스 기둥 (발사관에서 정점까지 수직 연기 기둥 생성!)
 	var fl = OmniLight3D.new()
 	fl.name = "CheongungColdLight"
 	fl.light_color = Color("ffaa44")
@@ -1509,7 +1507,6 @@ static func _spawn_cold_launch_fx(main_scene: Node, m_pos: Vector3, apex_pos: Ve
 
 
 static func _spawn_dacs_side_thrusters(main_scene: Node, apex_pos: Vector3, m_scale: float) -> void:
-	# 2단계: 상공 정점(apex_pos)에서 직각 방향 전환 시 폭발하는 십자형 DACS 측추력 노즐 화염!
 	var dl = OmniLight3D.new()
 	dl.name = "CheongungDACSLight"
 	dl.light_color = Color("ffaa22")
@@ -1574,7 +1571,6 @@ static func _spawn_booster_ring(main_scene: Node, pos: Vector3, m_scale: float) 
 
 
 static func _spawn_straight_contrail_beam(main_scene: Node, p0: Vector3, p1: Vector3, m_scale: float) -> void:
-	# 3단계: 정점(apex_pos)에서 표적(target_pos)까지 꺾인 뒤 뻗어나가는 일직선 부스터 궤적 라인!
 	var d = p0.distance_to(p1)
 	if d < 0.5:
 		return

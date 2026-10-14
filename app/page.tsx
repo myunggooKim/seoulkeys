@@ -1,3 +1,4 @@
+import { HomeEditorialGuideSection } from './HomeEditorialGuideSection';
 "use client";
 
 import { trapGameDialogTab } from "./game-dialog-focus";
@@ -4096,7 +4097,7 @@ export default function Home() {
           <span aria-hidden="true">◉</span>
           <div>
             <b>{tr(locale, "Your learning, kept minimal.", "학습에 꼭 필요한 정보만 저장합니다.")}</b>
-            <p>{tr(locale, "We store essential settings and lesson progress, and use analytics to see where lessons can improve. No advertising cookies are used.", "필수 설정과 학습 진도를 저장하고, 학습을 개선하기 위해 분석 도구를 사용합니다. 광고 쿠키는 사용하지 않습니다.")}</p>
+            <p>{tr(locale, "We store essential settings and lesson progress, and use analytics to see where lessons can improve. Google AdSense and analytics cookies are used to keep core Korean lessons and games free.", "필수 설정과 학습 진도를 저장하고, 학습을 개선하기 위해 분석 도구를 사용합니다. 광고 쿠키는 사용하지 않습니다.")}</p>
           </div>
           <a href="/legal#privacy">{tr(locale, "Details", "자세히")}</a>
           <button
@@ -4179,6 +4180,7 @@ export default function Home() {
         onClose={() => setSignupOpen(false)}
         locale={locale}
       />
+      <HomeEditorialGuideSection />
     </main>
   );
 }

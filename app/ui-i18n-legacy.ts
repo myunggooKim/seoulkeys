@@ -368,7 +368,7 @@ export const jaDict: Record<string, string> = {
   "Terms": "利用規約",
   "Privacy notice": "プライバシーのお知らせ",
   "Your learning, kept minimal.": "学習に必要な情報だけを保存します。",
-  "We store essential settings and lesson progress, and use analytics to see where lessons can improve. No advertising cookies are used.": "必須の設定と学習の進捗を保存し、レッスン改善のために分析ツールを使用します。広告クッキーは使用しません。",
+  "We store essential settings and lesson progress, and use analytics to see where lessons can improve. Google AdSense and analytics cookies are used to keep core Korean lessons and games free.": "必須の設定と学習の進捗を保存し、レッスン改善のために分析ツールを使用します。広告クッキーは使用しません。",
   "Details": "詳細",
   "Got it": "OK",
   "Press Enter to begin the Hangul City defense mission.": "Enterを押してハングルシティ防衛ミッションを開始。",
