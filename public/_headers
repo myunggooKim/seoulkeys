@@ -10,3 +10,6 @@
 
 /i18n/crossword/*
   Cache-Control: public, max-age=0, must-revalidate
+
+/games/seoul-defense/index.pck
+  Cache-Control: no-cache, no-store, must-revalidate
