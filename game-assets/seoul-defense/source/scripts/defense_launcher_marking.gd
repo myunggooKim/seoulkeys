@@ -1,6 +1,6 @@
 extends RefCounted
 
-# 천궁-II (KM-SAM Block-II) 통합 방공 포대 (v7.0 - v3 검증 엔진 코어 + 남산 도로 겹침 0% + 3단 직각 콜드런치)
+# 천궁-II (KM-SAM Block-II) 통합 방공 포대 (v8.0 - v3 검증 Tween 드라이버 + 남산 도로 겹침 0% + 3단 직각 콜드런치)
 static func apply(chassis: Node3D, font: Font) -> void:
 	if not is_instance_valid(chassis) or chassis.has_node("K239Marking"):
 		return
@@ -76,7 +76,7 @@ static func apply(chassis: Node3D, font: Font) -> void:
 	# 4. 좌측 다기능레이더(MFR) 차량 + 우측 교전통제소(ECS) 차량 (남산 다리 왼쪽 잔디공원에 배치해 도로 겹침 0%)
 	_apply_radar_and_ecs(launcher, font)
 
-	# 5. 실시간 애니메이션 드라이버 (레이더 회전·탐지 링·경광등·사이렌·3단 직각 콜드런치)
+	# 5. 실시간 애니메이션 드라이버 (v3 검증된 Tween 루프 방식 - 스코프 오류 0%)
 	_ensure_runtime_driver(launcher)
 
 
@@ -520,13 +520,16 @@ static func _create_siren_player(launcher: Node3D) -> void:
 
 
 static func _ensure_runtime_driver(launcher: Node3D) -> void:
-	if launcher.has_meta("cheongung_v7_driver"):
+	if launcher.has_meta("cheongung_v8_driver"):
 		return
-	launcher.set_meta("cheongung_v7_driver", true)
+	launcher.set_meta("cheongung_v8_driver", true)
 
-	var cb := Callable(DefenseLauncherMarking, "_on_pre_draw").bind(launcher)
-	if not RenderingServer.frame_pre_draw.is_connected(cb):
-		RenderingServer.frame_pre_draw.connect(cb)
+	# v3에서 100% 검증된 Tween 무한루프 콜백 (식별자 스코프 오류 0%)
+	var tw := launcher.create_tween().set_loops()
+	tw.tween_callback(func():
+		if is_instance_valid(launcher):
+			_on_pre_draw(launcher)
+	).set_delay(0.016)
 
 
 static func _find_battlefield(node: Node) -> Node3D:

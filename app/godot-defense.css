@@ -147,7 +147,8 @@
 .godot-defense-game .gd-side-ad { display: none !important; }
 .godot-defense-game .gd-layout.has-side-rails { grid-template-columns: minmax(0, 1040px) !important; grid-template-areas: "game" !important; column-gap: 0 !important; justify-content: center !important; }
 
-/* CHEONGUNG-COMPACT-FRAME-V7 */
+
+/* CHEONGUNG-COMPACT-FRAME-V8 */
 .godot-defense-game {
   max-width: 1080px !important;
   width: calc(100% - 32px) !important;
@@ -179,29 +180,20 @@
 .godot-defense-game .gd-side-ad {
   display: none !important;
 }
-/* 미리보기 그림 프레임 바깥(하단 캡션 영역 및 우측 하단)에 깨지지 않는 고선명 HTML/CSS 버전 배지 표시 */
-.godot-defense-game .gd-preview-caption,
-.godot-defense-game figcaption,
-.godot-defense-game .gd-footer {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  flex-wrap: wrap !important;
-  gap: 8px !important;
-}
+/* 미리보기 그림 프레임 바깥(상단 제목 옆 및 미리보기 프레임 바로 아래)에 크고 선명한 HTML/CSS 버전 배지 표시 */
+.godot-defense-game :has(> img[src*="preview"])::after,
 .godot-defense-game .gd-preview-card::after,
-.godot-defense-game .gd-preview-wrap::after,
 .godot-defense-game figure::after {
-  content: "● VER v7.0 · 천궁-II KM-SAM (도로겹침 0% · 고속로딩)" !important;
+  content: "● VER v8.0 · 천궁-II KM-SAM 3D (남산 도로겹침 0% · 고속로딩)" !important;
   display: inline-block !important;
   margin-top: 10px !important;
-  padding: 5px 14px !important;
-  font-size: 13.5px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.02em !important;
+  padding: 6px 14px !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.01em !important;
   color: #6ee7b7 !important;
-  background: rgba(6, 78, 59, 0.75) !important;
-  border: 1.5px solid rgba(52, 211, 153, 0.65) !important;
+  background: rgba(6, 78, 59, 0.88) !important;
+  border: 1.5px solid #34d399 !important;
   border-radius: 999px !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
 }
