@@ -240,7 +240,7 @@ export function GodotDefenseGame({ locale, soundEnabled, musicEnabled = true, on
         </div>
       </aside>}
       <div ref={panelRef} className="gd-game-panel">
-      <header className="gd-header">
+      <header className="gd-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
         <div>
           <p className="gd-eyebrow">Seoul after dark</p>
           <h2 id={titleId}>{text("City Defense", "도시 방어전")}</h2>
@@ -267,8 +267,8 @@ export function GodotDefenseGame({ locale, soundEnabled, musicEnabled = true, on
         </div>
         <figure className="gd-preview">
           {/* eslint-disable-next-line @next/next/no-img-element -- This is the original native capture, with no image-proxy processing. */}
-          <img src="/games/seoul-defense/preview.png?v=13.0" alt={text("Native Godot gameplay: a 3D Seoul skyline, Namsan Tower, and incoming Korean word targets", "실제 Godot 게임 화면: 3D 서울 전경과 남산 타워, 다가오는 한글 단어 표적")} width={1180} height={812} loading="lazy" decoding="async" />
-          <figcaption>{text("Native Godot gameplay preview", "Godot 실제 게임 화면 · [VER v13.0 · 천궁-II KM-SAM]")}</figcaption>
+          <img src="/games/seoul-defense/preview.png?v=14.0" alt={text("Native Godot gameplay: a 3D Seoul skyline, Namsan Tower, and incoming Korean word targets", "실제 Godot 게임 화면: 3D 서울 전경과 남산 타워, 다가오는 한글 단어 표적")} width={1180} height={812} loading="lazy" decoding="async" />
+          <figcaption>{text("Native Godot gameplay preview", "Godot 실제 게임 화면 · [VER v14.0 · 천궁-II KM-SAM]")}</figcaption>
         </figure>
       </div> : <div className="gd-viewport" aria-busy={loading}>
         <iframe
@@ -302,7 +302,7 @@ export function GodotDefenseGame({ locale, soundEnabled, musicEnabled = true, on
 
       <footer className="gd-help" id={helpId}>
         <p>{text("Requires WebGL 2 and WebAssembly. A desktop browser and keyboard are recommended. Click inside the game to type; use Esc to leave fullscreen.", "WebGL 2와 WebAssembly가 필요합니다. 데스크톱 브라우저와 키보드를 권장해요. 게임 안을 클릭하면 입력할 수 있고, Esc로 전체 화면을 나갈 수 있어요.")}</p>
-        <span>Godot · Blender · VER v13.0 (천궁-II KM-SAM)</span>
+        <span>Godot · Blender · VER v14.0 (천궁-II KM-SAM)</span>
       </footer>
       </div>
       {showSideRails && <aside className="gd-side-ad gd-side-ad-end" aria-label={text("Advertisements", "광고")}>

@@ -12186,8 +12186,46 @@ body:has(.hero.practice-focus-mode) { overflow: hidden; }
 
 
 
-/* CHEONGUNG-COMPACT-FRAME-V13 */
-/* 1) '← 나가기 Esc'와 '컨셉' 버튼(.game-stage-bar)을 감싸는 1200px 외곽 네모 박스 (상하 패딩 압축으로 한 화면 노출 극대화) */
+
+/* CHEONGUNG-COMPACT-FRAME-V14 */
+/* 1) 상부 도시방어전 헤더: 좌측 제목("도시 방어전")과 우측 2개 버튼("게임으로 돌아가기", "전체 화면") 우측 끝으로 완벽 분리 */
+.godot-defense-game .gd-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  padding: 8px 18px !important;
+  box-sizing: border-box !important;
+}
+
+.godot-defense-game .gd-header > :first-child,
+.godot-defense-game .gd-header h1,
+.godot-defense-game .gd-header h2,
+.godot-defense-game .gd-header [class*="title"],
+.godot-defense-game .gd-header [class*="brand"],
+.godot-defense-game .gd-header [class*="heading"] {
+  margin-right: auto !important;
+}
+
+.godot-defense-game .gd-header button,
+.godot-defense-game .gd-header a,
+.godot-defense-game .gd-header [class*="action"],
+.godot-defense-game .gd-header [class*="button"],
+.godot-defense-game .gd-header [class*="control"] {
+  margin-left: auto !important;
+}
+
+.godot-defense-game .gd-header :has(button),
+.godot-defense-game .gd-header [class*="actions"],
+.godot-defense-game .gd-header [class*="buttons"],
+.godot-defense-game .gd-header [class*="controls"] {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin-left: auto !important;
+}
+
+/* 2) 1200px 외곽 네모 박스 (상하 패딩 압축) */
 .practice-screen-stage:not(:has(.godot-defense-game.is-fullscreen)),
 :not(html):not(body):not(main):not(:has(.godot-defense-game.is-fullscreen)):has(> .game-stage-bar) {
   max-width: 1200px !important;
@@ -12195,32 +12233,36 @@ body:has(.hero.practice-focus-mode) { overflow: hidden; }
   margin-left: auto !important;
   margin-right: auto !important;
   border: 2px solid #0f172a !important;
-  border-radius: 24px !important;
+  border-radius: 20px !important;
   background-color: #ffffff !important;
-  padding: 10px 18px 12px !important;
+  padding: 6px 14px 8px !important;
   box-sizing: border-box !important;
 }
 
-/* 나가기 버튼과 컨셉 버튼 상단 바(.game-stage-bar) 여백 최소화 */
 .game-stage-bar {
   max-width: 100% !important;
   width: 100% !important;
-  margin: 0 0 6px 0 !important;
+  margin: 0 0 4px 0 !important;
   padding: 0 2px !important;
-  min-height: 32px !important;
+  min-height: 30px !important;
   box-sizing: border-box !important;
 }
 .game-stage-bar button,
 .game-stage-bar a {
-  padding-top: 4px !important;
-  padding-bottom: 4px !important;
+  padding-top: 3px !important;
+  padding-bottom: 3px !important;
   font-size: 13px !important;
-  min-height: 30px !important;
+  min-height: 28px !important;
 }
 
-/* 2) 가로세로 퀴즈(Crossword) 스크롤 없이 한 화면(One-Screen)에 전체가 들어오도록 제목·버튼·보드·입력창 높이/여백 정밀 압축 */
+/* 3) 가로세로 퀴즈(Crossword) 전체 무스크롤(One-Screen) 압축 레이아웃: Canvas, SVG, Table, Div Grid 전방위 제어 */
 .practice-screen-stage > .crossword-game-wrap,
-.crossword-game-wrap {
+.crossword-game-wrap,
+.studio-crossword-frame,
+[class*="crossword"] {
+  max-height: calc(100vh - 75px) !important;
+  overflow-y: hidden !important;
+  gap: 4px !important;
   border: none !important;
   box-shadow: none !important;
   padding-top: 2px !important;
@@ -12228,16 +12270,13 @@ body:has(.hero.practice-focus-mode) { overflow: hidden; }
   margin-top: 0 !important;
   margin-bottom: 0 !important;
 }
-.crossword-game-wrap,
-.studio-crossword-frame {
-  gap: 6px !important;
-}
+
 .crossword-game-wrap header,
 .studio-crossword-frame header,
 .crossword-game-wrap [class*="header"],
 .studio-crossword-frame [class*="header"] {
-  padding-top: 2px !important;
-  padding-bottom: 2px !important;
+  padding-top: 1px !important;
+  padding-bottom: 1px !important;
   margin-bottom: 2px !important;
   gap: 4px !important;
 }
@@ -12247,38 +12286,77 @@ body:has(.hero.practice-focus-mode) { overflow: hidden; }
 .studio-crossword-frame h1,
 .studio-crossword-frame h2,
 .studio-crossword-frame h3 {
-  font-size: 1.15rem !important;
-  line-height: 1.2 !important;
+  font-size: 1.10rem !important;
+  line-height: 1.15 !important;
   margin-top: 0 !important;
   margin-bottom: 2px !important;
 }
-.crossword-game-wrap p,
-.studio-crossword-frame p {
-  margin-top: 1px !important;
-  margin-bottom: 1px !important;
-  line-height: 1.25 !important;
+
+/* 보드 그리드 컨테이너 크기를 화면 높이에 맞춰 타이트하게 축소 */
+.crossword-game-wrap canvas,
+.studio-crossword-frame canvas,
+.crossword-game-wrap svg,
+.studio-crossword-frame svg,
+.crossword-game-wrap table,
+.studio-crossword-frame table,
+.crossword-game-wrap [class*="board"],
+.studio-crossword-frame [class*="board"],
+.crossword-game-wrap [class*="grid"],
+.studio-crossword-frame [class*="grid"] {
+  max-height: clamp(165px, 26vh, 235px) !important;
+  max-width: clamp(165px, 26vh, 235px) !important;
+  height: auto !important;
+  width: auto !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* 개별 글자 셀 타일 크기 */
+.crossword-game-wrap [class*="cell"],
+.studio-crossword-frame [class*="cell"],
+.crossword-game-wrap [class*="tile"],
+.studio-crossword-frame [class*="tile"],
+.crossword-game-wrap td,
+.studio-crossword-frame td {
+  width: clamp(17px, 2.3vw, 27px) !important;
+  height: clamp(17px, 2.3vw, 27px) !important;
+  min-width: unset !important;
+  min-height: unset !important;
+  font-size: clamp(10.5px, 1.1vw, 13.5px) !important;
+  padding: 0 !important;
+}
+
+/* 힌트 및 단어 설명창 여백 압축 */
+.crossword-game-wrap [class*="clue"],
+.studio-crossword-frame [class*="clue"],
+.crossword-game-wrap [class*="hint"],
+.studio-crossword-frame [class*="hint"],
+.crossword-game-wrap [class*="question"],
+.studio-crossword-frame [class*="question"] {
+  max-height: 46px !important;
+  padding: 3px 6px !important;
+  font-size: 12.5px !important;
+  line-height: 1.2 !important;
+  margin: 1px 0 !important;
+}
+
+/* 입력창 및 키보드 버튼 */
+.crossword-game-wrap input,
+.studio-crossword-frame input {
+  height: 32px !important;
+  min-height: 32px !important;
+  font-size: 13px !important;
+  padding: 2px 8px !important;
 }
 .crossword-game-wrap button,
 .studio-crossword-frame button {
-  padding: 4px 10px !important;
-  min-height: 28px !important;
-  font-size: 12.5px !important;
+  padding: 3px 8px !important;
+  min-height: 26px !important;
+  font-size: 12px !important;
   line-height: 1.2 !important;
 }
-/* 가로세로 퀴즈 3D/평면 보드 캔버스 높이를 화면 높이에 맞춰 컴팩트하게 고정하여 하단 입력창/키보드 버튼이 스크롤 없이 즉시 노출 */
-.crossword-game-wrap canvas,
-.studio-crossword-frame canvas {
-  max-height: clamp(210px, 31vh, 285px) !important;
-}
-.crossword-game-wrap input[type="text"],
-.studio-crossword-frame input[type="text"] {
-  height: 36px !important;
-  min-height: 36px !important;
-  padding: 4px 10px !important;
-  font-size: 14px !important;
-}
 
-/* 3) 도시 방어전(.godot-defense-game) 1200px 틀 내부 정렬 및 VER v13.0 배지 */
+/* 4) 도시 방어전(.godot-defense-game) 1200px 틀 내부 정렬 및 VER v14.0 배지 */
 .godot-defense-game {
   max-width: 100% !important;
   width: 100% !important;
@@ -12292,7 +12370,6 @@ body:has(.hero.practice-focus-mode) { overflow: hidden; }
   width: 100% !important;
   border-radius: 0 !important;
 }
-.godot-defense-game .gd-header,
 .godot-defense-game .gd-layout,
 .godot-defense-game .gd-layout.has-side-rails,
 .godot-defense-game .gd-game-panel,
@@ -12312,7 +12389,7 @@ body:has(.hero.practice-focus-mode) { overflow: hidden; }
 .godot-defense-game :has(> img[src*="preview"])::after,
 .godot-defense-game .gd-preview-card::after,
 .godot-defense-game figure::after {
-  content: "● VER v13.0 · 천궁-II 직각 콜드런치 · 북한산 암벽/청와대 & 남산 송신타워 실경 고증" !important;
+  content: "● VER v14.0 · 천궁-II 단일 직각 콜드런치 · 북한산 화강암 암벽 실경 & 남산 송신탑 저상화" !important;
   display: inline-block !important;
   margin-top: 10px !important;
   padding: 6px 14px !important;
