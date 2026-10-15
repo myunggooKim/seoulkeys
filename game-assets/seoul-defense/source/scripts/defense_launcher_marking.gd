@@ -268,13 +268,12 @@ static func _build_full_cheongung_battery(chassis: Node3D, font: Font, paint: St
 
 	# ========================================================================
 	# B. 주변 레이더 시스템 여유 있는 배치 + 남산 도로 겹침 방지용 독립 방공진지 패드!
-	#    (기존 X = ±7.6, Z = -0.8 -> X = ±11.6, Z = +0.65, Y = +0.28 로 넓고 쾌적하게 이격!)
 	# ========================================================================
 	var strobe_list = []
 	_build_strobe(erector, Vector3(-0.58, 3.04, -2.65), mat_black, mat_strobe_red, mat_strobe_off, true, strobe_list)
 	_build_strobe(erector, Vector3(0.58, 3.04, -2.65), mat_black, mat_strobe_amber, mat_strobe_off, false, strobe_list)
 
-	# 1) 좌측 다기능레이더(MFR) 차량 (X = -11.6, Z = +0.65, Y = +0.28 -> 발사대와 충분한 여유 거리 확보 및 도로 겹침 완전 해소)
+	# 1) 좌측 다기능레이더(MFR) 차량 (v11 검증 위치/비율: X = -10.20, scale = 0.74)
 	var mfr = Node3D.new()
 	mfr.name = "CheongungMFRVehicle"
 	mfr.position = Vector3(-10.20, 0.08, -0.25)
@@ -282,7 +281,7 @@ static func _build_full_cheongung_battery(chassis: Node3D, font: Font, paint: St
 	mfr.scale = Vector3(0.74, 0.74, 0.74)
 	launcher.add_child(mfr)
 
-	# MFR 전용 방공진지 콘크리트 플랫폼 패드 (남산 경사로/도로와 겹치지 않도록 받쳐줌)
+	# MFR 전용 방공진지 콘크리트 플랫폼 패드
 	mfr.add_child(_box(Vector3(3.60, 0.42, 7.40), mat_pad, Vector3(0.0, -0.21, 0.0)))
 	mfr.add_child(_box(Vector3(3.66, 0.08, 7.46), mat_pad_line, Vector3(0.0, -0.02, 0.0)))
 
@@ -302,24 +301,18 @@ static func _build_full_cheongung_battery(chassis: Node3D, font: Font, paint: St
 	radar_head.add_child(_cyl(0.78, 0.88, 0.45, mat_black, Vector3(0.0, 0.22, 0.0)))
 	radar_head.add_child(_box(Vector3(1.65, 1.15, 1.20), mat_olive, Vector3(0.0, 1.05, 0.45)))
 
+	# [수정 1] 위상배열 레이더 패널이 땅(-28도)이 아닌 상공(+32도 하늘)을 향하도록 각도 보정 및 땅을 비추던 빔 원뿔 완전 제거!
 	var array_panel = Node3D.new()
 	array_panel.position = Vector3(0.0, 1.60, -0.25)
-	array_panel.rotation.x = deg_to_rad(-28.0)
+	array_panel.rotation.x = deg_to_rad(32.0)
 	radar_head.add_child(array_panel)
 	array_panel.add_child(_box(Vector3(2.35, 2.65, 0.28), mat_dark, Vector3.ZERO))
 	array_panel.add_child(_box(Vector3(2.12, 2.42, 0.08), mat_radar, Vector3(0.0, 0.0, -0.16)))
 
-	var beam_mat = StandardMaterial3D.new()
-	beam_mat.albedo_color = Color(0.0, 0.92, 1.0, 0.20)
-	beam_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	beam_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	beam_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	beam_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	array_panel.add_child(_cyl(3.0, 0.25, 13.0, beam_mat, Vector3(0.0, 0.2, -6.6), Vector3(PI * 0.5, 0.0, 0.0)))
-
 	var r_tw = radar_head.create_tween().set_loops()
 	r_tw.tween_property(radar_head, "rotation:y", TAU, 2.6).from(0.0)
 
+	# 공중으로 날아가는 레이더 파장 링 4기 (그대로 유지)
 	for wi in range(4):
 		var w_ring = MeshInstance3D.new()
 		var w_torus = TorusMesh.new()
@@ -341,7 +334,7 @@ static func _build_full_cheongung_battery(chassis: Node3D, font: Font, paint: St
 	_build_strobe(mfr, Vector3(-0.62, 2.72, -2.50), mat_black, mat_strobe_red, mat_strobe_off, true, strobe_list)
 	_build_strobe(mfr, Vector3(0.62, 2.72, -2.50), mat_black, mat_strobe_amber, mat_strobe_off, false, strobe_list)
 
-	# 2) 우측 교전통제소(ECS) 지휘차량 + 4연장 통신 안테나 (X = +11.6, Z = +0.65, Y = +0.28 -> 남산 우측 도로와 절대 겹치지 않는 전면 방공패드 위치!)
+	# 2) 우측 교전통제소(ECS) 지휘차량 + 4연장 통신 안테나 (v11 검증 위치/비율: X = +16.20, scale = 0.74)
 	var ecs = Node3D.new()
 	ecs.name = "CheongungECSVehicle"
 	ecs.position = Vector3(16.20, 0.08, -0.25)
@@ -370,17 +363,17 @@ static func _build_full_cheongung_battery(chassis: Node3D, font: Font, paint: St
 
 	# 3) 다기능레이더(MFR) -> 교전통제소(ECS) -> 유도탄발사대(TEL) 데이터링크 광파 펄스
 	for di in range(6):
-		var pulse_a = _sphere(0.12, mat_radar, Vector3(-10.8, 1.8, 0.5))
+		var pulse_a = _sphere(0.12, mat_radar, Vector3(-9.8, 1.8, 0.5))
 		launcher.add_child(pulse_a)
 		var tw_a = pulse_a.create_tween().set_loops()
 		tw_a.tween_interval(float(di) * 0.18)
-		tw_a.tween_property(pulse_a, "position", Vector3(10.8, 1.9, 0.5), 1.15).from(Vector3(-10.8, 1.8, 0.5))
+		tw_a.tween_property(pulse_a, "position", Vector3(15.2, 1.9, 0.5), 1.15).from(Vector3(-9.8, 1.8, 0.5))
 
-		var pulse_b = _sphere(0.12, mat_radar, Vector3(10.8, 1.9, 0.5))
+		var pulse_b = _sphere(0.12, mat_radar, Vector3(15.2, 1.9, 0.5))
 		launcher.add_child(pulse_b)
 		var tw_b = pulse_b.create_tween().set_loops()
 		tw_b.tween_interval(float(di) * 0.18)
-		tw_b.tween_property(pulse_b, "position", Vector3(0.0, 1.8, 0.0), 0.78).from(Vector3(10.8, 1.9, 0.5))
+		tw_b.tween_property(pulse_b, "position", Vector3(0.0, 1.8, 0.0), 0.78).from(Vector3(15.2, 1.9, 0.5))
 
 	# 4) 방공 경보 사이렌 오디오 스트림 생성
 	var audio_player = AudioStreamPlayer.new()
@@ -400,23 +393,45 @@ static func _build_full_cheongung_battery(chassis: Node3D, font: Font, paint: St
 		if "launcher_sockets" in main_scene:
 			main_scene.set("launcher_sockets", new_socks)
 
+	# 천궁-II 전용 3단계 직각 콜드런치 요격미사일 비주얼 노드 생성
+	var cg_dart = Node3D.new()
+	cg_dart.name = "CheongungColdLaunchDart"
+	cg_dart.visible = false
+	if is_instance_valid(main_scene):
+		main_scene.add_child(cg_dart)
+	else:
+		launcher.add_child(cg_dart)
+	_upgrade_interceptor_mesh(cg_dart, mat_black)
+
 	var state = {
 		"launcher": launcher,
 		"chassis": chassis,
 		"pod_rack": pod_rack,
 		"rack": rack,
+		"mfr": mfr,
+		"ecs": ecs,
 		"main": main_scene,
 		"muzzles": muzzles,
 		"mfr_head": array_panel,
 		"strobes": strobe_list,
 		"mat_black": mat_black,
 		"audio_player": audio_player,
+		"cg_dart": cg_dart,
 		"next_tube": 0,
 		"time": 0.0,
 		"beam_timer": 0.0,
 		"siren_timer": 0.0,
 		"siren_phase": 0.0,
 		"prev_threats": 0,
+		"stage_chk_t": -99.0,
+		"is_namsan": true,
+		"flight_active": false,
+		"prev_flight_elapsed": 999.0,
+		"flight_muzzle_pos": Vector3.ZERO,
+		"flight_dacs_done": false,
+		"flight_booster_done": false,
+		"flight_trail_t": 0.0,
+		"last_flight_target": Vector3.ZERO,
 		"lock_rings": {},
 		"interceptors": {}
 	}
@@ -424,8 +439,50 @@ static func _build_full_cheongung_battery(chassis: Node3D, font: Font, paint: St
 		# 1) process_frame (main.gd._process 실행 직전): 엔진 원래 위치 복원 및 PodRack 수직 고정
 		tree.process_frame.connect(_on_pre_process.bind(state))
 		# 2) RenderingServer.frame_pre_draw (main.gd._process 실행 직후, 화면 그리기 직전!):
-		#    사각 발사 궤적을 완벽히 가로채서 '90° 수직 콜드런치 상승 -> 공중 정점 측면추력기(DACS) 회전 -> 주엔진 고각 점화' 모션그래픽 적용!
+		#    곡사 발사 궤적(_missile_node / _missile_smoke_node / _missile_flight)을 100% 가로채서
+		#    '1단계 90° 수직 콜드런치 사출 -> 2단계 공중 정점 정지·측면추력기(DACS) 직각 회전 -> 3단계 곡률 0% 일직선 직사 타격' 적용!
 		RenderingServer.frame_pre_draw.connect(_on_pre_draw.bind(state))
+
+
+static func _detect_is_namsan(main_scene: Node, launcher: Node3D) -> bool:
+	if not is_instance_valid(main_scene):
+		return true
+	# 1) main_scene의 현재 스테이지/맵 관련 String 프로퍼티 우선 확인
+	for prop_name in ["_stage_id", "stage_id", "_current_stage", "current_stage", "_map_id", "map_id", "_stage", "stage", "_backdrop_id", "backdrop_id", "_landmark", "landmark", "_location", "location"]:
+		var pv = main_scene.get(prop_name)
+		if typeof(pv) == TYPE_STRING or typeof(pv) == TYPE_STRING_NAME:
+			var sv = str(pv).to_lower()
+			if "gwang" in sv or "광화" in sv or "palace" in sv or "sejong" in sv or "gate" in sv:
+				return false
+			if "namsan" in sv or "남산" in sv or "tower" in sv or "river" in sv or "han" in sv:
+				return true
+	for p_info in main_scene.get_property_list():
+		var pname = str(p_info["name"])
+		var plower = pname.to_lower()
+		if plower.ends_with("s") or plower == "script":
+			continue
+		var raw_v = main_scene.get(pname)
+		if typeof(raw_v) == TYPE_STRING or typeof(raw_v) == TYPE_STRING_NAME:
+			var val = str(raw_v).to_lower()
+			if "gwang" in val or "광화" in val or "palace" in val or "sejong" in val:
+				return false
+			if "namsan" in val or "남산" in val:
+				return true
+		elif raw_v is Dictionary and ("stage" in plower or "map" in plower or "backdrop" in plower or "scene" in plower):
+			var dstr = str(raw_v.get("id", raw_v.get("name", raw_v.get("key", "")))).to_lower()
+			if "gwang" in dstr or "광화" in dstr:
+				return false
+			if "namsan" in dstr or "남산" in dstr:
+				return true
+	# 2) 현재 트리에서 화면에 보이는(visible) 3D 배경 노드 이름 및 씬 경로 확인
+	for ch in main_scene.find_children("*", "Node3D", true, false):
+		if ch is Node3D and ch.is_visible_in_tree():
+			var cn = (ch.name + " " + ch.scene_file_path).to_lower()
+			if "gwang" in cn or "광화" in cn or "palace" in cn or "sejong" in cn or "gyeongbok" in cn:
+				return false
+			if "namsan" in cn or "남산" in cn:
+				return true
+	return true
 
 
 static func _animate_radar_wave(w_ring: MeshInstance3D, w_mat: StandardMaterial3D, delay_sec: float) -> void:
@@ -475,7 +532,6 @@ static func _on_pre_process(state: Dictionary) -> void:
 	var chassis = state["chassis"]
 	if not is_instance_valid(chassis):
 		return
-	# main.gd._process가 돌기 직전에 요격미사일의 엔진 내부 좌표를 복원해 주어 타격 판정이 정확히 유지되게 함
 	var tracked = state["interceptors"]
 	for iid in tracked.keys():
 		var st = tracked[iid]
@@ -484,7 +540,6 @@ static func _on_pre_process(state: Dictionary) -> void:
 			inode.global_position = st["engine_pos"]
 			inode.global_rotation = st["engine_rot"]
 
-	# PodRack을 90도 수직 발사관 상단에 고정하여 main.gd의 기본 발사 이펙트도 수직으로 나가도록 강제
 	var pod_rack = state["pod_rack"]
 	var rack = state["rack"]
 	if is_instance_valid(pod_rack) and is_instance_valid(rack):
@@ -497,9 +552,25 @@ static func _on_pre_draw(state: Dictionary) -> void:
 	var chassis = state["chassis"]
 	if not is_instance_valid(chassis):
 		return
+	var launcher = state["launcher"]
+	var main_scene = state.get("main")
 	var delta = chassis.get_process_delta_time()
 	var t = float(state["time"]) + delta
 	state["time"] = t
+
+	# [수정 2] 광화문 vs 남산 스테이지별 발사 시스템 전체 차량 스케일 조정:
+	# - 광화문(is_namsan == false): 주변 시설과 완벽히 어울리는 현재의 1.0배 비율 그대로 유지!
+	# - 남산(is_namsan == true): 주변 다리/강변도로 주행 차량 크기에 맞춰 발사 시스템 전체(launcher)를 0.46배로 축소!
+	if is_instance_valid(launcher) and is_instance_valid(main_scene):
+		if t - float(state["stage_chk_t"]) >= 0.20:
+			state["stage_chk_t"] = t
+			state["is_namsan"] = _detect_is_namsan(main_scene, launcher)
+		var is_namsan = bool(state["is_namsan"])
+		var target_l_scale = Vector3(0.46, 0.46, 0.46) if is_namsan else Vector3(1.0, 1.0, 1.0)
+		launcher.scale = target_l_scale
+		var ecs_node = state.get("ecs")
+		if is_instance_valid(ecs_node):
+			ecs_node.position = Vector3(11.60 if is_namsan else 16.20, 0.08, -0.25)
 
 	# 1. 차체 측면 고정 및 천무 포드 숨김/수직 고정 (main.gd._process 이후 최종 덮어쓰기!)
 	chassis.rotation = Vector3(0.0, PI * 0.5, 0.0)
@@ -510,14 +581,13 @@ static func _on_pre_draw(state: Dictionary) -> void:
 		pod_rack.global_position = rack.global_position + Vector3(0.0, 4.8, 0.0)
 		pod_rack.rotation = Vector3(deg_to_rad(89.0), 0.0, 0.0)
 
-	var main_scene = state.get("main")
 	if not is_instance_valid(main_scene):
 		return
 
 	# 2. 씬 전체에서 적 미사일(threats) 및 아군 요격미사일(interceptors) 자동 수집
 	var threats = []
 	var active_int_nodes = []
-	_collect_missiles_and_interceptors(main_scene, state["launcher"], threats, active_int_nodes)
+	_collect_missiles_and_interceptors(main_scene, launcher, threats, active_int_nodes)
 
 	var has_threats = threats.size() > 0
 	if threats.size() > int(state["prev_threats"]):
@@ -596,25 +666,133 @@ static func _on_pre_draw(state: Dictionary) -> void:
 			lock_rings.erase(tid)
 
 	# ========================================================================
-	# 3. 천궁-II 3단계 콜드런치(Cold-Launch) 발사 모션그래픽 완벽 구현!
-	#    (RenderingServer.frame_pre_draw 단계에서 사각 직선 궤적을 완전히 대체)
+	# [수정 3] 천궁-II 3단계 직각 콜드런치(Cold-Launch) 발사 모션그래픽 완벽 구현!
+	# - main.gd의 기본 곡사 미사일(_missile_node)과 곡사 연기(_missile_smoke_node)를
+	#   매 프레임 렌더링 직전(frame_pre_draw)에 즉시 숨기고,
+	#   ① 90° 수직 사출 │ -> ② 공중 정점 완전 정지·측면추력기(DACS) 직각 회전 ┌ -> ③ 곡률 0% 일직선 직사 타격 ─> 수행!
 	# ========================================================================
+	var orig_missile = main_scene.get("_missile_node")
+	var orig_smoke = main_scene.get("_missile_smoke_node")
+	var flight = main_scene.get("_missile_flight")
+	var cg_dart = state.get("cg_dart")
+
+	if is_instance_valid(orig_smoke):
+		orig_smoke.visible = false
+		for sc in orig_smoke.get_children():
+			if sc is VisualInstance3D:
+				sc.visible = false
+
+	if flight is Dictionary and not flight.is_empty():
+		if is_instance_valid(orig_missile):
+			orig_missile.visible = false
+			for mc in orig_missile.get_children():
+				if mc is VisualInstance3D:
+					mc.visible = false
+
+		var elapsed = float(flight.get("elapsed", 0.0))
+		var duration = maxf(float(flight.get("duration", 0.36)), 0.001)
+		var target_pos = flight.get("target", chassis.global_position + Vector3(0.0, 8.0, -14.0))
+		var u_total = clampf(elapsed / duration, 0.0, 1.0)
+		var is_namsan = bool(state["is_namsan"])
+
+		# 새 미사일 발사 시작 감지 -> 8연장 수직발사관 상단에서 90도 수직 콜드런치 가스 기둥 분출!
+		if not bool(state["flight_active"]) or elapsed < float(state["prev_flight_elapsed"]) - 0.001:
+			state["flight_active"] = true
+			state["flight_dacs_done"] = false
+			state["flight_booster_done"] = false
+			state["flight_trail_t"] = 0.0
+			var muzzles = state["muzzles"]
+			var m_pos = chassis.global_position + Vector3(0.0, 5.2 * launcher.scale.y, 0.0)
+			if muzzles.size() > 0:
+				var idx = int(state["next_tube"]) % muzzles.size()
+				state["next_tube"] = idx + 1
+				if is_instance_valid(muzzles[idx]):
+					m_pos = muzzles[idx].global_position
+			state["flight_muzzle_pos"] = m_pos
+			_spawn_cold_launch_fx(main_scene, m_pos)
+
+		state["prev_flight_elapsed"] = elapsed
+		state["last_flight_target"] = target_pos
+
+		var m_pos = state["flight_muzzle_pos"]
+		var rise_h = 3.4 if is_namsan else 5.2
+		var apex_pos = m_pos + Vector3(0.0, rise_h, 0.0)
+		var to_target = target_pos - apex_pos
+		var aim_dir = to_target.normalized() if to_target.length_squared() > 0.0001 else Vector3(0.0, 0.5, -0.866)
+
+		var draw_pos = m_pos
+		var draw_dir = Vector3.UP
+		var booster_on = false
+
+		if u_total < 0.28:
+			# [1단계: 90° 수직 콜드런치 사출] X, Z 이동 0%! 발사관 상단에서 직상방(+Y)으로만 수직 상승!
+			var u1 = clampf(u_total / 0.28, 0.0, 1.0)
+			var ease_u1 = 1.0 - pow(1.0 - u1, 2.5)
+			draw_pos = Vector3(m_pos.x, lerpf(m_pos.y, apex_pos.y, ease_u1), m_pos.z)
+			draw_dir = Vector3.UP
+		elif u_total < 0.45:
+			# [2단계: 공중 정점(apex_pos) 완전 정지 호버링 & 측면추력기(DACS) 점화로 기수만 표적 방향으로 직각 회전!]
+			if not bool(state["flight_dacs_done"]):
+				state["flight_dacs_done"] = true
+				_spawn_dacs_side_thrusters(main_scene, apex_pos)
+			var u2 = clampf((u_total - 0.28) / 0.17, 0.0, 1.0)
+			draw_pos = apex_pos
+			draw_dir = Vector3.UP.lerp(aim_dir, clampf(u2 * 1.25, 0.0, 1.0)).normalized()
+		else:
+			# [3단계: 주 로켓 점화 후 정점(apex_pos)에서 표적(target_pos)까지 곡률 0% 일직선(직사) 초음속 타격!]
+			if not bool(state["flight_booster_done"]):
+				state["flight_booster_done"] = true
+				_spawn_booster_ring(main_scene, apex_pos)
+				_spawn_straight_contrail_beam(main_scene, apex_pos, target_pos)
+			var u3 = clampf((u_total - 0.45) / 0.55, 0.0, 1.0)
+			var smooth_u3 = 1.0 - pow(1.0 - u3, 2.1)
+			draw_pos = apex_pos.lerp(target_pos, smooth_u3)
+			draw_dir = aim_dir
+			booster_on = true
+
+			var tr_t = float(state["flight_trail_t"]) + delta
+			if tr_t >= 0.020:
+				tr_t = 0.0
+				_spawn_smoke_puff(main_scene, draw_pos)
+			state["flight_trail_t"] = tr_t
+
+		if is_instance_valid(cg_dart):
+			cg_dart.visible = true
+			var d_scale = 0.58 if is_namsan else 1.0
+			cg_dart.scale = Vector3(d_scale, d_scale, d_scale)
+			cg_dart.global_position = draw_pos
+			_orient_missile_along(cg_dart, draw_dir)
+			var pl = cg_dart.find_child("CheongungPlume", true, false)
+			if is_instance_valid(pl):
+				pl.visible = booster_on
+
+		if is_instance_valid(orig_missile):
+			orig_missile.global_position = draw_pos
+	else:
+		if bool(state["flight_active"]):
+			state["flight_active"] = false
+			_spawn_interception_explosion(main_scene, state["last_flight_target"])
+		if is_instance_valid(cg_dart):
+			cg_dart.visible = false
+		if is_instance_valid(orig_missile):
+			orig_missile.visible = false
+
+	# 추가 안전장치: 배열 기반 요격미사일 노드가 존재할 경우에도 곡률 0%(arc_lift 제거) 직사 궤적 강제!
 	var tracked = state["interceptors"]
 	var active_i_ids = {}
 
 	for i_node in active_int_nodes:
-		if not is_instance_valid(i_node):
+		if not is_instance_valid(i_node) or i_node == orig_missile or i_node == cg_dart:
 			continue
 		var iid = i_node.get_instance_id()
 		active_i_ids[iid] = true
 
-		# main.gd가 방금 계산한 원래(사각) 좌표와 회전값 저장
 		var eng_pos = i_node.global_position
 		var eng_rot = i_node.global_rotation
 
 		if not tracked.has(iid):
 			var muzzles = state["muzzles"]
-			var m_pos = chassis.global_position + Vector3(0.0, 5.2, 0.0)
+			var m_pos = chassis.global_position + Vector3(0.0, 5.2 * launcher.scale.y, 0.0)
 			if muzzles.size() > 0:
 				var idx = int(state["next_tube"]) % muzzles.size()
 				state["next_tube"] = idx + 1
@@ -644,48 +822,40 @@ static func _on_pre_draw(state: Dictionary) -> void:
 		var age = float(st["age"]) + delta
 		st["age"] = age
 		var m_pos = st["muzzle"]
-		# 콜드런치 수직 상승 정점 (발사관 상단에서 수직으로 +4.6m 위 상공!)
-		var apex_pos = m_pos + Vector3(0.0, 4.6, 0.0)
+		var rise_h = 3.4 if bool(state["is_namsan"]) else 4.8
+		var apex_pos = m_pos + Vector3(0.0, rise_h, 0.0)
 		var prev_draw = st["prev_draw_pos"]
 		var draw_pos = eng_pos
 
-		if age < 0.24:
-			# [1단계: 90° 수직 콜드런치 사출 (0.00s ~ 0.24s)]
-			# 사각으로 날아가지 않고 발사관 상단(m_pos)에서 하늘(+Y)로 90도 완전 수직 사출 후 정점(apex_pos)에서 감속 호버링!
-			var u1 = clampf(age / 0.24, 0.0, 1.0)
+		if age < 0.16:
+			var u1 = clampf(age / 0.16, 0.0, 1.0)
 			var ease_u1 = 1.0 - pow(1.0 - u1, 2.6)
 			draw_pos = m_pos.lerp(apex_pos, ease_u1)
 			i_node.global_position = draw_pos
-			# 기수가 하늘(+Y)을 향해 90도 완전 수직으로 서 있음
 			_orient_missile_along(i_node, Vector3.UP)
-		elif age < 0.38:
-			# [2단계: 공중 정점 측면 추력기(DACS) 점화 및 급격한 기수 방향전환 (0.24s ~ 0.38s)]
-			# 정점(apex_pos) 부근 공중에 멈춰 선 채 전방 측면 추력기가 좌우로 폭발하며 기수만 표적 쪽으로 휙 꺾음!
+		elif age < 0.28:
 			if not bool(st["dacs"]):
 				st["dacs"] = true
 				_spawn_dacs_side_thrusters(main_scene, apex_pos)
-			var u2 = clampf((age - 0.24) / 0.14, 0.0, 1.0)
-			draw_pos = apex_pos.lerp(eng_pos, u2 * u2 * 0.22)
+			var u2 = clampf((age - 0.16) / 0.12, 0.0, 1.0)
+			draw_pos = apex_pos
 			i_node.global_position = draw_pos
 			var target_dir = (eng_pos - apex_pos).normalized()
 			if target_dir.length_squared() < 0.01:
 				target_dir = Vector3(0.0, 0.7, -0.7).normalized()
-			var snap_dir = Vector3.UP.lerp(target_dir, ease(u2, -2.2)).normalized()
+			var snap_dir = Vector3.UP.lerp(target_dir, u2).normalized()
 			_orient_missile_along(i_node, snap_dir)
 		else:
-			# [3단계: 주 로켓 추진기관 공중 점화 및 고각 아치형 비행 유도 (0.38s ~ 명중)]
 			if not bool(st["booster"]):
 				st["booster"] = true
-				_spawn_booster_ring(main_scene, i_node.global_position)
+				_spawn_booster_ring(main_scene, apex_pos)
 				var pl = i_node.find_child("CheongungPlume", true, false)
 				if is_instance_valid(pl):
 					pl.visible = true
 
-			var u3 = clampf((age - 0.38) / 0.32, 0.0, 1.0)
-			var smooth_u3 = u3 * u3 * (3.0 - 2.0 * u3)
-			# 정점(apex_pos)에서 실제 타격 위치(eng_pos)까지 고고도 아치 궤적으로 부드럽게 합류!
-			var arc_lift := 0.0
-			draw_pos = apex_pos.lerp(eng_pos, smooth_u3) + arc_lift
+			var u3 = clampf((age - 0.28) / 0.24, 0.0, 1.0)
+			var smooth_u3 = 1.0 - pow(1.0 - u3, 2.0)
+			draw_pos = apex_pos.lerp(eng_pos, smooth_u3)
 			i_node.global_position = draw_pos
 
 			var vel_dir = (draw_pos - prev_draw)
@@ -718,7 +888,6 @@ static func _collect_missiles_and_interceptors(main_scene: Node, launcher: Node3
 	var seen_t = {}
 	var seen_i = {}
 
-	# 1) main_scene의 알려진 프로퍼티(missiles, interceptors 등) 확인
 	var raw_m = main_scene.get("missiles")
 	if raw_m is Array:
 		for item in raw_m:
@@ -735,24 +904,6 @@ static func _collect_missiles_and_interceptors(main_scene: Node, launcher: Node3
 				if is_instance_valid(n) and n.visible and not seen_t.has(n.get_instance_id()) and not seen_i.has(n.get_instance_id()):
 					seen_i[n.get_instance_id()] = true
 					interceptors.append(n)
-
-	# 2) 만약 프로퍼티 이름이 다르더라도 main_scene의 모든 Array 프로퍼티에서 발사체 Node3D 자동 탐지!
-	if interceptors.is_empty():
-		for p_info in main_scene.get_property_list():
-			var pname = p_info["name"]
-			if pname == "missiles" or pname == "vehicle_templates" or pname == "models":
-				continue
-			var val = main_scene.get(pname)
-			if val is Array and val.size() > 0:
-				for item in val:
-					var n = _find_node3d(item)
-					if is_instance_valid(n) and n.visible and n != launcher and not launcher.is_ancestor_of(n):
-						var nid = n.get_instance_id()
-						if not seen_t.has(nid) and not seen_i.has(nid):
-							# 요격미사일인지 확인 (이름에 interceptor가 있거나 발사대 근처에서 출발한 노드)
-							if "intercept" in n.name.to_lower() or n.has_node("CheongungBody") or n.global_position.distance_to(launcher.global_position) < 28.0:
-								seen_i[nid] = true
-								interceptors.append(n)
 
 
 static func _find_node3d(item) -> Node3D:
@@ -839,6 +990,29 @@ static func _spawn_lock_beam(main_scene: Node, p0: Vector3, p1: Vector3) -> void
 	tw.tween_callback(pivot.queue_free)
 
 
+static func _spawn_straight_contrail_beam(main_scene: Node, p0: Vector3, p1: Vector3) -> void:
+	var d = p0.distance_to(p1)
+	if d < 0.5:
+		return
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = Color(0.95, 0.98, 1.0, 0.72)
+	mat.emission_enabled = true
+	mat.emission = Color("ffddaa")
+	mat.emission_energy_multiplier = 2.6
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+
+	var pivot = Node3D.new()
+	main_scene.add_child(pivot)
+	pivot.global_position = (p0 + p1) * 0.5
+	pivot.look_at(p1, Vector3.UP)
+	pivot.add_child(_cyl(0.08, 0.15, d, mat, Vector3.ZERO, Vector3(PI * 0.5, 0.0, 0.0)))
+
+	var tw = pivot.create_tween()
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.42)
+	tw.tween_callback(pivot.queue_free)
+
+
 static func _upgrade_interceptor_mesh(i_node: Node3D, mat_body: Material) -> void:
 	if i_node.has_node("CheongungBody"):
 		return
@@ -857,6 +1031,8 @@ static func _upgrade_interceptor_mesh(i_node: Node3D, mat_body: Material) -> voi
 	root.add_child(_cyl(0.0, 0.14, 0.60, mat_w, Vector3(0.0, 0.0, -1.20), Vector3(PI * 0.5, 0.0, 0.0)))
 	root.add_child(_cyl(0.145, 0.145, 0.26, mat_r, Vector3(0.0, 0.0, -0.78), Vector3(PI * 0.5, 0.0, 0.0)))
 	root.add_child(_cyl(0.14, 0.14, 1.65, mat_body, Vector3(0.0, 0.0, 0.15), Vector3(PI * 0.5, 0.0, 0.0)))
+	root.add_child(_box(Vector3(0.62, 0.03, 0.36), mat_body, Vector3(0.0, 0.0, 0.65)))
+	root.add_child(_box(Vector3(0.03, 0.62, 0.36), mat_body, Vector3(0.0, 0.0, 0.65)))
 
 	var plume = Node3D.new()
 	plume.name = "CheongungPlume"
@@ -891,7 +1067,7 @@ static func _upgrade_interceptor_mesh(i_node: Node3D, mat_body: Material) -> voi
 
 
 static func _spawn_cold_launch_fx(main_scene: Node, m_pos: Vector3) -> void:
-	# ③ 수직 콜드런치 사출! 발사관 상단에서 하늘(+Y)로 수직 분출되는 고압 가스 연기 기둥 & 사출 압력 링
+	# 수직 콜드런치 사출! 발사관 상단에서 하늘(+Y)로 수직 분출되는 고압 가스 연기 기둥 & 사출 압력 링
 	var fl = OmniLight3D.new()
 	fl.light_color = Color("ffaa44")
 	fl.light_energy = 10.5
@@ -902,7 +1078,6 @@ static func _spawn_cold_launch_fx(main_scene: Node, m_pos: Vector3) -> void:
 	tw_l.tween_property(fl, "light_energy", 0.0, 0.38)
 	tw_l.tween_callback(fl.queue_free)
 
-	# 수직 사출구 충격파 링
 	var ring_mat = StandardMaterial3D.new()
 	ring_mat.albedo_color = Color(0.92, 0.95, 1.0, 0.85)
 	ring_mat.emission_enabled = true
@@ -930,20 +1105,20 @@ static func _spawn_cold_launch_fx(main_scene: Node, m_pos: Vector3) -> void:
 		p_mat.emission_energy_multiplier = 2.6 if i < 4 else 0.55
 		p_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 
-		var start_p = m_pos + Vector3(randf_range(-0.18, 0.18), float(i) * 0.28, randf_range(-0.18, 0.18))
-		var puff = _sphere(0.32 + float(i % 3) * 0.12, p_mat, start_p)
+		var start_p = m_pos + Vector3(randf_range(-0.12, 0.12), float(i) * 0.28, randf_range(-0.12, 0.12))
+		var puff = _sphere(0.28 + float(i % 3) * 0.10, p_mat, start_p)
 		main_scene.add_child(puff)
 		puff.global_position = start_p
 
 		var tw = puff.create_tween()
-		tw.tween_property(puff, "global_position", start_p + Vector3(randf_range(-0.45, 0.45), 3.4 + float(i) * 0.28, randf_range(-0.45, 0.45)), 0.78)
-		tw.parallel().tween_property(puff, "scale", Vector3(2.6, 2.6, 2.6), 0.78)
-		tw.parallel().tween_property(p_mat, "albedo_color:a", 0.0, 0.78)
+		tw.tween_property(puff, "global_position", start_p + Vector3(randf_range(-0.25, 0.25), 3.2 + float(i) * 0.25, randf_range(-0.25, 0.25)), 0.65)
+		tw.parallel().tween_property(puff, "scale", Vector3(2.2, 2.2, 2.2), 0.65)
+		tw.parallel().tween_property(p_mat, "albedo_color:a", 0.0, 0.65)
 		tw.tween_callback(puff.queue_free)
 
 
 static func _spawn_dacs_side_thrusters(main_scene: Node, apex_pos: Vector3) -> void:
-	# ④ 측면 추력기(DACS) 초기 방향전환! 상공 정점에서 좌우로 강렬하게 뿜어져 나오는 십자형 측면 스파크 화염
+	# 측면 추력기(DACS) 초기 방향전환! 상공 정점에서 좌우로 강렬하게 뿜어져 나오는 십자형 측면 스파크 화염
 	var dl = OmniLight3D.new()
 	dl.light_color = Color("ffaa22")
 	dl.light_energy = 14.0
@@ -1012,13 +1187,13 @@ static func _spawn_smoke_puff(main_scene: Node, pos: Vector3) -> void:
 	s_mat.emission_energy_multiplier = 0.70
 	s_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 
-	var puff = _sphere(0.26, s_mat, pos)
+	var puff = _sphere(0.24, s_mat, pos)
 	main_scene.add_child(puff)
 	puff.global_position = pos
 
 	var tw = puff.create_tween()
-	tw.tween_property(puff, "scale", Vector3(2.6, 2.6, 2.6), 0.65)
-	tw.parallel().tween_property(s_mat, "albedo_color:a", 0.0, 0.65)
+	tw.tween_property(puff, "scale", Vector3(2.4, 2.4, 2.4), 0.55)
+	tw.parallel().tween_property(s_mat, "albedo_color:a", 0.0, 0.55)
 	tw.tween_callback(puff.queue_free)
 
 

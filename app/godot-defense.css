@@ -221,7 +221,7 @@
 .godot-defense-game :has(> img[src*="preview"])::after,
 .godot-defense-game .gd-preview-card::after,
 .godot-defense-game figure::after {
-  content: "● VER v11.0 · 천궁-II KM-SAM 3D (MFR·발사대·ECS 무겹침 0.74x)" !important;
+  content: "● VER v12.0 · 천궁-II KM-SAM 3D (MFR·발사대·ECS 무겹침 0.74x)" !important;
   display: inline-block !important;
   margin-top: 10px !important;
   padding: 6px 14px !important;

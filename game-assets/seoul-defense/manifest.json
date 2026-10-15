@@ -1,18 +1,18 @@
 {
   "version": "16-integration17-responsive4",
   "output": "public/games/seoul-defense/index.pck",
-  "bytes": 20116184,
-  "sha256": "0d786dca770d55a093144e236d923eeff4ce246bb8443c4de11fab1c46be92ca",
+  "bytes": 20122744,
+  "sha256": "d54f25eb44a07ef296db60e5d6c11db3686393e3dadb4ca35bcfd87134b1bd05",
   "parts": [
     {
       "file": "index.pckpart1",
-      "bytes": 10058092,
-      "sha256": "b59176c238549ab826e46d617efc1f4e1cc963c10dfc787e02d755b4bcadfa00"
+      "bytes": 10061372,
+      "sha256": "f32d2306b50a875f3b9f52f881b85f9f12a7daf22e0ff4a5b6e5c26d3a76afc6"
     },
     {
       "file": "index.pckpart2",
-      "bytes": 10058092,
-      "sha256": "5099e4000b84158df3c18dc89d87e20521b93d8e83da93781bea7949641336ea"
+      "bytes": 10061372,
+      "sha256": "0d8f4f9827b936d25510c5ba2269a623bfcfe338b342b347066bf0b7d45caf2a"
     }
   ]
 }
