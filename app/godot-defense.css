@@ -152,9 +152,9 @@
 
 
 
-/* CHEONGUNG-COMPACT-FRAME-V11 */
-/* 1) '← 나가기 Esc'와 '컨셉' 버튼(.game-stage-bar)을 감싸는 최외곽 스테이지 박스를 상·하단 섹션과 동일한 1200px 둥근 네모 틀로 묶어,
-      나가기 버튼과 컨셉 버튼이 외곽 네모 박스 안쪽 상단에 들어가도록 처리 */
+
+/* CHEONGUNG-COMPACT-FRAME-V13 */
+/* 1) '← 나가기 Esc'와 '컨셉' 버튼(.game-stage-bar)을 감싸는 1200px 외곽 네모 박스 (상하 패딩 압축으로 한 화면 노출 극대화) */
 .practice-screen-stage:not(:has(.godot-defense-game.is-fullscreen)),
 :not(html):not(body):not(main):not(:has(.godot-defense-game.is-fullscreen)):has(> .game-stage-bar) {
   max-width: 1200px !important;
@@ -162,31 +162,90 @@
   margin-left: auto !important;
   margin-right: auto !important;
   border: 2px solid #0f172a !important;
-  border-radius: 28px !important;
+  border-radius: 24px !important;
   background-color: #ffffff !important;
-  padding: 18px 22px 24px !important;
+  padding: 10px 18px 12px !important;
   box-sizing: border-box !important;
 }
 
-/* 나가기 버튼과 컨셉 버튼 바(.game-stage-bar)가 1200px 네모 박스 안쪽 상단에 깔끔하게 정렬되도록 설정 */
+/* 나가기 버튼과 컨셉 버튼 상단 바(.game-stage-bar) 여백 최소화 */
 .game-stage-bar {
   max-width: 100% !important;
   width: 100% !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  margin-bottom: 14px !important;
-  padding-left: 4px !important;
-  padding-right: 4px !important;
+  margin: 0 0 6px 0 !important;
+  padding: 0 2px !important;
+  min-height: 32px !important;
   box-sizing: border-box !important;
 }
-
-/* 가로세로 퀴즈 자체(.crossword-game-wrap, .studio-crossword-frame)는 내부 2단 레이아웃(좌상단 보드 + 우측 기능버튼·입력창)이 절대 깨지거나 줄어들지 않도록 순정 100% 폭 유지 및 중복 외곽선만 제거 */
-.practice-screen-stage > .crossword-game-wrap {
-  border: none !important;
-  box-shadow: none !important;
+.game-stage-bar button,
+.game-stage-bar a {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+  font-size: 13px !important;
+  min-height: 30px !important;
 }
 
-/* 2) 안쪽 남색 게임창(.godot-defense-game)은 바깥 1200px 틀 안에 빈틈 없이 100% 꽉 차도록 설정 */
+/* 2) 가로세로 퀴즈(Crossword) 스크롤 없이 한 화면(One-Screen)에 전체가 들어오도록 제목·버튼·보드·입력창 높이/여백 정밀 압축 */
+.practice-screen-stage > .crossword-game-wrap,
+.crossword-game-wrap {
+  border: none !important;
+  box-shadow: none !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+.crossword-game-wrap,
+.studio-crossword-frame {
+  gap: 6px !important;
+}
+.crossword-game-wrap header,
+.studio-crossword-frame header,
+.crossword-game-wrap [class*="header"],
+.studio-crossword-frame [class*="header"] {
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+  margin-bottom: 2px !important;
+  gap: 4px !important;
+}
+.crossword-game-wrap h1,
+.crossword-game-wrap h2,
+.crossword-game-wrap h3,
+.studio-crossword-frame h1,
+.studio-crossword-frame h2,
+.studio-crossword-frame h3 {
+  font-size: 1.15rem !important;
+  line-height: 1.2 !important;
+  margin-top: 0 !important;
+  margin-bottom: 2px !important;
+}
+.crossword-game-wrap p,
+.studio-crossword-frame p {
+  margin-top: 1px !important;
+  margin-bottom: 1px !important;
+  line-height: 1.25 !important;
+}
+.crossword-game-wrap button,
+.studio-crossword-frame button {
+  padding: 4px 10px !important;
+  min-height: 28px !important;
+  font-size: 12.5px !important;
+  line-height: 1.2 !important;
+}
+/* 가로세로 퀴즈 3D/평면 보드 캔버스 높이를 화면 높이에 맞춰 컴팩트하게 고정하여 하단 입력창/키보드 버튼이 스크롤 없이 즉시 노출 */
+.crossword-game-wrap canvas,
+.studio-crossword-frame canvas {
+  max-height: clamp(210px, 31vh, 285px) !important;
+}
+.crossword-game-wrap input[type="text"],
+.studio-crossword-frame input[type="text"] {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 4px 10px !important;
+  font-size: 14px !important;
+}
+
+/* 3) 도시 방어전(.godot-defense-game) 1200px 틀 내부 정렬 및 VER v13.0 배지 */
 .godot-defense-game {
   max-width: 100% !important;
   width: 100% !important;
@@ -217,11 +276,10 @@
 .godot-defense-game .gd-side-ad {
   display: none !important;
 }
-/* 3) 미리보기 그림 프레임 바깥 바로 아래에 선명한 HTML/CSS 버전 배지 표시 */
 .godot-defense-game :has(> img[src*="preview"])::after,
 .godot-defense-game .gd-preview-card::after,
 .godot-defense-game figure::after {
-  content: "● VER v12.0 · 천궁-II KM-SAM 3D (MFR·발사대·ECS 무겹침 0.74x)" !important;
+  content: "● VER v13.0 · 천궁-II 직각 콜드런치 · 북한산 암벽/청와대 & 남산 송신타워 실경 고증" !important;
   display: inline-block !important;
   margin-top: 10px !important;
   padding: 6px 14px !important;
